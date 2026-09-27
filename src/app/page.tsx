@@ -1,10 +1,10 @@
-import { auth, providerList, signIn, signOut } from "@/auth";
+import { auth, authConfigured, providerList, signIn, signOut } from "@/auth";
 import { getDb } from "@/db";
 import { getBoard } from "@/server/board";
 import { Board } from "@/components/Board";
 
 export default async function Home() {
-  const session = await auth();
+  const session = authConfigured ? await auth() : null;
   const userId = session?.user?.id;
   const board = userId ? await getBoard(getDb(), userId) : null;
 
@@ -17,7 +17,7 @@ export default async function Home() {
     await signOut({ redirectTo: "/" });
   }
 
-  const signInButtons = providerList.length ? (
+  const signInButtons = authConfigured ? (
     <form action={doSignIn} className="actions">
       {providerList.map((p) => (
         <button key={p.id} className="btn primary" name="provider" value={p.id}>

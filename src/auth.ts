@@ -15,6 +15,12 @@ export const providerList = providers.map((p) => {
   return { id, name: id === "discord" ? "Discord" : "Google" };
 });
 
+/**
+ * Accounts need a database, a secret and at least one provider. Until all
+ * three are set, the site runs in guest mode instead of erroring.
+ */
+export const authConfigured = Boolean(process.env.DATABASE_URL && process.env.AUTH_SECRET && providers.length);
+
 export const { handlers, auth, signIn, signOut } = NextAuth(() => ({
   adapter: DrizzleAdapter(getDb(), {
     usersTable: users,
@@ -28,6 +34,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth(() => ({
 }));
 
 export async function requireUserId(): Promise<string> {
+  if (!authConfigured) throw new Error("Sign in is not available on this server yet.");
   const session = await auth();
   const id = session?.user?.id;
   if (!id) throw new Error("Sign in to save your board.");

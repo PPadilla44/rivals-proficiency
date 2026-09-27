@@ -165,11 +165,9 @@ button, input, select { font: inherit; color: inherit; }
 .empty { color: var(--ink-3); font-size: 13.5px; margin: 0; }
 
 /* ---------- controls ---------- */
-.controls { position: sticky; top: env(safe-area-inset-top, 0px); z-index: 5; background: var(--paper); padding-block: 12px; display: flex; flex-direction: column; gap: 10px; border-bottom: 3px solid var(--stroke); }
+.controls { position: sticky; top: env(safe-area-inset-top, 0px); z-index: 5; background: var(--paper); padding-block: 10px; border-bottom: 3px solid var(--stroke); }
+.filters { margin-top: -12px; }
 .row1 { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
-.sticky-sentinel { height: 1px; margin-bottom: -23px; }
-.controls.stuck { padding-block: 8px; }
-.controls.stuck .filters { display: none; }
 .start-here { margin: 0; padding: 10px 14px; border: 2.5px dashed var(--stroke); border-radius: 4px; background: color-mix(in srgb, var(--pop) 18%, var(--panel)); font-size: 14.5px; color: var(--ink-2); }
 .start-here strong { color: var(--ink); }
 .search { flex: 1 1 220px; position: relative; }

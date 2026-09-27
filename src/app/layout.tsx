@@ -23,10 +23,20 @@ const mono = localFont({
   ],
 });
 
+const description =
+  "Every Marvel Rivals hero's proficiency level on one screen. See who is closest to Lord and Champion, and estimate progress from your playtime.";
+
+// Absolute URLs for the link preview; Vercel sets the production domain.
+const siteUrl = process.env.VERCEL_PROJECT_PRODUCTION_URL
+  ? `https://${process.env.VERCEL_PROJECT_PRODUCTION_URL}`
+  : "http://localhost:3000";
+
 export const metadata: Metadata = {
+  metadataBase: new URL(siteUrl),
   title: "Proficiency Board",
-  description:
-    "Every Marvel Rivals hero's proficiency level on one screen. See who is closest to Lord and Champion, and estimate progress from your playtime.",
+  description,
+  openGraph: { title: "Proficiency Board", description, siteName: "Proficiency Board", type: "website" },
+  twitter: { card: "summary_large_image", title: "Proficiency Board", description },
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {

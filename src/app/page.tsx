@@ -45,7 +45,7 @@ export default async function Home() {
         </div>
         <div className="top-actions">
           <a className="kofi" href={KOFI_URL} target="_blank" rel="noreferrer">
-            Support on Ko-fi
+            <span aria-hidden="true">&#9829;</span> Support on Ko-fi
           </a>
         {session?.user ? (
           <div className="who">

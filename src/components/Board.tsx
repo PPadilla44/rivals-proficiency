@@ -180,6 +180,17 @@ export function Board({ mode, initial, signInSlot, portraits }: Props) {
     ...visible.filter((r) => !frozen.order.includes(r.id)),
   ];
 
+  // Collapse the filter bar to one row once it sticks to the top.
+  const sentinel = useRef<HTMLDivElement>(null);
+  const [stuck, setStuck] = useState(false);
+  useEffect(() => {
+    const el = sentinel.current;
+    if (!el || typeof IntersectionObserver === "undefined") return;
+    const io = new IntersectionObserver(([e]) => setStuck(!e.isIntersecting && e.boundingClientRect.top < 0));
+    io.observe(el);
+    return () => io.disconnect();
+  }, []);
+
   const saveUi = (next: { sort: Sort; view: View }) => {
     try {
       localStorage.setItem(LS_UI, JSON.stringify(next));
@@ -252,7 +263,8 @@ export function Board({ mode, initial, signInSlot, portraits }: Props) {
         linked={!!board.link}
       />
 
-      <section className="controls" aria-label="Filters">
+      <div ref={sentinel} className="sticky-sentinel" aria-hidden="true" />
+      <section className={`controls${stuck ? " stuck" : ""}`} aria-label="Filters">
         <div className="row1">
           <div className="search">
             <svg viewBox="0 0 24 24" fill="none" strokeWidth="2" strokeLinecap="round" aria-hidden="true">
@@ -282,8 +294,19 @@ export function Board({ mode, initial, signInSlot, portraits }: Props) {
               ))}
             </select>
           </label>
+          <span className="count">
+            {shown.length} of {rows.length}
+          </span>
+          <div className="view-toggle" role="group" aria-label="Layout">
+            <button type="button" aria-pressed={view === "cards"} onClick={() => changeView("cards")}>
+              Cards
+            </button>
+            <button type="button" aria-pressed={view === "list"} onClick={() => changeView("list")}>
+              List
+            </button>
+          </div>
         </div>
-        <div className="row1">
+        <div className="row1 filters">
           <div className="chips">
             {(
               [
@@ -320,19 +343,15 @@ export function Board({ mode, initial, signInSlot, portraits }: Props) {
               </button>
             ))}
           </div>
-          <span className="count">
-            {shown.length} of {rows.length} heroes
-          </span>
-          <div className="view-toggle" role="group" aria-label="Layout">
-            <button type="button" aria-pressed={view === "cards"} onClick={() => changeView("cards")}>
-              Cards
-            </button>
-            <button type="button" aria-pressed={view === "list"} onClick={() => changeView("list")}>
-              List
-            </button>
-          </div>
         </div>
       </section>
+
+      {!rows.some((r) => r.touched) ? (
+        <p className="start-here">
+          <strong>Start here:</strong> tap a hero&apos;s level and type where it is in game. The rank panels above fill in as
+          you go.
+        </p>
+      ) : null}
 
       {view === "cards" ? (
         <section className="grid" aria-label="Heroes">

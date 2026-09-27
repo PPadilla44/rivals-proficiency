@@ -48,7 +48,7 @@ OAuth redirect URLs:
 2. Add a Postgres database from the Vercel Marketplace (Neon) so `DATABASE_URL` is set.
 3. Add `AUTH_SECRET` (`npx auth secret`), provider IDs and secrets, and `MARVEL_RIVALS_API_KEY`.
 4. Add the production redirect URLs (`https://<your-domain>/api/auth/callback/<provider>`) to your OAuth apps.
-5. Run migrations once against the production database: `DATABASE_URL=... pnpm db:migrate`.
+5. Migrations run automatically at the start of every build (`scripts/migrate.mjs`), and are skipped when no database is configured.
 
 ## Scripts
 

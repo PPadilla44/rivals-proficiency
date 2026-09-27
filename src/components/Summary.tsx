@@ -1,7 +1,7 @@
 import { CHAMPION, LORD, RANKS, formatHours, tierOf } from "@/lib/proficiency";
 import type { HeroRow } from "@/lib/board-model";
 
-export const tierColor = (t: number) => `var(--t${t})`;
+import { tierColor } from "./bits";
 
 type Props = {
   rows: HeroRow[];

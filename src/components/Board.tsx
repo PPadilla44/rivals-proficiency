@@ -14,7 +14,7 @@ import { buildRows, GOALS, SORTS, type Goal, type HeroRow, type Sort } from "@/l
 import { ROLE_SORT, type Role } from "@/lib/heroes";
 import { CHAMPION, LORD, RANKS, clampLevel, tierOf } from "@/lib/proficiency";
 import { Summary } from "./Summary";
-import { HeroLine } from "./HeroLine";
+import { HeroCard, HeroLine } from "./HeroViews";
 import { Account } from "./Account";
 
 const LS_LEVELS = "proficiency-board-v1";
@@ -24,7 +24,10 @@ type Props = {
   mode: "guest" | "user";
   initial: BoardData | null;
   signInSlot: ReactNode;
+  portraits: Record<string, string>;
 };
+
+type View = "cards" | "list";
 
 const EMPTY: BoardData = { levels: {}, playtime: {}, link: null };
 
@@ -38,10 +41,11 @@ function readLocal(): Record<string, number> {
   }
 }
 
-export function Board({ mode, initial, signInSlot }: Props) {
+export function Board({ mode, initial, signInSlot, portraits }: Props) {
   const [board, setBoard] = useState<BoardData>(initial ?? EMPTY);
   const [q, setQ] = useState("");
   const [sort, setSort] = useState<Sort>("level-desc");
+  const [view, setView] = useState<View>("cards");
   const [role, setRole] = useState<Role | "all">("all");
   const [goal, setGoal] = useState<Goal>("all");
   const [rank, setRank] = useState<number | null>(null);
@@ -69,6 +73,7 @@ export function Board({ mode, initial, signInSlot }: Props) {
     try {
       const ui = JSON.parse(localStorage.getItem(LS_UI) ?? "null");
       if (ui?.sort && ui.sort in SORTS) setSort(ui.sort);
+      if (ui?.view === "cards" || ui?.view === "list") setView(ui.view);
     } catch {}
   }, [mode]);
 
@@ -175,11 +180,18 @@ export function Board({ mode, initial, signInSlot }: Props) {
     ...visible.filter((r) => !frozen.order.includes(r.id)),
   ];
 
+  const saveUi = (next: { sort: Sort; view: View }) => {
+    try {
+      localStorage.setItem(LS_UI, JSON.stringify(next));
+    } catch {}
+  };
   const changeSort = (s: Sort) => {
     setSort(s);
-    try {
-      localStorage.setItem(LS_UI, JSON.stringify({ sort: s }));
-    } catch {}
+    saveUi({ sort: s, view });
+  };
+  const changeView = (v: View) => {
+    setView(v);
+    saveUi({ sort, view: v });
   };
 
   const localCount = Object.values(guestLevels).filter((l) => l > 1).length;
@@ -311,33 +323,51 @@ export function Board({ mode, initial, signInSlot }: Props) {
           <span className="count">
             {shown.length} of {rows.length} heroes
           </span>
+          <div className="view-toggle" role="group" aria-label="Layout">
+            <button type="button" aria-pressed={view === "cards"} onClick={() => changeView("cards")}>
+              Cards
+            </button>
+            <button type="button" aria-pressed={view === "list"} onClick={() => changeView("list")}>
+              List
+            </button>
+          </div>
         </div>
       </section>
 
-      <section className="list" aria-label="Heroes">
-        <div className="head">
-          <button className={sort === "name" ? "on" : ""} onClick={() => changeSort("name")}>
-            Hero
-          </button>
-          <button className={sort === "role" ? "on" : ""} onClick={() => changeSort("role")}>
-            Role
-          </button>
-          <button className={sort.startsWith("level") ? "on" : ""} onClick={() => changeSort(sort === "level-desc" ? "level-asc" : "level-desc")}>
-            Rank
-          </button>
-          <button className={sort.startsWith("level") ? "on" : ""} onClick={() => changeSort(sort === "level-desc" ? "level-asc" : "level-desc")}>
-            Level
-          </button>
-          <button className={sort === "lord" || sort === "champ" ? "on" : ""} onClick={() => changeSort(sort === "lord" ? "champ" : "lord")}>
-            Next milestone
-          </button>
-        </div>
-        {shown.length ? (
-          shown.map((r) => <HeroLine key={r.id} row={r} onLevel={setLevel} />)
-        ) : (
-          <div className="noresults">No heroes match these filters.</div>
-        )}
-      </section>
+      {view === "cards" ? (
+        <section className="grid" aria-label="Heroes">
+          {shown.length ? (
+            shown.map((r) => <HeroCard key={r.id} row={r} portrait={portraits[r.id]} onLevel={setLevel} />)
+          ) : (
+            <div className="noresults">No heroes match these filters.</div>
+          )}
+        </section>
+      ) : (
+        <section className="list" aria-label="Heroes">
+          <div className="head">
+            <button className={sort === "name" ? "on" : ""} onClick={() => changeSort("name")}>
+              Hero
+            </button>
+            <button className={sort === "role" ? "on" : ""} onClick={() => changeSort("role")}>
+              Role
+            </button>
+            <button className={sort.startsWith("level") ? "on" : ""} onClick={() => changeSort(sort === "level-desc" ? "level-asc" : "level-desc")}>
+              Rank
+            </button>
+            <button className={sort.startsWith("level") ? "on" : ""} onClick={() => changeSort(sort === "level-desc" ? "level-asc" : "level-desc")}>
+              Level
+            </button>
+            <button className={sort === "lord" || sort === "champ" ? "on" : ""} onClick={() => changeSort(sort === "lord" ? "champ" : "lord")}>
+              Next milestone
+            </button>
+          </div>
+          {shown.length ? (
+            shown.map((r) => <HeroLine key={r.id} row={r} portrait={portraits[r.id]} onLevel={setLevel} />)
+          ) : (
+            <div className="noresults">No heroes match these filters.</div>
+          )}
+        </section>
+      )}
 
       {toast ? (
         <div className={`toast${toast.error ? " error" : ""}`} role="status">

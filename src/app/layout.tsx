@@ -5,11 +5,7 @@ import "./globals.css";
 // Self-hosted (SIL Open Font License) so builds never depend on Google Fonts.
 const display = localFont({
   variable: "--font-display",
-  src: [
-    { path: "../fonts/chakra-petch-latin-500-normal.woff2", weight: "500" },
-    { path: "../fonts/chakra-petch-latin-600-normal.woff2", weight: "600" },
-    { path: "../fonts/chakra-petch-latin-700-normal.woff2", weight: "700" },
-  ],
+  src: [{ path: "../fonts/anton-latin-400-normal.woff2", weight: "400" }],
 });
 const body = localFont({
   variable: "--font-body",

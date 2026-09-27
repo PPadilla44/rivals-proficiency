@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { RivalsApiError, parsePlayerStats } from "@/lib/rivals-api";
+import { parsePortraits } from "@/lib/portraits";
 
 // Shape follows the documented /api/v1/player/{query} response.
 const sample = {
@@ -36,5 +37,30 @@ describe("parsePlayerStats", () => {
   it("tolerates missing lists", () => {
     const s = parsePlayerStats({ uid: "5" }, "5");
     expect(s.heroes).toEqual([]);
+  });
+});
+
+describe("parsePortraits", () => {
+  it("maps hero names to absolute image URLs", () => {
+    const p = parsePortraits({
+      status: "success",
+      heroes: [
+        { name: "Iron Man", imageUrl: "/heroes/cards/ironman.png" },
+        { name: "Bruce Banner", imageUrl: "heroes/cards/hulk.png" },
+        { name: "Thor", image: "https://cdn.example.com/thor.png" },
+        { name: "Nightcrawler", imageUrl: "/heroes/cards/nc.png" },
+        { name: "Loki" },
+      ],
+    });
+    expect(p["iron-man"]).toBe("https://marvelrivalsapi.com/rivals/heroes/cards/ironman.png");
+    expect(p.hulk).toBe("https://marvelrivalsapi.com/rivals/heroes/cards/hulk.png");
+    expect(p.thor).toBe("https://cdn.example.com/thor.png");
+    expect(p.loki).toBeUndefined();
+    expect(Object.keys(p)).toHaveLength(3);
+  });
+
+  it("returns nothing for unexpected shapes", () => {
+    expect(parsePortraits(null)).toEqual({});
+    expect(parsePortraits({ heroes: "nope" })).toEqual({});
   });
 });

@@ -1,10 +1,11 @@
 "use server";
 
 import { z } from "zod";
-import { requireUserId } from "@/auth";
+import { requireUserId, signOut } from "@/auth";
 import { getDb } from "@/db";
 import {
   applySync,
+  deleteAccount,
   getBoard,
   getLink,
   linkPlayer,
@@ -112,4 +113,26 @@ export async function syncAction() {
       ? `Synced. Skipped unknown heroes: ${stats.unmatched.join(", ")}.`
       : "Synced your latest playtime.";
   });
+}
+
+/**
+ * Permanently delete the signed-in account and all of its data, then sign out.
+ * The page asks the player to type DELETE first; the server checks it too.
+ */
+export async function deleteAccountAction(confirmation: unknown): Promise<{ ok: false; error: string } | void> {
+  if (confirmation !== "DELETE") return { ok: false, error: "Type DELETE to confirm." };
+  let userId: string;
+  try {
+    userId = await requireUserId();
+  } catch (e) {
+    return { ok: false, error: e instanceof Error ? e.message : "Sign in first." };
+  }
+  try {
+    await deleteAccount(getDb(), userId);
+  } catch (e) {
+    console.error(e);
+    return { ok: false, error: "Could not delete your account. Try again." };
+  }
+  // The session row is already gone; this clears the cookie and goes home.
+  await signOut({ redirectTo: "/?deleted=1" });
 }

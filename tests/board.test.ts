@@ -3,7 +3,8 @@ import { PGlite } from "@electric-sql/pglite";
 import { drizzle } from "drizzle-orm/pglite";
 import { migrate } from "drizzle-orm/pglite/migrator";
 import * as schema from "@/db/schema";
-import { applySync, getBoard, linkPlayer, setLevels, unlinkPlayer, type AnyDb } from "@/server/board";
+import { eq } from "drizzle-orm";
+import { applySync, deleteAccount, getBoard, linkPlayer, setLevels, unlinkPlayer, type AnyDb } from "@/server/board";
 
 let db: AnyDb;
 const USER = "u1";
@@ -105,5 +106,26 @@ describe("board storage", () => {
     await applySync(db, USER, stats(100));
     const b = await getBoard(db, USER);
     expect(b.levels.thor.baselinePlaytimeSec).toBe(100);
+  });
+
+  it("deletes an account and everything tied to it, leaving other users alone", async () => {
+    await db.insert(schema.users).values({ id: "u2", name: "Other" });
+    await setLevels(db, "u2", [{ heroId: "loki", level: 9 }]);
+
+    await setLevels(db, USER, [{ heroId: "thor", level: 20 }]);
+    await linkPlayer(db, USER, "42", "Tester");
+    await applySync(db, USER, stats(1000));
+    await db.insert(schema.sessions).values({ sessionToken: "t1", userId: USER, expires: new Date(Date.now() + 864e5) });
+    await db.insert(schema.accounts).values({ userId: USER, type: "oauth", provider: "discord", providerAccountId: "d1" });
+
+    await deleteAccount(db, USER);
+
+    expect(await db.select().from(schema.users).where(eq(schema.users.id, USER))).toHaveLength(0);
+    for (const t of [schema.heroLevels, schema.heroPlaytime, schema.playerLinks]) {
+      expect(await db.select().from(t).where(eq(t.userId, USER))).toHaveLength(0);
+    }
+    expect(await db.select().from(schema.sessions).where(eq(schema.sessions.userId, USER))).toHaveLength(0);
+    expect(await db.select().from(schema.accounts).where(eq(schema.accounts.userId, USER))).toHaveLength(0);
+    expect((await getBoard(db, "u2")).levels.loki.level).toBe(9);
   });
 });

@@ -3,10 +3,10 @@ import { getDb } from "@/db";
 import { getBoard } from "@/server/board";
 import { Board } from "@/components/Board";
 import { getHeroPortraits } from "@/lib/portraits";
+import { KOFI_URL } from "@/lib/site";
 
-const KOFI_URL = "https://ko-fi.com/pablopadilla";
-
-export default async function Home() {
+export default async function Home({ searchParams }: PageProps<"/">) {
+  const deleted = (await searchParams).deleted === "1";
   const session = authConfigured ? await auth() : null;
   const userId = session?.user?.id;
   const [board, portraits] = await Promise.all([
@@ -62,27 +62,15 @@ export default async function Home() {
         </div>
       </header>
 
-      <Board mode={board ? "user" : "guest"} initial={board} signInSlot={signInButtons} portraits={portraits} />
+      {deleted ? (
+        <div className="banner" role="status">
+          <p>
+            <strong>Your account and all of its data were deleted.</strong> You can keep using the board as a guest.
+          </p>
+        </div>
+      ) : null}
 
-      <footer className="foot">
-        <span>
-          54 heroes as of Season 10 (Gorr the God Butcher). A new rank every 5 levels: Lord at 20, Champion at 50, max 70.
-        </span>
-        <span>
-          Estimates use playtime from the unofficial{" "}
-          <a href="https://marvelrivalsapi.com" target="_blank" rel="noreferrer">
-            MarvelRivalsAPI.com
-          </a>{" "}
-          and learn your pace each time you correct a level. Hero art is linked from that service. Not affiliated with NetEase or Marvel.
-        </span>
-        <span>
-          Free and fan-made. If it saves you some clicking,{" "}
-          <a href={KOFI_URL} target="_blank" rel="noreferrer">
-            buy me a coffee on Ko-fi
-          </a>
-          .
-        </span>
-      </footer>
+      <Board mode={board ? "user" : "guest"} initial={board} signInSlot={signInButtons} portraits={portraits} />
     </div>
   );
 }

@@ -1,5 +1,8 @@
 import type { Metadata } from "next";
 import localFont from "next/font/local";
+import Link from "next/link";
+import { Analytics } from "@vercel/analytics/next";
+import { KOFI_URL } from "@/lib/site";
 import "./globals.css";
 
 // Self-hosted (SIL Open Font License) so builds never depend on Google Fonts.
@@ -42,7 +45,30 @@ export const metadata: Metadata = {
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
     <html lang="en" className={`${display.variable} ${body.variable} ${mono.variable}`}>
-      <body>{children}</body>
+      <body>
+        {children}
+        <footer className="foot wrap">
+          <span>
+            54 heroes as of Season 10 (Gorr the God Butcher). A new rank every 5 levels: Lord at 20, Champion at 50, max 70.
+          </span>
+          <span>
+            Estimates use playtime from the unofficial{" "}
+            <a href="https://marvelrivalsapi.com" target="_blank" rel="noreferrer">
+              MarvelRivalsAPI.com
+            </a>{" "}
+            and learn your pace each time you correct a level. Hero art is linked from that service. Not affiliated with
+            NetEase or Marvel.
+          </span>
+          <span>
+            Free and fan-made. If it saves you some clicking,{" "}
+            <a href={KOFI_URL} target="_blank" rel="noreferrer">
+              buy me a coffee on Ko-fi
+            </a>
+            . <Link href="/privacy">Privacy</Link>
+          </span>
+        </footer>
+        <Analytics />
+      </body>
     </html>
   );
 }

@@ -1,7 +1,7 @@
 import { and, eq, inArray, sql } from "drizzle-orm";
 import type { PgDatabase, PgQueryResultHKT } from "drizzle-orm/pg-core";
 import * as schema from "@/db/schema";
-import { heroLevels, heroPlaytime, playerLinks } from "@/db/schema";
+import { heroLevels, heroPlaytime, playerLinks, users } from "@/db/schema";
 import { isHeroId } from "@/lib/heroes";
 import { blendRate, clampLevel, observedRate } from "@/lib/proficiency";
 import type { PlayerStats } from "@/lib/rivals-api";
@@ -175,4 +175,13 @@ export async function markUpdateRequested(db: AnyDb, userId: string, now = new D
 export async function getLink(db: AnyDb, userId: string) {
   const [link] = await db.select().from(playerLinks).where(eq(playerLinks.userId, userId));
   return link ?? null;
+}
+
+/**
+ * Delete a user and everything tied to them. Every app and auth table
+ * references `user` with ON DELETE CASCADE, so one delete removes sessions,
+ * Discord account links, levels, playtime and the linked player.
+ */
+export async function deleteAccount(db: AnyDb, userId: string) {
+  await db.delete(users).where(eq(users.id, userId));
 }

@@ -1,5 +1,7 @@
 # Proficiency Board
 
+**Live at [rivalsproficiency.com](https://rivalsproficiency.com)**
+
 Every Marvel Rivals hero's proficiency level on one screen. See who is closest to **Lord** (level 20) and **Champion** (level 50), search, sort and filter the whole roster, and get time estimates from the playtime in your match history.
 
 ## Features

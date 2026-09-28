@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { auth, authConfigured } from "@/auth";
 import { DeleteAccount } from "@/components/DeleteAccount";
+import { FEEDBACK_URL } from "@/lib/site";
 
 export const metadata: Metadata = {
   title: "Privacy · Proficiency Board",
@@ -87,10 +88,10 @@ export default async function PrivacyPage() {
 
         <h2>Contact</h2>
         <p>
-          Proficiency Board is a free fan project by Pablo Padilla, not affiliated with NetEase Games or Marvel. Questions go
+          Proficiency Board is a free fan project by Pablo Padilla, not affiliated with NetEase Games or Marvel. Questions and requests go
           to{" "}
-          <a href="https://github.com/PPadilla44/rivals-proficiency/issues" target="_blank" rel="noreferrer">
-            the project&apos;s GitHub issues
+          <a href={FEEDBACK_URL} target="_blank" rel="noreferrer">
+            the project&apos;s GitHub page
           </a>
           .
         </p>

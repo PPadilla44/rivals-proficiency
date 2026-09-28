@@ -1,0 +1,40 @@
+name: Something's broken
+description: A bug, a wrong number, or something that looks off
+title: "[Bug] "
+labels: ["bug"]
+body:
+  - type: textarea
+    id: what
+    attributes:
+      label: What happened?
+      description: What you did, what you expected, and what you saw instead.
+    validations:
+      required: true
+  - type: dropdown
+    id: device
+    attributes:
+      label: Where?
+      options:
+        - Phone
+        - Desktop
+        - Tablet
+    validations:
+      required: true
+  - type: dropdown
+    id: account
+    attributes:
+      label: Signed in?
+      options:
+        - Signed in with Discord
+        - Guest (not signed in)
+    validations:
+      required: true
+  - type: input
+    id: heroes
+    attributes:
+      label: Which hero(es), if it's about one?
+  - type: textarea
+    id: screenshot
+    attributes:
+      label: Screenshot
+      description: Drag an image in here if you have one.

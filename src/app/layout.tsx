@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import localFont from "next/font/local";
 import Link from "next/link";
 import { Analytics } from "@vercel/analytics/next";
-import { KOFI_URL } from "@/lib/site";
+import { FEEDBACK_URL, KOFI_URL } from "@/lib/site";
 import "./globals.css";
 
 // Self-hosted (SIL Open Font License) so builds never depend on Google Fonts.
@@ -63,6 +63,10 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
             Free and fan-made. If it saves you some clicking,{" "}
             <a href={KOFI_URL} target="_blank" rel="noreferrer">
               buy me a coffee on Ko-fi
+            </a>
+            .{" "}
+            <a href={FEEDBACK_URL} target="_blank" rel="noreferrer">
+              Report a bug or suggest an idea
             </a>
             . <Link href="/privacy">Privacy</Link>
           </span>

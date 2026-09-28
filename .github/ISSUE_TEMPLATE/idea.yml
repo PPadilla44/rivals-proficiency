@@ -1,0 +1,16 @@
+name: Idea or request
+description: A feature, a missing hero, or something that would make the board more useful
+title: "[Idea] "
+labels: ["idea"]
+body:
+  - type: textarea
+    id: idea
+    attributes:
+      label: What would you like?
+    validations:
+      required: true
+  - type: textarea
+    id: why
+    attributes:
+      label: What would it help with?
+      description: What you're trying to do in game or on the board.

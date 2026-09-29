@@ -11,17 +11,29 @@ import type { Metadata } from "next";
 
 export const metadata: Metadata = { alternates: { canonical: "/" } };
 
+// Structured data: the WebSite entry is what Google uses for the site name
+// shown in results; the WebApplication entry describes the tool itself.
 const JSON_LD = {
   "@context": "https://schema.org",
-  "@type": "WebApplication",
-  name: "Proficiency Board",
-  alternateName: "Marvel Rivals Proficiency Tracker",
-  url: SITE_URL,
-  applicationCategory: "GameApplication",
-  operatingSystem: "Any",
-  description:
-    "Track every Marvel Rivals hero's proficiency rank and level on one screen, see who is closest to Lord and Champion, and import ranks from Heroes tab screenshots.",
-  offers: { "@type": "Offer", price: "0", priceCurrency: "USD" },
+  "@graph": [
+    {
+      "@type": "WebSite",
+      name: "Proficiency Board",
+      alternateName: ["Rivals Proficiency", "Rivals Proficiency Tracker", "Marvel Rivals Proficiency Tracker"],
+      url: `${SITE_URL}/`,
+    },
+    {
+      "@type": "WebApplication",
+      name: "Proficiency Board",
+      alternateName: "Marvel Rivals Proficiency Tracker",
+      url: `${SITE_URL}/`,
+      applicationCategory: "GameApplication",
+      operatingSystem: "Any",
+      description:
+        "Track every Marvel Rivals hero's proficiency rank and level on one screen, see who is closest to Lord and Champion, and import ranks from Heroes tab screenshots.",
+      offers: { "@type": "Offer", price: "0", priceCurrency: "USD" },
+    },
+  ],
 };
 
 export default async function Home({ searchParams }: PageProps<"/">) {
@@ -73,7 +85,7 @@ export default async function Home({ searchParams }: PageProps<"/">) {
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(JSON_LD).replace(/</g, "\\u003c") }} />
       <header className="top">
         <div>
-          <h1 className="page-title">Marvel Rivals hero proficiency</h1>
+          <h1 className="page-title">Marvel Rivals proficiency tracker</h1>
           <p className="sub">
             Every hero&apos;s rank and level on one board. Set a level once, bump it after a session.{" "}
             <Link href="/ranks">How ranks and points work</Link>.

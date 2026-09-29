@@ -377,6 +377,8 @@ footer.foot a { color: var(--ink-2); font-weight: 600; }
 .shot-bar span { font-size: 13.5px; color: var(--ink-3); }
 .shot { gap: 14px; }
 .shot .muted { margin: 0; color: var(--ink-3); font-size: 13.5px; }
+.shot-note { margin: 0; padding: 10px 12px; border-radius: 8px; background: color-mix(in srgb, var(--pop) 10%, var(--panel)); border: 1px solid color-mix(in srgb, var(--pop) 45%, var(--line)); font-size: 13.5px; color: var(--ink-2); }
+.shot-note strong { color: var(--ink); }
 .drop { border: 1.5px dashed var(--line-2); border-radius: 10px; background: var(--panel-2); padding: 26px 18px; text-align: center; display: grid; gap: 8px; transition: background 0.15s, border-color 0.15s; }
 .drop.over { border-color: var(--pop); background: color-mix(in srgb, var(--pop) 14%, var(--panel)); }
 .drop p { margin: 0; color: var(--ink-2); }

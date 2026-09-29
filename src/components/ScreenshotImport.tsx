@@ -220,11 +220,16 @@ export function ScreenshotImport({ current, onSave }: Props) {
   return (
     <section className="panel shot" aria-label="Review screenshot levels">
       <h2>
-        Check these levels
+        Check these ranks
         <b>
           {proposals.length} read, {changes.length} different
         </b>
       </h2>
+      <p className="shot-note" role="note">
+        <strong>Ranks, not exact levels.</strong> The Heroes tab only shows each hero&apos;s rank badge, so a hero is set to the
+        first level of its rank (Lord becomes 20) unless your saved level is already inside that rank. Afterwards, tap a
+        level to set it exactly; the in-game hero page shows the real number.
+      </p>
       {notes.length ? <p className="muted">{notes.join(" ")}</p> : null}
       <div className="shot-list" role="list">
         {proposals.map((p) => (

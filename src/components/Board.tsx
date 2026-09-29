@@ -266,7 +266,10 @@ export function Board({ mode, initial, signInSlot, portraits, screenshotImport, 
           current={currentLevels}
           onSave={async (updates) => {
             const ok = await withBusy(() => saveLevelsAction(updates));
-            if (ok) setToast({ text: `Saved ${updates.length} level${updates.length === 1 ? "" : "s"} from your screenshot.` });
+            if (ok)
+              setToast({
+                text: `Saved ${updates.length} rank${updates.length === 1 ? "" : "s"}. Each starts at its rank's first level; tap a level to set it exactly.`,
+              });
             return ok;
           }}
         />

@@ -1,5 +1,4 @@
 import type { Metadata } from "next";
-import Link from "next/link";
 import { notFound } from "next/navigation";
 import { connection } from "next/server";
 import { auth, authConfigured } from "@/auth";
@@ -57,10 +56,6 @@ export default async function StatsPage() {
     <div className="wrap prose-page">
       <header className="top">
         <div>
-          <Link href="/" className="logo small" aria-label="Back to the board">
-            <span className="logo-a">Proficiency</span>
-            <span className="logo-b">Board</span>
-          </Link>
           <h1 className="page-title">Stats</h1>
           <p className="sub">Anonymous events from the board. Only accounts in ADMIN_EMAILS can see this page. Times are UTC.</p>
         </div>

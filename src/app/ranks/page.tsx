@@ -83,10 +83,6 @@ export default function RanksPage() {
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd).replace(/</g, "\\u003c") }} />
       <header className="top">
         <div>
-          <Link href="/" className="logo small" aria-label="Proficiency Board home">
-            <span className="logo-a">Proficiency</span>
-            <span className="logo-b">Board</span>
-          </Link>
           <h1 className="page-title">Marvel Rivals proficiency ranks</h1>
           <p className="sub">
             Every rank from Agent to Champion, the level it starts at, and the points it takes. Checked against the in-game

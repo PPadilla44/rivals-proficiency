@@ -4,7 +4,6 @@ import { getBoard } from "@/server/board";
 import { Board } from "@/components/Board";
 import { CameraIcon } from "@/components/bits";
 import { getHeroPortraits } from "@/lib/portraits";
-import { KOFI_URL } from "@/lib/site";
 import { visionConfigured } from "@/lib/vision";
 import { SITE_URL } from "@/lib/site-url";
 import Link from "next/link";
@@ -74,20 +73,12 @@ export default async function Home({ searchParams }: PageProps<"/">) {
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(JSON_LD).replace(/</g, "\\u003c") }} />
       <header className="top">
         <div>
-          <h1 className="logo">
-            <span className="logo-a">Proficiency</span>
-            <span className="logo-b">Board</span>
-          </h1>
+          <h1 className="page-title">Marvel Rivals hero proficiency</h1>
           <p className="sub">
-            Every Marvel Rivals hero&apos;s proficiency on one screen. Set a level once, bump it after a session.{" "}
+            Every hero&apos;s rank and level on one board. Set a level once, bump it after a session.{" "}
             <Link href="/ranks">How ranks and points work</Link>.
           </p>
         </div>
-        <div className="top-actions">
-          <a className="kofi" href={KOFI_URL} target="_blank" rel="noreferrer" aria-label="Support on Ko-fi">
-            <span aria-hidden="true">&#9829;</span>
-            <span className="kofi-label">Support on Ko-fi</span>
-          </a>
         {session?.user ? (
           <div className="who">
             {session.user.image ? (
@@ -100,7 +91,6 @@ export default async function Home({ searchParams }: PageProps<"/">) {
             </form>
           </div>
         ) : null}
-        </div>
       </header>
 
       {authError ? (

@@ -13,6 +13,52 @@ type Props = {
   linked: boolean;
 };
 
+/** Four headline numbers above the board (hidden on phones, which get the one-line strip). */
+export function StatTiles({ rows }: { rows: HeroRow[] }) {
+  const lordPlus = rows.filter((r) => r.effective >= LORD).length;
+  const champs = rows.filter((r) => r.effective >= CHAMPION).sort((a, b) => b.effective - a.effective);
+  const nextChamp = rows
+    .filter((r) => r.effective >= LORD && r.effective < CHAMPION)
+    .sort((a, b) => b.effective - a.effective)[0];
+  const nextLord = rows
+    .filter((r) => r.effective > 1 && r.effective < LORD)
+    .sort((a, b) => b.effective - a.effective)[0];
+  const tiles = [
+    { label: "Lord or higher", value: String(lordPlus), unit: `/ ${rows.length}`, sub: lordPlus ? "heroes past level 20" : "none yet" },
+    {
+      label: "Champion",
+      value: String(champs.length),
+      unit: "",
+      sub: champs[0] ? `${champs[0].name} · Lv ${champs[0].effective}` : "reach level 50 on a hero",
+    },
+    {
+      label: "Next Champion",
+      value: nextChamp ? String(CHAMPION - nextChamp.effective) : "-",
+      unit: nextChamp ? "levels" : "",
+      sub: nextChamp ? `${nextChamp.name} · Lv ${nextChamp.effective}` : "get a hero to Lord first",
+    },
+    {
+      label: "Next Lord",
+      value: nextLord ? String(LORD - nextLord.effective) : "-",
+      unit: nextLord ? "levels" : "",
+      sub: nextLord ? `${nextLord.name} · Lv ${nextLord.effective}` : "set a few levels to see it",
+    },
+  ];
+  return (
+    <section className="tiles" aria-label="Highlights">
+      {tiles.map((t) => (
+        <div key={t.label} className="tile">
+          <span className="tile-label">{t.label}</span>
+          <span className="tile-value">
+            <b>{t.value}</b> {t.unit}
+          </span>
+          <span className="tile-sub">{t.sub}</span>
+        </div>
+      ))}
+    </section>
+  );
+}
+
 export function Summary({ rows, activeRank, onRank, linked }: Props) {
   const [open, setOpen] = useState(false);
   const counts = Array(RANKS.length).fill(0) as number[];

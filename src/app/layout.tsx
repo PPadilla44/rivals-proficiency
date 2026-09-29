@@ -4,12 +4,16 @@ import Link from "next/link";
 import { Analytics } from "@vercel/analytics/next";
 import { FEEDBACK_URL, KOFI_URL } from "@/lib/site";
 import { SITE_URL } from "@/lib/site-url";
+import { SiteNav } from "@/components/SiteNav";
 import "./globals.css";
 
 // Self-hosted (SIL Open Font License) so builds never depend on Google Fonts.
 const display = localFont({
   variable: "--font-display",
-  src: [{ path: "../fonts/anton-latin-400-normal.woff2", weight: "400" }],
+  src: [
+    { path: "../fonts/saira-semi-condensed-latin-600-normal.woff2", weight: "600" },
+    { path: "../fonts/saira-semi-condensed-latin-700-normal.woff2", weight: "700" },
+  ],
 });
 const body = localFont({
   variable: "--font-body",
@@ -46,6 +50,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
     <html lang="en" className={`${display.variable} ${body.variable} ${mono.variable}`}>
       <body>
+        <SiteNav />
         {children}
         <footer className="foot wrap">
           <span>

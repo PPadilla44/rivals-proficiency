@@ -63,7 +63,7 @@ function Estimate({ row, onLevel }: { row: HeroRow; onLevel: LevelHandler }) {
 
 type Props = { row: HeroRow; portrait?: string; onLevel: LevelHandler };
 
-/** Comic-panel card: art up top, rank sticker, big level, progress. */
+/** Card: portrait up top (gold for Lord and up, animated for Champion), rank, big level, progress. */
 export const HeroCard = memo(function HeroCard({ row, portrait, onLevel }: Props) {
   const t = tierOf(row.effective);
   return (
@@ -95,11 +95,11 @@ export const HeroLine = memo(function HeroLine({ row, portrait, onLevel }: Props
         <Portrait heroId={row.id} name={row.name} role={row.role} tier={portraitTier(t)} fallbackSrc={portrait} variant="thumb" />
         <span className="name-text">
           <span>{row.name}</span>
+          <span className={`role role-${row.role}`}>{ROLE_LABEL[row.role]}</span>
           <Estimate row={row} onLevel={onLevel} />
         </span>
       </div>
-      <span className={`role role-${row.role}`}>{ROLE_LABEL[row.role]}</span>
-      <div className="rank">
+      <div className={`rank${t >= 10 ? " champ" : t >= 4 ? " lord" : ""}`}>
         <RankBadge tier={t} size={28} />
         <span>{RANKS[t]}</span>
       </div>

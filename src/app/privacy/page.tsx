@@ -1,5 +1,4 @@
 import type { Metadata } from "next";
-import Link from "next/link";
 import { auth, authConfigured } from "@/auth";
 import { DeleteAccount } from "@/components/DeleteAccount";
 import { FEEDBACK_URL } from "@/lib/site";
@@ -17,10 +16,6 @@ export default async function PrivacyPage() {
     <div className="wrap prose-page">
       <header className="top">
         <div>
-          <Link href="/" className="logo small" aria-label="Back to the board">
-            <span className="logo-a">Proficiency</span>
-            <span className="logo-b">Board</span>
-          </Link>
           <h1 className="page-title">Privacy</h1>
           <p className="sub">Updated September 28, 2026. Short version: only what the board needs, never sold.</p>
         </div>

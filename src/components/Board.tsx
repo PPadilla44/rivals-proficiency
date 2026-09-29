@@ -13,7 +13,7 @@ import type { BoardData } from "@/server/board";
 import { buildRows, GOALS, SORTS, type Goal, type HeroRow, type Sort } from "@/lib/board-model";
 import { ROLE_SORT, type Role } from "@/lib/heroes";
 import { CHAMPION, LORD, RANKS, clampLevel, tierOf } from "@/lib/proficiency";
-import { Summary } from "./Summary";
+import { StatTiles, Summary } from "./Summary";
 import { HeroCard, HeroLine } from "./HeroViews";
 import { Account } from "./Account";
 import { ScreenshotImport } from "./ScreenshotImport";
@@ -298,6 +298,9 @@ export function Board({ mode, initial, signInSlot, portraits, screenshotImport, 
         </div>
       ) : null}
 
+      <StatTiles rows={rows} />
+
+      <div className="board-layout">
       <Summary
         rows={rows}
         activeRank={rank}
@@ -305,6 +308,7 @@ export function Board({ mode, initial, signInSlot, portraits, screenshotImport, 
         linked={syncEnabled && !!board.link}
       />
 
+      <div className="board-main">
       <section className="controls" aria-label="Search and sort">
         <div className="row1">
           <div className="search">
@@ -414,9 +418,6 @@ export function Board({ mode, initial, signInSlot, portraits, screenshotImport, 
             <button className={sort === "name" ? "on" : ""} onClick={() => changeSort("name")}>
               Hero
             </button>
-            <button className={sort === "role" ? "on" : ""} onClick={() => changeSort("role")}>
-              Role
-            </button>
             <button className={sort.startsWith("level") ? "on" : ""} onClick={() => changeSort(sort === "level-desc" ? "level-asc" : "level-desc")}>
               Rank
             </button>
@@ -434,6 +435,9 @@ export function Board({ mode, initial, signInSlot, portraits, screenshotImport, 
           )}
         </section>
       )}
+
+      </div>
+      </div>
 
       {toast ? (
         <div className={`toast${toast.error ? " error" : ""}`} role="status">

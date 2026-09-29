@@ -96,3 +96,28 @@ export function describeDetection(p: Pick<Proposal, "detectedLevel" | "detectedR
   const r = rankRange(p.detectedRank ?? "");
   return r ? `${p.detectedRank} (Lv ${r[0]} to ${r[1]})` : "Unreadable";
 }
+
+export type Rect = { x: number; y: number; w: number; h: number };
+
+/**
+ * Split a screenshot into overlapping tiles so small rank badges keep their
+ * full resolution. Wide screenshots get 2x2 tiles; small ones stay whole.
+ * Each tile overlaps its neighbour so a card cut by one edge is whole in the
+ * other tile.
+ */
+export function tileRects(width: number, height: number, maxEdge = 1568): Rect[] {
+  if (Math.max(width, height) <= maxEdge * 1.15) return [{ x: 0, y: 0, w: width, h: height }];
+  const cols = width >= height ? 2 : 1;
+  const rows = width >= height ? 2 : 3;
+  const tw = cols === 1 ? width : Math.round(width * 0.54);
+  const th = Math.round(height * (rows === 2 ? 0.54 : 0.38));
+  const rects: Rect[] = [];
+  for (let r = 0; r < rows; r++) {
+    for (let c = 0; c < cols; c++) {
+      const x = cols === 1 ? 0 : Math.round(((width - tw) * c) / (cols - 1));
+      const y = Math.round(((height - th) * r) / (rows - 1));
+      rects.push({ x, y, w: tw, h: th });
+    }
+  }
+  return rects;
+}

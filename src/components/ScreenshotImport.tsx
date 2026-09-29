@@ -6,6 +6,7 @@ import {
   buildProposals,
   describeDetection,
   mergeDetections,
+  tileRects,
   type Detection,
   type Proposal,
 } from "@/lib/screenshot-import";
@@ -24,22 +25,36 @@ type Phase =
 
 const MAX_FILES = 6;
 const LONG_EDGE = 1568; // the vision model scales larger images down to this anyway
-const MAX_BYTES = 850_000;
+const MAX_BYTES = 900_000;
 
-/** Shrink a screenshot to a JPEG small enough for one server action request. */
-async function prepare(file: File): Promise<Blob> {
-  const bitmap = await createImageBitmap(file);
-  const scale = Math.min(1, LONG_EDGE / Math.max(bitmap.width, bitmap.height));
-  const canvas = document.createElement("canvas");
-  canvas.width = Math.round(bitmap.width * scale);
-  canvas.height = Math.round(bitmap.height * scale);
-  canvas.getContext("2d")!.drawImage(bitmap, 0, 0, canvas.width, canvas.height);
-  bitmap.close();
-  for (const q of [0.88, 0.8, 0.7, 0.6]) {
+async function toJpeg(canvas: HTMLCanvasElement): Promise<Blob> {
+  for (const q of [0.9, 0.82, 0.72, 0.6]) {
     const blob = await new Promise<Blob | null>((r) => canvas.toBlob(r, "image/jpeg", q));
     if (blob && blob.size <= MAX_BYTES) return blob;
   }
   throw new Error("too large");
+}
+
+/**
+ * Cut a screenshot into overlapping tiles at full resolution (rank badges
+ * are small) and encode each as a JPEG small enough to upload.
+ */
+async function prepare(file: File): Promise<Blob[]> {
+  const bitmap = await createImageBitmap(file);
+  try {
+    const out: Blob[] = [];
+    for (const r of tileRects(bitmap.width, bitmap.height, LONG_EDGE)) {
+      const scale = Math.min(1, LONG_EDGE / Math.max(r.w, r.h));
+      const canvas = document.createElement("canvas");
+      canvas.width = Math.round(r.w * scale);
+      canvas.height = Math.round(r.h * scale);
+      canvas.getContext("2d")!.drawImage(bitmap, r.x, r.y, r.w, r.h, 0, 0, canvas.width, canvas.height);
+      out.push(await toJpeg(canvas));
+    }
+    return out;
+  } finally {
+    bitmap.close();
+  }
 }
 
 export function ScreenshotImport({ current, onSave }: Props) {
@@ -65,7 +80,7 @@ export function ScreenshotImport({ current, onSave }: Props) {
       const label = images.length > 1 ? `Screenshot ${i + 1}: ` : "";
       try {
         const form = new FormData();
-        form.append("image", await prepare(images[i]), "screenshot.jpg");
+        for (const [n, tile] of (await prepare(images[i])).entries()) form.append("image", tile, `tile-${n}.jpg`);
         const res = await scanScreenshotAction(form);
         if (!res.ok) notes.push(label + res.error);
         else if (!res.heroes.length)

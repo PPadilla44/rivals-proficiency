@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { buildProposals, describeDetection, mergeDetections, rankRange } from "@/lib/screenshot-import";
+import { buildProposals, describeDetection, mergeDetections, rankRange, tileRects } from "@/lib/screenshot-import";
 import { parseToolInput } from "@/lib/vision";
 
 describe("rank ranges", () => {
@@ -95,5 +95,26 @@ describe("vision tool output", () => {
   });
   it("rejects a malformed payload", () => {
     expect(() => parseToolInput({ heroes: "nope" })).toThrow();
+  });
+});
+
+describe("tiling", () => {
+  it("keeps small screenshots whole", () => {
+    expect(tileRects(1600, 900)).toEqual([{ x: 0, y: 0, w: 1600, h: 900 }]);
+  });
+  it("covers a wide screenshot with four overlapping tiles", () => {
+    const t = tileRects(2560, 1440);
+    expect(t).toHaveLength(4);
+    expect(t[0]).toEqual({ x: 0, y: 0, w: 1382, h: 778 });
+    expect(t[3]).toEqual({ x: 1178, y: 662, w: 1382, h: 778 });
+    for (const r of t) {
+      expect(r.x + r.w).toBeLessThanOrEqual(2560);
+      expect(r.y + r.h).toBeLessThanOrEqual(1440);
+    }
+  });
+  it("stacks tall phone screenshots", () => {
+    const t = tileRects(1290, 2796);
+    expect(t).toHaveLength(3);
+    expect(t[2].y + t[2].h).toBe(2796);
   });
 });

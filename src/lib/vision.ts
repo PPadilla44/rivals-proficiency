@@ -45,7 +45,7 @@ const TOOL = {
 
 const SYSTEM = `You read screenshots from the game Marvel Rivals and report each hero's proficiency rank.
 
-The first image is a labeled reference of the ${RANKS.length} proficiency rank badges, lowest to highest: ${RANKS.join(", ")}. The second image is the player's screenshot.
+The first image is a labeled reference of the ${RANKS.length} proficiency rank badges, lowest to highest: ${RANKS.join(", ")}. The images after it are the player's screenshot, sometimes split into overlapping tiles.
 
 On the Heroes tab each hero card shows the hero name, and directly under the name a small rank badge. Ignore the yellow bookmark icon next to some badges (it marks favorites) and the role icon at the right of the name.
 
@@ -81,7 +81,10 @@ export function parseToolInput(input: unknown): VisionResult {
   };
 }
 
-export async function readScreenshot(image: { mediaType: string; base64: string }, model = MODEL): Promise<VisionResult> {
+export type ImagePart = { mediaType: string; base64: string };
+
+/** Read one screenshot, sent as one or more overlapping tiles. */
+export async function readScreenshot(tiles: ImagePart[], model = MODEL): Promise<VisionResult> {
   const key = process.env.ANTHROPIC_API_KEY;
   if (!key) throw new VisionError("Screenshot import is not set up on this server yet.");
 
@@ -106,8 +109,15 @@ export async function readScreenshot(image: { mediaType: string; base64: string 
             content: [
               { type: "text", text: "Reference: the rank badges, labeled." },
               { type: "image", source: { type: "base64", media_type: "image/jpeg", data: RANK_LEGEND_JPEG_BASE64 } },
-              { type: "text", text: "Screenshot: report every hero card and its rank badge." },
-              { type: "image", source: { type: "base64", media_type: image.mediaType, data: image.base64 } },
+              {
+                type: "text",
+                text:
+                  tiles.length > 1
+                    ? `Screenshot, split into ${tiles.length} overlapping tiles (left to right, top to bottom). A card may appear in two tiles; report each hero once, using the tile where its badge is fully visible.`
+                    : "Screenshot:",
+              },
+              ...tiles.map((t) => ({ type: "image", source: { type: "base64", media_type: t.mediaType, data: t.base64 } })),
+              { type: "text", text: "Report every hero card and its rank badge." },
             ],
           },
         ],

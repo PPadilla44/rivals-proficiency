@@ -27,9 +27,14 @@ export async function GET(req: Request) {
   const started = Date.now();
   const pages = await Promise.all(
     [1, 2, 3, 4].map(async (i) => {
-      const base64 = (await readFile(path.join(DIR, `page${i}.jpg`))).toString("base64");
+      const tiles = await Promise.all(
+        [1, 2, 3, 4].map(async (t) => ({
+          mediaType: "image/jpeg",
+          base64: (await readFile(path.join(DIR, `page${i}-${t}.jpg`))).toString("base64"),
+        })),
+      );
       try {
-        return await readScreenshot({ mediaType: "image/jpeg", base64 }, model);
+        return await readScreenshot(tiles, model);
       } catch (e) {
         return { error: e instanceof Error ? e.message : String(e) };
       }

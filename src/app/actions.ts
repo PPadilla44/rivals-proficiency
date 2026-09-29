@@ -159,16 +159,23 @@ export async function scanScreenshotAction(form: FormData): Promise<ScanResult> 
   } catch (e) {
     return { ok: false, error: e instanceof Error ? e.message : "Sign in first." };
   }
-  const file = form.get("image");
-  if (!(file instanceof File) || !IMAGE_TYPES.has(file.type)) return { ok: false, error: "That file is not a screenshot image." };
-  if (file.size > 900_000) return { ok: false, error: "That image is too large. Try a smaller screenshot." };
+  const files = form.getAll("image");
+  if (!files.length || files.length > 4) return { ok: false, error: "That screenshot could not be sent." };
+  let total = 0;
+  for (const f of files) {
+    if (!(f instanceof File) || !IMAGE_TYPES.has(f.type)) return { ok: false, error: "That file is not a screenshot image." };
+    total += f.size;
+    if (f.size > 1_200_000 || total > 3_500_000) return { ok: false, error: "That image is too large. Try a smaller screenshot." };
+  }
 
   try {
     if (!(await takeScanSlot(getDb(), userId, SCAN_LIMIT, SCAN_WINDOW_MS))) {
       return { ok: false, error: `You have read ${SCAN_LIMIT} screenshots today. Try again tomorrow.` };
     }
-    const base64 = Buffer.from(await file.arrayBuffer()).toString("base64");
-    const result = await readScreenshot({ mediaType: file.type, base64 });
+    const tiles = await Promise.all(
+      (files as File[]).map(async (f) => ({ mediaType: f.type, base64: Buffer.from(await f.arrayBuffer()).toString("base64") })),
+    );
+    const result = await readScreenshot(tiles);
     return { ok: true, heroes: result.heroes, isProficiencyScreen: result.isProficiencyScreen };
   } catch (e) {
     if (e instanceof VisionError) return { ok: false, error: e.message };

@@ -77,11 +77,11 @@ export function parseToolInput(input: unknown): VisionResult {
   const r = resultSchema.parse(input);
   return {
     isProficiencyScreen: r.is_proficiency_screen,
-    heroes: r.heroes.map((h) => ({ name: h.name, level: h.level, rank: h.rank })),
+    heroes: r.heroes.map((h) => ({ name: h.name, level: h.level, rank: h.rank, badge: h.badge })),
   };
 }
 
-export async function readScreenshot(image: { mediaType: string; base64: string }): Promise<VisionResult> {
+export async function readScreenshot(image: { mediaType: string; base64: string }, model = MODEL): Promise<VisionResult> {
   const key = process.env.ANTHROPIC_API_KEY;
   if (!key) throw new VisionError("Screenshot import is not set up on this server yet.");
 
@@ -95,7 +95,7 @@ export async function readScreenshot(image: { mediaType: string; base64: string 
         "anthropic-version": "2023-06-01",
       },
       body: JSON.stringify({
-        model: MODEL,
+        model,
         max_tokens: 4000,
         system: SYSTEM,
         tools: [TOOL],

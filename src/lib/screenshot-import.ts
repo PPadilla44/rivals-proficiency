@@ -2,7 +2,7 @@ import { HEROES, HERO_BY_ID, heroIdFromName } from "./heroes";
 import { MAX_LEVEL, RANKS, clampLevel, tierOf } from "./proficiency";
 
 /** One hero as read off a screenshot. Either a level, a rank, or both. */
-export type Detection = { name: string; level: number | null; rank: string | null };
+export type Detection = { name: string; level: number | null; rank: string | null; badge?: string };
 
 export type ProposalStatus = "raise" | "same" | "lower" | "new";
 

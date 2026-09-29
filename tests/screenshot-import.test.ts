@@ -89,8 +89,8 @@ describe("vision tool output", () => {
     });
     expect(r.isProficiencyScreen).toBe(true);
     expect(r.heroes).toEqual([
-      { name: "Thor", level: 21, rank: "Lord" },
-      { name: "Hulk", level: null, rank: null },
+      { name: "Thor", level: 21, rank: "Lord", badge: undefined },
+      { name: "Hulk", level: null, rank: null, badge: undefined },
     ]);
   });
   it("rejects a malformed payload", () => {

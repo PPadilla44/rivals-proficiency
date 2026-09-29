@@ -48,7 +48,7 @@ export function nextMilestone(level: number): Milestone {
 export function pointsToNext(level: number): number {
   if (level >= MAX_LEVEL) return 0;
   if (level < 5) return 125;
-  if (level < 10) return 300;
+  if (level < 10) return 240;
   if (level < 15) return 400;
   if (level < LORD) return 480;
   if (level < CHAMPION) return 1600;

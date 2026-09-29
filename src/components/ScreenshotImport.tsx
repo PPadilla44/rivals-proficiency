@@ -205,7 +205,7 @@ export function ScreenshotImport({ current, onSave }: Props) {
   }
 
   const { proposals, unmatched, notes } = phase;
-  const chosen = proposals.filter((p) => p.selected && p.proposed !== p.current);
+  const chosen = proposals.filter((p) => p.selected && p.proposed !== (p.current ?? 1));
   const update = (heroId: string, patch: Partial<Proposal>) =>
     setPhase({ ...phase, proposals: proposals.map((p) => (p.heroId === heroId ? { ...p, ...patch } : p)) });
   const changes = proposals.filter((p) => p.status !== "same");
@@ -225,7 +225,7 @@ export function ScreenshotImport({ current, onSave }: Props) {
             <input
               type="checkbox"
               checked={p.selected}
-              disabled={p.proposed === p.current}
+              disabled={p.proposed === (p.current ?? 1)}
               onChange={(e) => update(p.heroId, { selected: e.target.checked })}
             />
             <span className="nm">{p.name}</span>
@@ -246,7 +246,7 @@ export function ScreenshotImport({ current, onSave }: Props) {
                 value={p.proposed}
                 onChange={(e) => {
                   const v = clampLevel(Number(e.target.value));
-                  update(p.heroId, { proposed: v, selected: v !== p.current });
+                  update(p.heroId, { proposed: v, selected: v !== (p.current ?? 1) });
                 }}
               />
             </span>

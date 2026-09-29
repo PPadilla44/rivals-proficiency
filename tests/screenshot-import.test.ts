@@ -65,6 +65,13 @@ describe("proposals", () => {
     expect(by.magik).toMatchObject({ proposed: 10, status: "new", selected: true });
   });
 
+  it("treats an unset hero read at level 1 as unchanged", () => {
+    const { byHero } = mergeDetections([[{ name: "Venom", level: null, rank: "Agent" }, { name: "Blade", level: null, rank: "Knight" }]]);
+    const ps = buildProposals(byHero, {});
+    expect(ps.find((p) => p.heroId === "venom")).toMatchObject({ proposed: 1, status: "same", selected: false });
+    expect(ps.find((p) => p.heroId === "blade")).toMatchObject({ proposed: 5, status: "new", selected: true });
+  });
+
   it("never pre-selects lowering a level", () => {
     expect(by.loki).toMatchObject({ proposed: 10, status: "lower", selected: false });
   });

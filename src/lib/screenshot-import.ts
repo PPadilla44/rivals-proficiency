@@ -1,5 +1,5 @@
 import { HEROES, HERO_BY_ID, heroIdFromName } from "./heroes";
-import { MAX_LEVEL, RANKS, clampLevel, tierOf } from "./proficiency";
+import { MAX_LEVEL, MIN_LEVEL, RANKS, clampLevel, tierOf } from "./proficiency";
 
 /** One hero as read off a screenshot. Either a level, a rank, or both. */
 export type Detection = { name: string; level: number | null; rank: string | null; badge?: string };
@@ -74,7 +74,9 @@ export function buildProposals(byHero: Map<string, Detection>, current: Record<s
       const [min, max] = rankRange(d.rank!)!;
       proposed = cur != null && cur >= min && cur <= max ? cur : min;
     }
-    const status: ProposalStatus = cur == null ? "new" : proposed > cur ? "raise" : proposed < cur ? "lower" : "same";
+    // An unset hero already shows level 1, so reading level 1 changes nothing.
+    const status: ProposalStatus =
+      cur == null ? (proposed > MIN_LEVEL ? "new" : "same") : proposed > cur ? "raise" : proposed < cur ? "lower" : "same";
     out.push({
       heroId: hero.id,
       name: hero.name,

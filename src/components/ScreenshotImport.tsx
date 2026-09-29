@@ -103,8 +103,8 @@ export function ScreenshotImport({ current, onSave }: Props) {
     return (
       <div className="banner shot-bar">
         <p>
-          <strong>Update from a screenshot.</strong> Snap the in-game Heroes tab and every level it shows fills in. You check
-          them before anything saves.
+          <strong>Update from a screenshot.</strong> Snap the in-game Heroes tab and every hero&apos;s rank is read from its
+          badge. You check them before anything saves.
         </p>
         <button className="btn" onClick={() => setPhase({ kind: "pick" })}>
           Import screenshot
@@ -153,8 +153,9 @@ export function ScreenshotImport({ current, onSave }: Props) {
                 .
               </p>
               <p className="muted">
-                Use full-screen captures of the Heroes tab. If it scrolls, add one per page (up to {MAX_FILES}). Screenshots
-                are read once and not stored.
+                Use full-screen captures of the Heroes tab (Heroes, then Heroes again at the top). Scroll and add one per page, up to{" "}
+                {MAX_FILES}. The tab shows ranks, not exact levels, so a level you already set inside that rank is kept.
+                Screenshots are read once and not stored.
               </p>
             </>
           )}

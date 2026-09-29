@@ -1,6 +1,7 @@
 import { z } from "zod";
 import { HEROES } from "./heroes";
 import { RANKS } from "./proficiency";
+import { RANK_LEGEND_JPEG_BASE64 } from "./rank-legend";
 import type { Detection } from "./screenshot-import";
 
 /** Reads hero proficiency off a Marvel Rivals screenshot with Claude's vision model. */
@@ -13,24 +14,28 @@ export class VisionError extends Error {}
 
 const TOOL = {
   name: "report_heroes",
-  description: "Report every hero whose proficiency is visible in the screenshot.",
+  description: "Report every hero card visible in the screenshot with its proficiency rank badge.",
   input_schema: {
     type: "object",
     properties: {
       is_proficiency_screen: {
         type: "boolean",
-        description: "True if this is a Marvel Rivals screen that shows hero proficiency for one or more heroes.",
+        description: "True if this is a Marvel Rivals screen that shows hero proficiency (for example the Heroes tab).",
       },
       heroes: {
         type: "array",
         items: {
           type: "object",
           properties: {
-            name: { type: "string", description: "Hero name exactly as it appears, or your best identification from the portrait." },
-            level: { type: ["integer", "null"], description: "Proficiency level number if shown (1 to 70), else null." },
-            rank: { type: ["string", "null"], enum: [...RANKS, null], description: "Proficiency rank if shown, else null." },
+            name: { type: "string", description: "Hero name as printed on the card." },
+            badge: {
+              type: "string",
+              description: "Short description of the rank badge under the name: main color, shape, and whether it has wings.",
+            },
+            rank: { type: ["string", "null"], enum: [...RANKS, null], description: "The rank whose reference badge matches, or null if unsure." },
+            level: { type: ["integer", "null"], description: "Proficiency level number, only if a number is printed. Usually null." },
           },
-          required: ["name", "level", "rank"],
+          required: ["name", "badge", "rank", "level"],
         },
       },
     },
@@ -38,23 +43,28 @@ const TOOL = {
   },
 } as const;
 
-const SYSTEM = `You read screenshots from the game Marvel Rivals and report hero proficiency.
+const SYSTEM = `You read screenshots from the game Marvel Rivals and report each hero's proficiency rank.
 
-Proficiency ranks, lowest to highest, with a new rank every 5 levels: ${RANKS.map((r, i) => `${r} (${i === 0 ? 1 : i * 5}${i === RANKS.length - 1 ? " to 70" : ` to ${i * 5 + 4}`})`).join(", ")}.
+The first image is a labeled reference of the ${RANKS.length} proficiency rank badges, lowest to highest: ${RANKS.join(", ")}. The second image is the player's screenshot.
 
-Known heroes: ${HEROES.map((h) => h.name).join(", ")}.
+On the Heroes tab each hero card shows the hero name, and directly under the name a small rank badge. Ignore the yellow bookmark icon next to some badges (it marks favorites) and the role icon at the right of the name.
+
+How to tell badges apart:
+- Agent: bronze or brown chevron shield. Knight: the same shield in silver or gray.
+- Captain: small pale blue star, no wings. Centurion: teal crystal cross, no wings. Lord: gold star, no wings.
+- Winged badges, by color: Count teal, Colonel blue, Warrior purple, Elite pink, Guardian orange. Champion: large red and gold badge with big gold wings.
 
 Rules:
-- Report only heroes whose proficiency level or rank you can actually see. Skip heroes with no proficiency shown.
-- Prefer the exact level number when one is visible. Give the rank only when you can read its name or are confident from the badge.
-- Do not guess numbers. If a digit is unreadable, leave level null.
-- Use the hero names from the known list.`;
+- Report every hero card you can see, using names from this list: ${HEROES.map((h) => h.name).join(", ")}. The game may print "Bruce Banner" for Hulk.
+- Describe the badge first, then choose the rank whose reference badge matches best. Compare colors carefully: teal versus blue, pink versus purple versus orange.
+- Only give a level when a level number is actually printed. Never guess numbers.`;
 
 const resultSchema = z.object({
   is_proficiency_screen: z.boolean(),
   heroes: z.array(
     z.object({
       name: z.string(),
+      badge: z.string().optional(),
       level: z.number().int().nullable().catch(null),
       rank: z.string().nullable().catch(null),
     }),
@@ -94,8 +104,10 @@ export async function readScreenshot(image: { mediaType: string; base64: string 
           {
             role: "user",
             content: [
+              { type: "text", text: "Reference: the rank badges, labeled." },
+              { type: "image", source: { type: "base64", media_type: "image/jpeg", data: RANK_LEGEND_JPEG_BASE64 } },
+              { type: "text", text: "Screenshot: report every hero card and its rank badge." },
               { type: "image", source: { type: "base64", media_type: image.mediaType, data: image.base64 } },
-              { type: "text", text: "Report the proficiency of every hero visible in this screenshot." },
             ],
           },
         ],

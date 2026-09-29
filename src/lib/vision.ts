@@ -51,7 +51,7 @@ On the Heroes tab each hero card shows the hero name, and directly under the nam
 
 How to tell badges apart:
 - Agent: bronze or brown chevron shield. Knight: the same shield in silver or gray.
-- Captain: small pale blue star, no wings. Centurion: teal crystal cross, no wings. Lord: gold star, no wings.
+- Captain: teal crystal cross, no wings. Centurion: small pale blue star, no wings. Lord: gold star, no wings.
 - Winged badges, by color: Count teal, Colonel blue, Warrior purple, Elite orange, Guardian pink. Champion: large red and gold badge with big gold wings.
 
 Rules:

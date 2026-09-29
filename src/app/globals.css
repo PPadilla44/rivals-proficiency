@@ -372,3 +372,31 @@ footer.foot a { color: var(--ink); font-weight: 600; }
   .shot-row .to { grid-column: 3; grid-row: 1 / span 3; }
 }
 @media (prefers-reduced-motion: reduce) { .dots::after { animation: none; width: 1.2em; } }
+
+/* ---------- ranks guide ---------- */
+.sub a { color: var(--ink); font-weight: 600; text-decoration-color: var(--pop); text-decoration-thickness: 2px; text-underline-offset: 3px; }
+.stat-row { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px; max-width: 760px; }
+.stat { gap: 4px; }
+.stat span { font-size: 13px; font-weight: 600; color: var(--ink-3); text-transform: uppercase; letter-spacing: 0.04em; }
+.stat b { font-family: var(--display); font-weight: 400; font-size: 34px; line-height: 1.05; }
+.stat small { font-family: var(--mono); font-size: 12.5px; color: var(--ink-2); }
+.rank-table-wrap { max-width: 760px; padding: 18px 20px 20px; }
+.table-scroll { overflow-x: auto; margin: 0 -4px; }
+.rank-table { width: 100%; border-collapse: collapse; font-size: 14.5px; min-width: 560px; }
+.rank-table th, .rank-table td { text-align: left; padding: 8px 10px; vertical-align: middle; border-bottom: 1px solid color-mix(in srgb, var(--ink) 12%, transparent); white-space: nowrap; }
+.rank-table thead th { font-size: 12px; text-transform: uppercase; letter-spacing: 0.04em; color: var(--ink-3); font-weight: 600; }
+.rank-table tbody th { font-weight: 600; }
+.rank-table .rk { display: inline-flex; align-items: center; gap: 10px; }
+.rank-table th:first-child { min-width: 150px; }
+.rank-table .rk img { flex: none; }
+.rank-table tbody th img { width: 40px; height: auto; border-radius: 4px; background: #2c2e48; }
+.rank-table td { font-family: var(--mono); font-size: 13.5px; color: var(--ink-2); }
+.rank-table tbody tr:last-child th, .rank-table tbody tr:last-child td { border-bottom: 0; }
+.muted-note { margin: 0; font-size: 13px; color: var(--ink-3); }
+.faq { display: grid; gap: 4px; }
+.faq h3 { margin: 6px 0 0; font-size: 16px; color: var(--ink); }
+.cta { max-width: 760px; }
+@media (max-width: 640px) {
+  .stat-row { grid-template-columns: 1fr; }
+  .stat b { font-size: 30px; }
+}

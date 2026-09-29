@@ -122,3 +122,13 @@ describe("buildRows", () => {
     expect(guest.hoursToNext).toBeNull();
   });
 });
+
+describe("rank levels", () => {
+  it("starts a rank every 5 levels and ends Champion at 70", async () => {
+    const { rankLevels } = await import("@/lib/proficiency");
+    expect(rankLevels(0)).toEqual([1, 4]);
+    expect(rankLevels(4)).toEqual([20, 24]);
+    expect(rankLevels(9)).toEqual([45, 49]);
+    expect(rankLevels(10)).toEqual([50, 70]);
+  });
+});

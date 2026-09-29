@@ -5,8 +5,9 @@ import { DeleteAccount } from "@/components/DeleteAccount";
 import { FEEDBACK_URL } from "@/lib/site";
 
 export const metadata: Metadata = {
-  title: "Privacy · Proficiency Board",
+  title: "Privacy",
   description: "What Proficiency Board stores about you, why, and how to delete it.",
+  alternates: { canonical: "/privacy" },
 };
 
 export default async function PrivacyPage() {

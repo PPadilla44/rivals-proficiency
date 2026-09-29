@@ -3,6 +3,7 @@ import localFont from "next/font/local";
 import Link from "next/link";
 import { Analytics } from "@vercel/analytics/next";
 import { FEEDBACK_URL, KOFI_URL } from "@/lib/site";
+import { SITE_URL } from "@/lib/site-url";
 import "./globals.css";
 
 // Self-hosted (SIL Open Font License) so builds never depend on Google Fonts.
@@ -27,19 +28,18 @@ const mono = localFont({
 });
 
 const description =
-  "Every Marvel Rivals hero's proficiency level on one screen. See who is closest to Lord and Champion, and estimate progress from your playtime.";
+  "Free Marvel Rivals proficiency tracker. See every hero's rank and level on one screen, who is closest to Lord and Champion, and import your ranks from a Heroes tab screenshot.";
 
-// Absolute URLs for the link preview; Vercel sets the production domain.
-const siteUrl = process.env.VERCEL_PROJECT_PRODUCTION_URL
-  ? `https://${process.env.VERCEL_PROJECT_PRODUCTION_URL}`
-  : "http://localhost:3000";
+const homeTitle = "Marvel Rivals Proficiency Tracker";
 
 export const metadata: Metadata = {
-  metadataBase: new URL(siteUrl),
-  title: "Proficiency Board",
+  // Absolute URLs for link previews and canonicals.
+  metadataBase: new URL(SITE_URL),
+  title: { default: `${homeTitle} | Proficiency Board`, template: "%s | Proficiency Board" },
   description,
-  openGraph: { title: "Proficiency Board", description, siteName: "Proficiency Board", type: "website" },
-  twitter: { card: "summary_large_image", title: "Proficiency Board", description },
+  applicationName: "Proficiency Board",
+  openGraph: { title: homeTitle, description, siteName: "Proficiency Board", type: "website", url: "/" },
+  twitter: { card: "summary_large_image", title: homeTitle, description },
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
@@ -68,7 +68,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
             <a href={FEEDBACK_URL} target="_blank" rel="noreferrer">
               Report a bug or suggest an idea
             </a>
-            . <Link href="/privacy">Privacy</Link>
+            . <Link href="/ranks">Proficiency ranks and points</Link> · <Link href="/privacy">Privacy</Link>
           </span>
         </footer>
         <Analytics />

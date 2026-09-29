@@ -27,6 +27,12 @@ export function rankOf(level: number): RankName {
   return RANKS[tierOf(level)];
 }
 
+/** First and last level of a rank: Agent 1 to 4, Knight 5 to 9, ... Champion 50 to 70. */
+export function rankLevels(tier: number): [number, number] {
+  const last = RANKS.length - 1;
+  return [Math.max(MIN_LEVEL, tier * 5), tier >= last ? MAX_LEVEL : tier * 5 + 4];
+}
+
 export function clampLevel(level: number): number {
   if (!Number.isFinite(level)) return MIN_LEVEL;
   return Math.max(MIN_LEVEL, Math.min(MAX_LEVEL, Math.round(level)));
@@ -62,7 +68,7 @@ export function pointsBetween(from: number, to: number): number {
 }
 
 /**
- * Default earn rate. Guides put Lord (level 20, 6,400 points) at about
+ * Default earn rate. Guides put Lord (level 20, 6,100 points) at about
  * 20 hours on one hero, so about 320 points per hour of play.
  */
 export const DEFAULT_POINTS_PER_HOUR = 320;

@@ -5,6 +5,24 @@ import { Board } from "@/components/Board";
 import { getHeroPortraits } from "@/lib/portraits";
 import { KOFI_URL } from "@/lib/site";
 import { visionConfigured } from "@/lib/vision";
+import { SITE_URL } from "@/lib/site-url";
+import Link from "next/link";
+import type { Metadata } from "next";
+
+export const metadata: Metadata = { alternates: { canonical: "/" } };
+
+const JSON_LD = {
+  "@context": "https://schema.org",
+  "@type": "WebApplication",
+  name: "Proficiency Board",
+  alternateName: "Marvel Rivals Proficiency Tracker",
+  url: SITE_URL,
+  applicationCategory: "GameApplication",
+  operatingSystem: "Any",
+  description:
+    "Track every Marvel Rivals hero's proficiency rank and level on one screen, see who is closest to Lord and Champion, and import ranks from a screenshot.",
+  offers: { "@type": "Offer", price: "0", priceCurrency: "USD" },
+};
 
 export default async function Home({ searchParams }: PageProps<"/">) {
   const deleted = (await searchParams).deleted === "1";
@@ -36,13 +54,17 @@ export default async function Home({ searchParams }: PageProps<"/">) {
 
   return (
     <div className="wrap">
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(JSON_LD).replace(/</g, "\\u003c") }} />
       <header className="top">
         <div>
           <h1 className="logo">
             <span className="logo-a">Proficiency</span>
             <span className="logo-b">Board</span>
           </h1>
-          <p className="sub">Every Marvel Rivals hero on one screen. Set a level once, bump it after a session.</p>
+          <p className="sub">
+            Every Marvel Rivals hero&apos;s proficiency on one screen. Set a level once, bump it after a session.{" "}
+            <Link href="/ranks">How ranks and points work</Link>.
+          </p>
         </div>
         <div className="top-actions">
           <a className="kofi" href={KOFI_URL} target="_blank" rel="noreferrer">

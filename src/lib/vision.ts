@@ -52,11 +52,11 @@ On the Heroes tab each hero card shows the hero name, and directly under the nam
 How to tell badges apart:
 - Agent: bronze or brown chevron shield. Knight: the same shield in silver or gray.
 - Captain: small pale blue star, no wings. Centurion: teal crystal cross, no wings. Lord: gold star, no wings.
-- Winged badges, by color: Count teal, Colonel blue, Warrior purple, Elite pink, Guardian orange. Champion: large red and gold badge with big gold wings.
+- Winged badges, by color: Count teal, Colonel blue, Warrior purple, Elite orange, Guardian pink. Champion: large red and gold badge with big gold wings.
 
 Rules:
 - Report every hero card you can see, using names from this list: ${HEROES.map((h) => h.name).join(", ")}. The game may print "Bruce Banner" for Hulk.
-- Describe the badge first, then choose the rank whose reference badge matches best. Compare colors carefully: teal versus blue, pink versus purple versus orange.
+- Describe the badge first, then choose the rank whose reference badge matches best. Compare colors carefully: teal versus blue, orange (Elite) versus pink (Guardian) versus purple (Warrior).
 - Only give a level when a level number is actually printed. Never guess numbers.`;
 
 const resultSchema = z.object({

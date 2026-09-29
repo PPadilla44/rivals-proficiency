@@ -1,7 +1,7 @@
-import { and, eq, inArray, sql } from "drizzle-orm";
+import { and, eq, gte, inArray, sql } from "drizzle-orm";
 import type { PgDatabase, PgQueryResultHKT } from "drizzle-orm/pg-core";
 import * as schema from "@/db/schema";
-import { heroLevels, heroPlaytime, playerLinks, users } from "@/db/schema";
+import { heroLevels, heroPlaytime, playerLinks, screenshotScans, users } from "@/db/schema";
 import { isHeroId } from "@/lib/heroes";
 import { blendRate, clampLevel, observedRate } from "@/lib/proficiency";
 import type { PlayerStats } from "@/lib/rivals-api";
@@ -184,4 +184,19 @@ export async function getLink(db: AnyDb, userId: string) {
  */
 export async function deleteAccount(db: AnyDb, userId: string) {
   await db.delete(users).where(eq(users.id, userId));
+}
+
+/**
+ * Record a screenshot read if the user is under `limit` reads in the last
+ * `windowMs`. Returns false when they are at the limit.
+ */
+export async function takeScanSlot(db: AnyDb, userId: string, limit: number, windowMs: number, now = new Date()): Promise<boolean> {
+  const since = new Date(now.getTime() - windowMs);
+  const [{ n }] = await db
+    .select({ n: sql<number>`count(*)::int` })
+    .from(screenshotScans)
+    .where(and(eq(screenshotScans.userId, userId), gte(screenshotScans.createdAt, since)));
+  if (n >= limit) return false;
+  await db.insert(screenshotScans).values({ userId, createdAt: now });
+  return true;
 }

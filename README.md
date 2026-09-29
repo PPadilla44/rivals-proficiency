@@ -9,7 +9,8 @@ Every Marvel Rivals hero's proficiency level on one screen. See who is closest t
 - **All 54 heroes** (through Gorr the God Butcher, Season 10) with rank badges, progress to the next milestone, and levels to go
 - **Search, sort and filter**: by role, by rank, by goal (near Lord, near Champion, untouched), sorted by level, closest to Lord or Champion, name, role or release order
 - **Guest mode**: works without an account, saving levels in the browser. Sign in later and import them
-- **Sign in** with Discord or Google to keep your board on every device
+- **Sign in** with Discord to keep your board on every device
+- **Screenshot import**: drop in screenshots of the in-game Heroes tab and every level it shows is read for you (with Claude's vision model), then you review before saving
 - **Playtime sync** through [MarvelRivalsAPI.com](https://marvelrivalsapi.com): link your in-game name or UID and the board estimates how many levels you gained since you last set each hero, plus hours to the next milestone
 - **Learns your pace**: each time you correct a level after playing, it compares points earned to hours played and updates your points-per-hour
 
@@ -42,13 +43,12 @@ You need a Postgres database (a free [Neon](https://neon.tech) project works, or
 OAuth redirect URLs:
 
 - Discord: `http://localhost:3000/api/auth/callback/discord`
-- Google: `http://localhost:3000/api/auth/callback/google`
 
 ## Deploy to Vercel
 
 1. Import this repo in Vercel.
 2. Add a Postgres database from the Vercel Marketplace (Neon) so `DATABASE_URL` is set.
-3. Add `AUTH_SECRET` (`npx auth secret`), provider IDs and secrets, and `MARVEL_RIVALS_API_KEY`.
+3. Add `AUTH_SECRET` (`npx auth secret`), provider IDs and secrets, `MARVEL_RIVALS_API_KEY`, and `ANTHROPIC_API_KEY` for screenshot import.
 4. Add the production redirect URLs (`https://<your-domain>/api/auth/callback/<provider>`) to your OAuth apps.
 5. Migrations run automatically at the start of every build (`scripts/migrate.mjs`), and are skipped when no database is configured.
 
@@ -88,5 +88,5 @@ Append a row to `ROSTER` in `src/lib/heroes.ts` (name, role, and any alternate s
 
 - MarvelRivalsAPI.com is unofficial and may change. Its update endpoint allows one refresh request per player every 30 minutes; the app enforces a 5 minute sync cooldown on top of that.
 - Players need a public career profile in game for sync to work.
-- Fonts (Chakra Petch, IBM Plex Sans, IBM Plex Mono) are self-hosted under the SIL Open Font License.
+- Fonts (Anton, IBM Plex Sans, IBM Plex Mono) are self-hosted under the SIL Open Font License.
 - Not affiliated with NetEase Games or Marvel.

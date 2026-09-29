@@ -11,6 +11,7 @@ import {
   linkPlayer,
   markUpdateRequested,
   setLevels,
+  takeScanSlot,
   unlinkPlayer,
   type BoardData,
 } from "@/server/board";
@@ -20,6 +21,8 @@ import {
   requestPlayerUpdate,
   resolvePlayer,
 } from "@/lib/rivals-api";
+import { VisionError, readScreenshot } from "@/lib/vision";
+import type { Detection } from "@/lib/screenshot-import";
 
 export type ActionResult =
   | { ok: true; board: BoardData; message?: string }
@@ -135,4 +138,41 @@ export async function deleteAccountAction(confirmation: unknown): Promise<{ ok: 
   }
   // The session row is already gone; this clears the cookie and goes home.
   await signOut({ redirectTo: "/?deleted=1" });
+}
+
+export type ScanResult =
+  | { ok: true; heroes: Detection[]; isProficiencyScreen: boolean }
+  | { ok: false; error: string };
+
+const SCAN_LIMIT = 30;
+const SCAN_WINDOW_MS = 24 * 60 * 60 * 1000;
+const IMAGE_TYPES = new Set(["image/jpeg", "image/png", "image/webp"]);
+
+/**
+ * Read hero proficiency off one screenshot. Nothing is saved here; the
+ * player reviews the result and saves through saveLevelsAction.
+ */
+export async function scanScreenshotAction(form: FormData): Promise<ScanResult> {
+  let userId: string;
+  try {
+    userId = await requireUserId();
+  } catch (e) {
+    return { ok: false, error: e instanceof Error ? e.message : "Sign in first." };
+  }
+  const file = form.get("image");
+  if (!(file instanceof File) || !IMAGE_TYPES.has(file.type)) return { ok: false, error: "That file is not a screenshot image." };
+  if (file.size > 900_000) return { ok: false, error: "That image is too large. Try a smaller screenshot." };
+
+  try {
+    if (!(await takeScanSlot(getDb(), userId, SCAN_LIMIT, SCAN_WINDOW_MS))) {
+      return { ok: false, error: `You have read ${SCAN_LIMIT} screenshots today. Try again tomorrow.` };
+    }
+    const base64 = Buffer.from(await file.arrayBuffer()).toString("base64");
+    const result = await readScreenshot({ mediaType: file.type, base64 });
+    return { ok: true, heroes: result.heroes, isProficiencyScreen: result.isProficiencyScreen };
+  } catch (e) {
+    if (e instanceof VisionError) return { ok: false, error: e.message };
+    console.error(e);
+    return { ok: false, error: "Something went wrong reading that screenshot. Try again." };
+  }
 }

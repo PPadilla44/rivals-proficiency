@@ -56,8 +56,8 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
             <a href="https://marvelrivalsapi.com" target="_blank" rel="noreferrer">
               MarvelRivalsAPI.com
             </a>{" "}
-            and learn your pace each time you correct a level. Hero art is linked from that service. Not affiliated with
-            NetEase or Marvel.
+            and learn your pace each time you correct a level. Hero art © Marvel and NetEase Games, used for this free fan tool. Not affiliated
+            with NetEase or Marvel.
           </span>
           <span>
             Free and fan-made. If it saves you some clicking,{" "}

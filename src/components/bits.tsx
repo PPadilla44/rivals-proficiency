@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import type { Role } from "@/lib/heroes";
 import { MAX_LEVEL } from "@/lib/proficiency";
 
@@ -28,31 +28,80 @@ function initials(name: string): string {
   return (words.length > 1 ? words[0][0] + words[1][0] : words[0].slice(0, 2)).toUpperCase();
 }
 
-/** Hero art from the stats API, or a halftone monogram when there is none. */
+export type PortraitTier = "base" | "lord" | "champ";
+
+/** Lord styling from level 20 (Lord to Guardian), animated Champion from level 50. */
+export function portraitTier(tier: number): PortraitTier {
+  return tier >= 10 ? "champ" : tier >= 4 ? "lord" : "base";
+}
+
+/** Runs Champion animations only while the card is on screen. */
+function useOnScreen<T extends Element>(enabled: boolean) {
+  const ref = useRef<T>(null);
+  const [visible, setVisible] = useState(false);
+  useEffect(() => {
+    const el = ref.current;
+    if (!enabled || !el || typeof IntersectionObserver === "undefined") return;
+    const io = new IntersectionObserver(([e]) => setVisible(e.isIntersecting), { rootMargin: "80px" });
+    io.observe(el);
+    return () => io.disconnect();
+  }, [enabled]);
+  return [ref, visible] as const;
+}
+
+/**
+ * Official hero headshot (stored with the site), falling back to the stats
+ * API's art for heroes added later, then to a halftone monogram.
+ */
 export function Portrait({
+  heroId,
   name,
   role,
-  src,
-  className,
+  tier,
+  fallbackSrc,
+  variant = "card",
 }: {
+  heroId: string;
   name: string;
   role: Role;
-  src?: string;
-  className?: string;
+  tier: PortraitTier;
+  fallbackSrc?: string;
+  variant?: "card" | "thumb";
 }) {
-  const [failed, setFailed] = useState(false);
-  const show = src && !failed;
+  const sources = [`/heroes/${heroId}.webp`, fallbackSrc].filter(Boolean) as string[];
+  const [attempt, setAttempt] = useState(0);
+  const src = sources[attempt];
+  const [ref, onScreen] = useOnScreen<HTMLDivElement>(tier === "champ");
+
+  const art = src ? (
+    // Small static files; next/image would add nothing at this size.
+    // eslint-disable-next-line @next/next/no-img-element
+    <img src={src} alt="" loading="lazy" decoding="async" onError={() => setAttempt((a) => a + 1)} />
+  ) : (
+    <span className="monogram" aria-hidden="true">
+      {initials(name)}
+    </span>
+  );
+
+  if (variant === "thumb") {
+    return <div className={`portrait thumb tier-${tier} role-${role}`}>{art}</div>;
+  }
+
   return (
-    <div className={`portrait role-${role} ${className ?? ""}`}>
-      {show ? (
-        // Linked from the stats API's image server; not optimized through Vercel.
-        // eslint-disable-next-line @next/next/no-img-element
-        <img src={src} alt="" loading="lazy" decoding="async" onError={() => setFailed(true)} />
-      ) : (
-        <span className="monogram" aria-hidden="true">
-          {initials(name)}
+    <div ref={ref} className={`portrait tier-${tier} role-${role}${onScreen ? " live" : ""}`}>
+      {tier === "champ" ? (
+        <span className="sparks" aria-hidden="true">
+          <i />
+          <i />
+          <i />
+          <i />
+          <i />
         </span>
-      )}
+      ) : null}
+      <div className={`inset${src ? "" : " empty"}`}>
+        {art}
+        {tier !== "base" ? <span className="foil" aria-hidden="true" /> : null}
+      </div>
     </div>
   );
 }

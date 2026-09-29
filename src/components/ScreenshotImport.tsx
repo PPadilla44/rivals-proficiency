@@ -128,9 +128,9 @@ export function ScreenshotImport({ current, onSave }: Props) {
       <div className="shot-bar">
         <button className="btn primary" onClick={() => setPhase({ kind: "pick" })}>
           <CameraIcon />
-          Import from screenshot
+          Import from screenshots
         </button>
-        <span>Snap the in-game Heroes tab and every rank fills in.</span>
+        <span>Screenshot each page of the in-game Heroes tab and every rank fills in.</span>
       </div>
     );
   }
@@ -140,9 +140,9 @@ export function ScreenshotImport({ current, onSave }: Props) {
   if (phase.kind === "pick" || phase.kind === "reading") {
     const reading = phase.kind === "reading";
     return (
-      <section className="panel shot" aria-label="Import from a screenshot">
+      <section className="panel shot" aria-label="Import from screenshots">
         <h2>
-          Import from a screenshot
+          Import from screenshots
           <button className="btn small" onClick={close} disabled={reading}>
             Close
           </button>

@@ -21,7 +21,7 @@ const JSON_LD = {
   applicationCategory: "GameApplication",
   operatingSystem: "Any",
   description:
-    "Track every Marvel Rivals hero's proficiency rank and level on one screen, see who is closest to Lord and Champion, and import ranks from a screenshot.",
+    "Track every Marvel Rivals hero's proficiency rank and level on one screen, see who is closest to Lord and Champion, and import ranks from Heroes tab screenshots.",
   offers: { "@type": "Offer", price: "0", priceCurrency: "USD" },
 };
 
@@ -49,9 +49,9 @@ export default async function Home({ searchParams }: PageProps<"/">) {
       <form action={doSignIn} className="shot-bar">
         <button className="btn primary" name="provider" value={providerList[0].id}>
           <CameraIcon />
-          Sign in to import from a screenshot
+          Sign in to import from screenshots
         </button>
-        <span>Snap the in-game Heroes tab and every rank fills in.</span>
+        <span>Screenshot each page of the in-game Heroes tab and every rank fills in.</span>
       </form>
     ) : null;
 

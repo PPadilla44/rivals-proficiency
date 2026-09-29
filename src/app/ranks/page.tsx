@@ -166,7 +166,7 @@ export default function RanksPage() {
       <section className="banner accent cta">
         <p>
           <strong>See every hero&apos;s rank at once.</strong> Proficiency Board shows who is closest to Lord and Champion, and
-          can read your ranks straight from a screenshot of the Heroes tab.
+          can read your ranks straight from screenshots of the Heroes tab.
         </p>
         <Link href="/" className="btn primary">
           Open the board

@@ -178,7 +178,7 @@ button, input, select { font: inherit; color: inherit; }
 .chips { display: flex; flex-wrap: wrap; gap: 8px; }
 .chip { height: 32px; padding: 0 12px; border-radius: 16px; border: 2px solid var(--stroke); background: var(--panel); cursor: pointer; font-size: 13.5px; font-weight: 500; display: inline-flex; align-items: center; gap: 6px; color: var(--ink-2); box-shadow: 2px 2px 0 var(--shadow); }
 .chip:hover { color: var(--ink); }
-.chip[aria-pressed="true"] { background: var(--ink); color: var(--pop); font-weight: 600; }
+.chip[aria-pressed="true"] { background: var(--pop); color: var(--pop-ink); border-color: var(--stroke); font-weight: 600; }
 .chip .dot { width: 9px; height: 9px; border-radius: 50%; border: 1.5px solid var(--stroke); }
 .sep { width: 2px; height: 22px; background: var(--stroke); margin: 0 4px; }
 .count { font-size: 13px; color: var(--ink-3); margin-left: auto; font-family: var(--mono); }

@@ -221,7 +221,7 @@ export function Board({ mode, initial, signInSlot, portraits, screenshotImport, 
         <div className="banner accent">
           <p>
             <strong>Playing as a guest.</strong> Levels save in this browser only. Sign in to keep them on every device
-            {screenshotImport ? " and fill in your ranks from a screenshot" : ""}.
+            {screenshotImport ? " and fill in your ranks from Heroes tab screenshots" : ""}.
           </p>
           {signInSlot ?? <p>Sign-in is not configured on this server yet.</p>}
         </div>
@@ -369,9 +369,9 @@ export function Board({ mode, initial, signInSlot, portraits, screenshotImport, 
         <p className="start-here">
           <strong>Start here:</strong>{" "}
           {screenshotImport && mode === "user"
-            ? "use Import from screenshot above to fill in every hero's rank at once, then tap a level to set exact numbers."
+            ? "use Import from screenshots above to fill in every hero's rank at once, then tap a level to set exact numbers."
             : screenshotImport && importSignIn
-              ? "tap a hero's level and type where it is in game, or sign in to fill in every rank from one screenshot."
+              ? "tap a hero's level and type where it is in game, or sign in to fill in every rank from a few Heroes tab screenshots."
               : "tap a hero's level and type where it is in game. The rank panels above fill in as you go."}
         </p>
       ) : null}

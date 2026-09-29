@@ -1,0 +1,33 @@
+# One-off helper: downloads the official hero headshots listed in
+# scripts/portrait-sources.txt into portraits-raw/ and commits them back to
+# this branch. Only runs on the fetch-portraits branch.
+name: Fetch hero portraits
+on:
+  push:
+    branches: [fetch-portraits]
+    paths: [scripts/portrait-sources.txt, .github/workflows/fetch-portraits.yml]
+permissions:
+  contents: write
+jobs:
+  fetch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Download
+        run: |
+          mkdir -p portraits-raw
+          i=0
+          while read -r url; do
+            [ -z "$url" ] && continue
+            i=$((i+1))
+            name=$(printf "%02d" "$i")-$(basename "$url")
+            curl -fsSL --retry 3 -A "Mozilla/5.0" -o "portraits-raw/$name" "$url" || echo "FAILED $url" >> portraits-raw/failed.txt
+          done < scripts/portrait-sources.txt
+          ls -la portraits-raw
+      - name: Commit
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add portraits-raw
+          git commit -m "Download raw hero portraits" || echo "nothing to commit"
+          git push

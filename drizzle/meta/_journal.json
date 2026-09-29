@@ -8,6 +8,13 @@
       "when": 1790528768580,
       "tag": "0000_woozy_smasher",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1790646406455,
+      "tag": "0001_screenshot_scan",
+      "breakpoints": true
     }
   ]
 }

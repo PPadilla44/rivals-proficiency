@@ -1,8 +1,10 @@
 import {
+  index,
   integer,
   pgTable,
   primaryKey,
   real,
+  serial,
   text,
   timestamp,
 } from "drizzle-orm/pg-core";
@@ -104,4 +106,17 @@ export const heroPlaytime = pgTable(
     fetchedAt: timestamp("fetched_at", { mode: "date", withTimezone: true }).notNull().defaultNow(),
   },
   (t) => [primaryKey({ columns: [t.userId, t.heroId] })],
+);
+
+/** One row per screenshot read, for the daily per-user limit. */
+export const screenshotScans = pgTable(
+  "screenshot_scan",
+  {
+    id: serial("id").primaryKey(),
+    userId: text("user_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    createdAt: timestamp("created_at", { mode: "date", withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [index("screenshot_scan_user_time").on(t.userId, t.createdAt)],
 );

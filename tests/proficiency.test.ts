@@ -35,7 +35,10 @@ describe("ranks", () => {
 
 describe("points", () => {
   it("costs 6,400 points to reach Lord", () => {
-    expect(pointsBetween(1, 20)).toBe(4 * 125 + 5 * 300 + 5 * 400 + 5 * 480);
+    expect(pointsBetween(1, 20)).toBe(4 * 125 + 5 * 240 + 5 * 400 + 5 * 480);
+    // Community stage totals: 500, 1,200, 2,000, 2,400, then 8,000 per stage, 62,000 for Champion.
+    expect(pointsBetween(1, 50)).toBe(54_100);
+    expect(pointsBetween(1, 70)).toBe(116_100);
   });
 
   it("puts Lord near 20 hours at the default pace", () => {

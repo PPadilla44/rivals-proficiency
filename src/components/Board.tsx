@@ -16,6 +16,7 @@ import { CHAMPION, LORD, RANKS, clampLevel, tierOf } from "@/lib/proficiency";
 import { Summary } from "./Summary";
 import { HeroCard, HeroLine } from "./HeroViews";
 import { Account } from "./Account";
+import { ScreenshotImport } from "./ScreenshotImport";
 
 const LS_LEVELS = "proficiency-board-v1";
 const LS_UI = "proficiency-board-ui";
@@ -25,6 +26,8 @@ type Props = {
   initial: BoardData | null;
   signInSlot: ReactNode;
   portraits: Record<string, string>;
+  /** Server can read screenshots (vision key configured). */
+  screenshotImport: boolean;
 };
 
 type View = "cards" | "list";
@@ -41,7 +44,7 @@ function readLocal(): Record<string, number> {
   }
 }
 
-export function Board({ mode, initial, signInSlot, portraits }: Props) {
+export function Board({ mode, initial, signInSlot, portraits, screenshotImport }: Props) {
   const [board, setBoard] = useState<BoardData>(initial ?? EMPTY);
   const [q, setQ] = useState("");
   const [sort, setSort] = useState<Sort>("level-desc");
@@ -194,6 +197,11 @@ export function Board({ mode, initial, signInSlot, portraits }: Props) {
     saveUi({ sort, view: v });
   };
 
+  const currentLevels = useMemo(
+    () => Object.fromEntries(Object.entries(board.levels).map(([id, v]) => [id, v.level])),
+    [board.levels],
+  );
+
   const localCount = Object.values(guestLevels).filter((l) => l > 1).length;
   const serverCount = Object.keys(board.levels).length;
   const [importDismissed, setImportDismissed] = useState(false);
@@ -205,7 +213,8 @@ export function Board({ mode, initial, signInSlot, portraits }: Props) {
         <div className="banner accent">
           <p>
             <strong>You are using the board as a guest.</strong> Levels save in this browser only. Sign in to keep them on
-            every device and estimate progress from your match playtime.
+            every device{screenshotImport ? ", import levels from a screenshot," : ""} and estimate progress from your match
+            playtime.
           </p>
           {signInSlot ?? <p>Sign-in is not configured on this server yet.</p>}
         </div>
@@ -218,6 +227,17 @@ export function Board({ mode, initial, signInSlot, portraits }: Props) {
           onUnlink={() => withBusy(() => unlinkPlayerAction())}
         />
       )}
+
+      {mode === "user" && screenshotImport ? (
+        <ScreenshotImport
+          current={currentLevels}
+          onSave={async (updates) => {
+            const ok = await withBusy(() => saveLevelsAction(updates));
+            if (ok) setToast({ text: `Saved ${updates.length} level${updates.length === 1 ? "" : "s"} from your screenshot.` });
+            return ok;
+          }}
+        />
+      ) : null}
 
       {showImport ? (
         <div className="banner">

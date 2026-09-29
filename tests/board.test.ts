@@ -4,7 +4,7 @@ import { drizzle } from "drizzle-orm/pglite";
 import { migrate } from "drizzle-orm/pglite/migrator";
 import * as schema from "@/db/schema";
 import { eq } from "drizzle-orm";
-import { applySync, deleteAccount, getBoard, linkPlayer, setLevels, unlinkPlayer, type AnyDb } from "@/server/board";
+import { applySync, deleteAccount, getBoard, linkPlayer, setLevels, takeScanSlot, unlinkPlayer, type AnyDb } from "@/server/board";
 
 let db: AnyDb;
 const USER = "u1";
@@ -127,5 +127,16 @@ describe("board storage", () => {
     expect(await db.select().from(schema.sessions).where(eq(schema.sessions.userId, USER))).toHaveLength(0);
     expect(await db.select().from(schema.accounts).where(eq(schema.accounts.userId, USER))).toHaveLength(0);
     expect((await getBoard(db, "u2")).levels.loki.level).toBe(9);
+  });
+});
+
+describe("screenshot scan limit", () => {
+  it("allows up to the limit inside the window, then frees up", async () => {
+    const day = 24 * 60 * 60 * 1000;
+    const t0 = new Date("2026-09-28T10:00:00Z");
+    expect(await takeScanSlot(db, USER, 2, day, t0)).toBe(true);
+    expect(await takeScanSlot(db, USER, 2, day, t0)).toBe(true);
+    expect(await takeScanSlot(db, USER, 2, day, t0)).toBe(false);
+    expect(await takeScanSlot(db, USER, 2, day, new Date(t0.getTime() + day + 1000))).toBe(true);
   });
 });

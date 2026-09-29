@@ -1,0 +1,13 @@
+{
+  "Agent": ["Angela", "Black Cat", "Black Panther", "Blade", "Hulk", "Captain America", "Cyclops", "Daredevil", "Devil Dinosaur", "Gorr the God Butcher", "Groot", "Hawkeye", "Iron Fist", "Iron Man", "Jubilee", "Mister Fantastic", "Peni Parker", "Rogue", "Scarlet Witch", "Spider-Man", "Squirrel Girl", "Thor", "Venom", "White Fox"],
+  "Knight": ["Adam Warlock", "Black Widow", "Deadpool", "Jeff the Land Shark", "The Hood", "Wolverine"],
+  "Captain": ["Human Torch", "Mantis", "Storm"],
+  "Centurion": ["Elsa Bloodstone", "Psylocke", "Ultron"],
+  "Lord": ["Loki", "Magik", "Rocket Raccoon", "The Thing"],
+  "Count": ["Cloak & Dagger", "Emma Frost", "Gambit", "Namor", "The Punisher"],
+  "Colonel": ["Invisible Woman", "Moon Knight", "Star-Lord"],
+  "Warrior": ["Magneto", "Phoenix", "Winter Soldier"],
+  "Elite": ["Doctor Strange"],
+  "Guardian": ["Luna Snow"],
+  "Champion": ["Hela"]
+}

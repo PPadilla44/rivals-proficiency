@@ -4,6 +4,7 @@ import { getBoard } from "@/server/board";
 import { Board } from "@/components/Board";
 import { getHeroPortraits } from "@/lib/portraits";
 import { KOFI_URL } from "@/lib/site";
+import { visionConfigured } from "@/lib/vision";
 
 export default async function Home({ searchParams }: PageProps<"/">) {
   const deleted = (await searchParams).deleted === "1";
@@ -70,7 +71,7 @@ export default async function Home({ searchParams }: PageProps<"/">) {
         </div>
       ) : null}
 
-      <Board mode={board ? "user" : "guest"} initial={board} signInSlot={signInButtons} portraits={portraits} />
+      <Board mode={board ? "user" : "guest"} initial={board} signInSlot={signInButtons} portraits={portraits} screenshotImport={visionConfigured} />
     </div>
   );
 }

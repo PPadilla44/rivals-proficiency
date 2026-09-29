@@ -65,7 +65,7 @@ const n = (v: unknown) => Number(v ?? 0);
 export async function getStats(db: AnyDb, days: number, now = new Date()): Promise<Stats> {
   const since = new Date(now.getTime() - days * 86_400_000);
   const rows = await db.execute(sql`
-    with e as (select * from ${events} where ${events.createdAt} >= ${since})
+    with e as (select * from ${events} where ${events.createdAt} >= ${since.toISOString()}::timestamptz)
     select
       (select count(distinct visitor_id) from e where visitor_id <> 'server-auth') as visitors,
       (select count(distinct visitor_id) from e where name in ('level_set', 'import_open', 'import_save')) as interacted,
@@ -88,7 +88,7 @@ export async function getStats(db: AnyDb, days: number, now = new Date()): Promi
       count(distinct ${events.visitorId}) filter (where ${events.name} in ('level_set', 'import_open', 'import_save')) as interacted,
       coalesce(sum(coalesce((${events.props}->>'heroes')::int, 1)) filter (where ${events.name} = 'level_set'), 0) as level_sets,
       count(*) filter (where ${events.name} = 'import_save') as imports_saved
-    from ${events} where ${events.createdAt} >= ${since}
+    from ${events} where ${events.createdAt} >= ${since.toISOString()}::timestamptz
     group by 1 order by 1 desc
   `);
   const list = (dailyRows as unknown as { rows?: Record<string, unknown>[] }).rows ?? (dailyRows as unknown as Record<string, unknown>[]);

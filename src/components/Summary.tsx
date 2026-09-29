@@ -1,7 +1,10 @@
+"use client";
+
+import { useState } from "react";
 import { CHAMPION, LORD, RANKS, formatHours, tierOf } from "@/lib/proficiency";
 import type { HeroRow } from "@/lib/board-model";
 
-import { tierColor } from "./bits";
+import { RankBadge, tierColor } from "./bits";
 
 type Props = {
   rows: HeroRow[];
@@ -11,6 +14,7 @@ type Props = {
 };
 
 export function Summary({ rows, activeRank, onRank, linked }: Props) {
+  const [open, setOpen] = useState(false);
   const counts = Array(RANKS.length).fill(0) as number[];
   let sum = 0;
   for (const r of rows) {
@@ -26,8 +30,27 @@ export function Summary({ rows, activeRank, onRank, linked }: Props) {
     .sort((a, b) => b.effective - a.effective || (a.hoursToNext ?? 0) - (b.hoursToNext ?? 0))
     .slice(0, 5);
 
+  const lordPlus = rows.filter((r) => r.effective >= LORD).length;
+  const champions = rows.filter((r) => r.effective >= CHAMPION).length;
+  const nearest = lord[0];
+
   return (
-    <section className="summary" aria-label="Overview">
+    <section className={`summary${open ? " open" : ""}`} aria-label="Overview">
+      {/* Phones get a one-line overview; the panels open on demand. */}
+      <div className="summary-strip">
+        <span>
+          <b>{lordPlus}</b> Lord or higher · <b>{champions}</b> Champion
+          {nearest ? (
+            <>
+              {" "}
+              · next Lord: <b>{nearest.name}</b> ({LORD - nearest.effective} to go)
+            </>
+          ) : null}
+        </span>
+        <button type="button" className="btn small" aria-expanded={open} onClick={() => setOpen((o) => !o)}>
+          {open ? "Hide" : "Overview"}
+        </button>
+      </div>
       <div className="panel dist">
         <h2>
           Roster by rank <b>avg Lv {(sum / rows.length).toFixed(1)}</b>
@@ -44,7 +67,7 @@ export function Summary({ rows, activeRank, onRank, linked }: Props) {
               onClick={() => onRank(t)}
               aria-pressed={activeRank === t}
             >
-              <i style={{ background: tierColor(t) }} />
+              <RankBadge tier={t} size={18} />
               {RANKS[t]}
               <b>{c}</b>
             </button>

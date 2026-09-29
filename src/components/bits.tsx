@@ -2,24 +2,18 @@
 
 import { useEffect, useRef, useState } from "react";
 import type { Role } from "@/lib/heroes";
-import { MAX_LEVEL } from "@/lib/proficiency";
+import { MAX_LEVEL, RANKS } from "@/lib/proficiency";
 
 export const tierColor = (t: number) => `var(--t${t})`;
 
-export function Shield({ tier, size = 26 }: { tier: number; size?: number }) {
+/** The in-game proficiency badge for a rank, on a dark tile like the Heroes tab. */
+export function RankBadge({ tier, size = 26 }: { tier: number; size?: number }) {
+  const rank = RANKS[Math.max(0, Math.min(RANKS.length - 1, tier))];
   return (
-    <svg className="shield" width={size} height={size * 1.1} viewBox="0 0 22 24" aria-hidden="true">
-      <path
-        d="M11 1.5 20 5v6.5c0 5.4-3.8 9.3-9 11-5.2-1.7-9-5.6-9-11V5z"
-        fill={tierColor(tier)}
-        stroke="var(--ink)"
-        strokeWidth="1.6"
-        strokeLinejoin="round"
-      />
-      <text x="11" y="15.6" textAnchor="middle" fontFamily="var(--display)" fontSize="10" fill="#fff">
-        {tier === 10 ? "C" : tier}
-      </text>
-    </svg>
+    <span className="rank-badge" style={{ width: size, height: size }} title={rank}>
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img src={`/ranks/${rank.toLowerCase()}.webp`} alt="" width={size} height={size} loading="lazy" decoding="async" />
+    </span>
   );
 }
 

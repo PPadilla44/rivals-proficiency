@@ -121,7 +121,7 @@ button, input, select { font: inherit; color: inherit; }
 .btn.primary { background: var(--pop); color: var(--pop-ink); }
 .btn.small { height: 30px; padding: 0 10px; font-size: 13px; box-shadow: 2px 2px 0 var(--shadow); }
 .kofi { height: 34px; padding: 0 12px; font-size: 13px; font-weight: 500; border-width: 2px; box-shadow: 2px 2px 0 var(--shadow); color: var(--ink-2); }
-.kofi span { color: var(--duel); }
+.kofi span[aria-hidden] { color: var(--duel); }
 
 /* ---------- banners and account ---------- */
 .banner { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 14px; padding: 14px 18px; font-size: 14.5px; }
@@ -342,7 +342,24 @@ footer.foot a { color: var(--ink); font-weight: 600; }
 .danger-error { color: var(--bad) !important; font-weight: 600; }
 
 /* ---------- screenshot import ---------- */
-.shot-bar p { max-width: 70ch; }
+.shot-bar { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 14px; }
+.shot-bar .btn { display: inline-flex; align-items: center; gap: 8px; }
+.shot-bar span { font-size: 13.5px; color: var(--ink-3); }
+
+/* Phones: one-line overview instead of three panels, chip rows that scroll sideways. */
+.summary-strip { display: none; }
+@media (max-width: 640px) {
+  .summary-strip { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 9px 10px 9px 14px; font-size: 13.5px; color: var(--ink-2); background: var(--panel); border: 2.5px solid var(--stroke); border-radius: 4px; box-shadow: 3px 3px 0 var(--shadow); }
+  .summary-strip b { color: var(--ink); font-weight: 600; }
+  .summary-strip .btn { flex: none; }
+  .summary:not(.open) > .panel { display: none; }
+  .filters .row1 { flex-direction: column; align-items: stretch; gap: 8px; }
+  .filters .sep { display: none; }
+  .filters .chips { flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none; padding: 0 2px 4px; margin: 0 -2px; }
+  .filters .chips::-webkit-scrollbar { display: none; }
+  .filters .chip { flex: none; }
+  .shot-bar span { display: none; }
+}
 .shot { gap: 14px; }
 .shot .muted { margin: 0; color: var(--ink-3); font-size: 13.5px; }
 .drop { border: 2.5px dashed var(--ink-3); border-radius: 4px; background: var(--panel-2); padding: 26px 18px; text-align: center; display: grid; gap: 8px; transition: background 0.15s, border-color 0.15s; }
@@ -399,4 +416,25 @@ footer.foot a { color: var(--ink); font-weight: 600; }
 @media (max-width: 640px) {
   .stat-row { grid-template-columns: 1fr; }
   .stat b { font-size: 30px; }
+}
+
+/* ---------- in-game rank badges ---------- */
+.rank-badge { display: inline-grid; place-items: center; flex: none; background: #2c2e48; border: 1.5px solid var(--stroke); border-radius: 4px; overflow: hidden; }
+.rank-badge img { width: 118%; height: 118%; object-fit: cover; display: block; }
+.rank-sticker { padding-left: 3px; }
+
+/* ---------- phones: get to the heroes faster ---------- */
+@media (max-width: 640px) {
+  .top { position: relative; }
+  .kofi { position: absolute; top: 2px; right: 0; width: 38px; padding: 0; justify-content: center; }
+  .kofi-label { display: none; }
+  .logo { font-size: 34px; padding-right: 48px; }
+  .sub { font-size: 14px; margin-top: 8px; }
+  .controls { padding-block: 8px; }
+  .controls .row1 { gap: 8px; }
+  .controls .search { flex: 1 1 100%; }
+  .controls .lbl-text, .controls .rank-select, .controls .count { display: none; }
+  .controls .lbl { flex: 1; }
+  .controls select { width: 100%; height: 38px; }
+  .search input { height: 40px; }
 }

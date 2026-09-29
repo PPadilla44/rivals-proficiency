@@ -124,14 +124,15 @@ export function ScreenshotImport({ current, onSave }: Props) {
 
   if (phase.kind === "closed") {
     return (
-      <div className="banner shot-bar">
-        <p>
-          <strong>Update from a screenshot.</strong> Snap the in-game Heroes tab and every hero&apos;s rank is read from its
-          badge. You check them before anything saves.
-        </p>
-        <button className="btn" onClick={() => setPhase({ kind: "pick" })}>
-          Import screenshot
+      <div className="shot-bar">
+        <button className="btn primary" onClick={() => setPhase({ kind: "pick" })}>
+          <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+            <path d="M4 8h3l2-3h6l2 3h3v11H4z" />
+            <circle cx="12" cy="13" r="3.5" />
+          </svg>
+          Import from screenshot
         </button>
+        <span>Snap the in-game Heroes tab and every rank fills in.</span>
       </div>
     );
   }

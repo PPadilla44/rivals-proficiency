@@ -67,8 +67,9 @@ export default async function Home({ searchParams }: PageProps<"/">) {
           </p>
         </div>
         <div className="top-actions">
-          <a className="kofi" href={KOFI_URL} target="_blank" rel="noreferrer">
-            <span aria-hidden="true">&#9829;</span> Support on Ko-fi
+          <a className="kofi" href={KOFI_URL} target="_blank" rel="noreferrer" aria-label="Support on Ko-fi">
+            <span aria-hidden="true">&#9829;</span>
+            <span className="kofi-label">Support on Ko-fi</span>
           </a>
         {session?.user ? (
           <div className="who">
@@ -93,7 +94,10 @@ export default async function Home({ searchParams }: PageProps<"/">) {
         </div>
       ) : null}
 
-      <Board mode={board ? "user" : "guest"} initial={board} signInSlot={signInButtons} portraits={portraits} screenshotImport={visionConfigured} />
+      <Board mode={board ? "user" : "guest"} initial={board} signInSlot={signInButtons} portraits={portraits}
+        screenshotImport={visionConfigured}
+        syncEnabled={!!process.env.MARVEL_RIVALS_API_KEY}
+      />
     </div>
   );
 }

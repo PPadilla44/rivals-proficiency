@@ -28,6 +28,8 @@ type Props = {
   portraits: Record<string, string>;
   /** Server can read screenshots (vision key configured). */
   screenshotImport: boolean;
+  /** Playtime sync is available (stats API key configured). */
+  syncEnabled: boolean;
 };
 
 type View = "cards" | "list";
@@ -44,7 +46,7 @@ function readLocal(): Record<string, number> {
   }
 }
 
-export function Board({ mode, initial, signInSlot, portraits, screenshotImport }: Props) {
+export function Board({ mode, initial, signInSlot, portraits, screenshotImport, syncEnabled }: Props) {
   const [board, setBoard] = useState<BoardData>(initial ?? EMPTY);
   const [q, setQ] = useState("");
   const [sort, setSort] = useState<Sort>("level-desc");
@@ -157,8 +159,12 @@ export function Board({ mode, initial, signInSlot, portraits, screenshotImport }
   };
 
   const rows = useMemo(
-    () => buildRows(board.levels, board.playtime, { linked: !!board.link, pointsPerHour: board.link?.pointsPerHour ?? null }),
-    [board],
+    () =>
+      buildRows(board.levels, board.playtime, {
+        linked: syncEnabled && !!board.link,
+        pointsPerHour: board.link?.pointsPerHour ?? null,
+      }),
+    [board, syncEnabled],
   );
 
   const visible = useMemo(() => {
@@ -212,13 +218,12 @@ export function Board({ mode, initial, signInSlot, portraits, screenshotImport }
       {mode === "guest" ? (
         <div className="banner accent">
           <p>
-            <strong>You are using the board as a guest.</strong> Levels save in this browser only. Sign in to keep them on
-            every device{screenshotImport ? ", import levels from a screenshot," : ""} and estimate progress from your match
-            playtime.
+            <strong>Playing as a guest.</strong> Levels save in this browser only. Sign in to keep them on every device
+            {screenshotImport ? " and fill in your ranks from a screenshot" : ""}.
           </p>
           {signInSlot ?? <p>Sign-in is not configured on this server yet.</p>}
         </div>
-      ) : (
+      ) : syncEnabled ? (
         <Account
           link={board.link}
           busy={busy}
@@ -226,7 +231,7 @@ export function Board({ mode, initial, signInSlot, portraits, screenshotImport }
           onSync={() => withBusy(() => syncAction())}
           onUnlink={() => withBusy(() => unlinkPlayerAction())}
         />
-      )}
+      ) : null}
 
       {mode === "user" && screenshotImport ? (
         <ScreenshotImport
@@ -269,7 +274,7 @@ export function Board({ mode, initial, signInSlot, portraits, screenshotImport }
         rows={rows}
         activeRank={rank}
         onRank={(t) => setRank((r) => (r === t ? null : t))}
-        linked={!!board.link}
+        linked={syncEnabled && !!board.link}
       />
 
       <section className="controls" aria-label="Search and sort">
@@ -282,7 +287,7 @@ export function Board({ mode, initial, signInSlot, portraits, screenshotImport }
             <input id="q" type="search" placeholder="Search heroes" autoComplete="off" aria-label="Search heroes" value={q} onChange={(e) => setQ(e.target.value)} />
           </div>
           <label className="lbl" htmlFor="sort">
-            Sort
+            <span className="lbl-text">Sort</span>
             <select id="sort" value={sort} onChange={(e) => changeSort(e.target.value as Sort)}>
               {Object.entries(SORTS).map(([k, v]) => (
                 <option key={k} value={k}>
@@ -291,8 +296,8 @@ export function Board({ mode, initial, signInSlot, portraits, screenshotImport }
               ))}
             </select>
           </label>
-          <label className="lbl" htmlFor="rank">
-            Rank
+          <label className="lbl rank-select" htmlFor="rank">
+            <span className="lbl-text">Rank</span>
             <select id="rank" value={rank ?? ""} onChange={(e) => setRank(e.target.value === "" ? null : Number(e.target.value))}>
               <option value="">All ranks</option>
               {RANKS.map((r, i) => (

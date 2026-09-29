@@ -93,6 +93,11 @@ describe("vision tool output", () => {
       { name: "Hulk", level: null, rank: null, badge: undefined },
     ]);
   });
+  it("unwraps fields sent as JSON strings", () => {
+    const r = parseToolInput({ is_proficiency_screen: "true", heroes: JSON.stringify([{ name: "Thor", level: null, rank: "Lord" }]) });
+    expect(r.isProficiencyScreen).toBe(true);
+    expect(r.heroes[0]).toMatchObject({ name: "Thor", rank: "Lord" });
+  });
   it("rejects a malformed payload", () => {
     expect(() => parseToolInput({ heroes: "nope" })).toThrow();
   });

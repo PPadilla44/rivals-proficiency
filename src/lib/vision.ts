@@ -77,8 +77,23 @@ const resultSchema = z.object({
 
 export type VisionResult = { isProficiencyScreen: boolean; heroes: Detection[] };
 
+/** Some models send nested fields as JSON strings; unwrap them. */
+function unwrap(v: unknown): unknown {
+  if (typeof v !== "string") return v;
+  try {
+    return JSON.parse(v);
+  } catch {
+    return v;
+  }
+}
+
 export function parseToolInput(input: unknown): VisionResult {
-  const r = resultSchema.parse(input);
+  const obj = unwrap(input) as Record<string, unknown> | null;
+  const r = resultSchema.parse({
+    ...obj,
+    heroes: unwrap(obj?.heroes),
+    is_proficiency_screen: obj?.is_proficiency_screen === true || obj?.is_proficiency_screen === "true",
+  });
   return {
     isProficiencyScreen: r.is_proficiency_screen,
     heroes: r.heroes.map((h) => ({ name: h.name, level: h.level, rank: h.rank, badge: h.badge })),
@@ -148,7 +163,8 @@ export async function readScreenshot(tiles: ImagePart[], model = MODEL): Promise
     const json = text.slice(text.indexOf("{"), text.lastIndexOf("}") + 1);
     return parseToolInput(JSON.parse(json));
   } catch {
-    console.error("vision unreadable", model, body.stop_reason, JSON.stringify(body.content ?? []).slice(0, 600));
+    const parts = (body.content ?? []).filter((c) => c.type !== "thinking");
+    console.error("vision unreadable", model, body.stop_reason, JSON.stringify(parts).slice(0, 800));
     throw new VisionError("Could not read that screenshot. Try a full-screen capture.");
   }
 }

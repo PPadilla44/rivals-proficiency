@@ -9,7 +9,7 @@ Every Marvel Rivals hero's proficiency level on one screen. See who is closest t
 - **All 54 heroes** (through Gorr the God Butcher, Season 10) with rank badges, progress to the next milestone, and levels to go
 - **Search, sort and filter**: by role, by rank, by goal (near Lord, near Champion, untouched), sorted by level, closest to Lord or Champion, name, role or release order
 - **Guest mode**: works without an account, saving levels in the browser. Sign in later and import them
-- **Sign in** with Discord to keep your board on every device
+- **Sign in** with Discord or Google to keep your board on every device
 - **Screenshot import**: drop in screenshots of the in-game Heroes tab and every level it shows is read for you (with Claude's vision model), then you review before saving
 - **Playtime sync** through [MarvelRivalsAPI.com](https://marvelrivalsapi.com): link your in-game name or UID and the board estimates how many levels you gained since you last set each hero, plus hours to the next milestone
 - **Learns your pace**: each time you correct a level after playing, it compares points earned to hours played and updates your points-per-hour
@@ -43,6 +43,7 @@ You need a Postgres database (a free [Neon](https://neon.tech) project works, or
 OAuth redirect URLs:
 
 - Discord: `http://localhost:3000/api/auth/callback/discord`
+- Google: `http://localhost:3000/api/auth/callback/google`
 
 ## Deploy to Vercel
 

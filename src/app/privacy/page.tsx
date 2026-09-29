@@ -30,8 +30,8 @@ export default async function PrivacyPage() {
         <h2>What is stored</h2>
         <ul>
           <li>
-            <strong>From Discord when you sign in:</strong> your display name, email address and avatar, plus the ID Discord
-            uses for your account. The email is used only to identify your account; you will not get emails from the board.
+            <strong>From Discord or Google when you sign in:</strong> your display name, email address and avatar, plus
+            the ID that service uses for your account. The email is used only to identify your account; you will not get emails from the board.
           </li>
           <li>
             <strong>Your hero levels,</strong> and when you last changed each one.
@@ -56,6 +56,11 @@ export default async function PrivacyPage() {
           Page visits are counted with Vercel Web Analytics, which does not use cookies or track you across sites. It records
           things like the page, the referring site and your country, so I can see which posts bring people in.
         </p>
+        <p>
+          The board also records a few anonymous actions so I can tell whether it is useful: a visit, changing levels (how
+          many, not which heroes), and opening, reading and saving a screenshot import. Each is tied to a random id stored in
+          your browser, not a cookie, plus your account if you are signed in. Deleting your account deletes these too.
+        </p>
 
         <h2>Who sees your data</h2>
         <p>
@@ -78,8 +83,8 @@ export default async function PrivacyPage() {
         <h2>Deleting your data</h2>
         <p>
           Unlinking your Marvel Rivals account removes your synced playtime and keeps your levels. Deleting your account
-          removes everything above right away. You can also revoke the board&apos;s access in Discord under User Settings,
-          Authorized Apps.
+          removes everything above right away. You can also revoke the board&apos;s access in Discord (User Settings,
+          Authorized Apps) or in your Google Account (Security, Third-party apps and services).
         </p>
         {session?.user ? (
           <DeleteAccount />

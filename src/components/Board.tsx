@@ -17,6 +17,7 @@ import { Summary } from "./Summary";
 import { HeroCard, HeroLine } from "./HeroViews";
 import { Account } from "./Account";
 import { ScreenshotImport } from "./ScreenshotImport";
+import { track } from "@/lib/track";
 
 const LS_LEVELS = "proficiency-board-v1";
 const LS_UI = "proficiency-board-ui";
@@ -84,6 +85,25 @@ export function Board({ mode, initial, signInSlot, portraits, screenshotImport, 
     } catch {}
   }, [mode]);
 
+  // One "visit" per browser session.
+  useEffect(() => {
+    try {
+      if (sessionStorage.getItem("pb-visit")) return;
+      sessionStorage.setItem("pb-visit", "1");
+    } catch {}
+    track("visit", { mode });
+  }, [mode]);
+
+  // Level changes are batched: at most one event a minute, plus one when the tab is hidden.
+  const levelEdits = useRef({ count: 0, last: 0 });
+  const flushLevelEvent = useCallback(() => {
+    const e = levelEdits.current;
+    if (!e.count) return;
+    track("level_set", { heroes: e.count, mode });
+    e.count = 0;
+    e.last = Date.now();
+  }, [mode]);
+
   useEffect(() => {
     if (!toast) return;
     const t = setTimeout(() => setToast(null), toast.error ? 6000 : 3500);
@@ -120,6 +140,8 @@ export function Board({ mode, initial, signInSlot, portraits, screenshotImport, 
   const setLevel = useCallback(
     (heroId: string, level: number, fromEstimate = false) => {
       const v = clampLevel(level);
+      levelEdits.current.count += 1;
+      if (Date.now() - levelEdits.current.last > 60_000) flushLevelEvent();
       setBoard((b) => ({
         ...b,
         levels: { ...b.levels, [heroId]: { level: v, baselinePlaytimeSec: b.levels[heroId]?.baselinePlaytimeSec ?? null } },
@@ -139,17 +161,19 @@ export function Board({ mode, initial, signInSlot, portraits, screenshotImport, 
       if (fromEstimate) void flush(true);
       else timer.current = setTimeout(() => void flush(), 700);
     },
-    [mode, flush],
+    [mode, flush, flushLevelEvent],
   );
 
   // Save anything queued if the tab is closed or hidden.
   useEffect(() => {
     const onHide = () => {
-      if (document.visibilityState === "hidden" && pending.current.size) void flush();
+      if (document.visibilityState !== "hidden") return;
+      if (pending.current.size) void flush();
+      flushLevelEvent();
     };
     document.addEventListener("visibilitychange", onHide);
     return () => document.removeEventListener("visibilitychange", onHide);
-  }, [flush]);
+  }, [flush, flushLevelEvent]);
 
   const withBusy = async (fn: () => Promise<ActionResult>) => {
     setBusy(true);
@@ -221,7 +245,7 @@ export function Board({ mode, initial, signInSlot, portraits, screenshotImport, 
         <div className="banner accent">
           <p>
             <strong>Playing as a guest.</strong> Levels save in this browser only. Sign in to keep them on every device
-            {screenshotImport ? " and fill in your ranks from Heroes tab screenshots" : ""}.
+            {screenshotImport ? " and import your ranks from Heroes tab screenshots" : ""}.
           </p>
           {signInSlot ?? <p>Sign-in is not configured on this server yet.</p>}
         </div>
@@ -370,7 +394,7 @@ export function Board({ mode, initial, signInSlot, portraits, screenshotImport, 
           <strong>Start here:</strong>{" "}
           {screenshotImport && mode === "user"
             ? "use Import from screenshots above to fill in every hero's rank at once, then tap a level to set exact numbers."
-            : screenshotImport && importSignIn
+            : screenshotImport && mode === "guest"
               ? "tap a hero's level and type where it is in game, or sign in to fill in every rank from a few Heroes tab screenshots."
               : "tap a hero's level and type where it is in game. The rank panels above fill in as you go."}
         </p>

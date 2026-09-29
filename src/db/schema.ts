@@ -1,6 +1,7 @@
 import {
   index,
   integer,
+  jsonb,
   pgTable,
   primaryKey,
   real,
@@ -119,4 +120,21 @@ export const screenshotScans = pgTable(
     createdAt: timestamp("created_at", { mode: "date", withTimezone: true }).notNull().defaultNow(),
   },
   (t) => [index("screenshot_scan_user_time").on(t.userId, t.createdAt)],
+);
+
+/**
+ * Anonymous product events (a visit, a level change, an import). `visitorId`
+ * is a random id kept in the browser; `userId` is set only when signed in.
+ */
+export const events = pgTable(
+  "event",
+  {
+    id: serial("id").primaryKey(),
+    name: text("name").notNull(),
+    visitorId: text("visitor_id").notNull(),
+    userId: text("user_id").references(() => users.id, { onDelete: "cascade" }),
+    props: jsonb("props").$type<Record<string, string | number | boolean | null>>(),
+    createdAt: timestamp("created_at", { mode: "date", withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [index("event_time").on(t.createdAt), index("event_visitor").on(t.visitorId)],
 );

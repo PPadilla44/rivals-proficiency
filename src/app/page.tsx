@@ -26,7 +26,10 @@ const JSON_LD = {
 };
 
 export default async function Home({ searchParams }: PageProps<"/">) {
-  const deleted = (await searchParams).deleted === "1";
+  const params = await searchParams;
+  const deleted = params.deleted === "1";
+  // Auth.js sends sign-in failures back here (pages.error in auth.ts).
+  const authError = typeof params.error === "string" ? params.error : null;
   const session = authConfigured ? await auth() : null;
   const userId = session?.user?.id;
   const [board, portraits] = await Promise.all([
@@ -43,9 +46,10 @@ export default async function Home({ searchParams }: PageProps<"/">) {
     await signOut({ redirectTo: "/" });
   }
 
-  // Guests see the import too, as a button that signs them in first.
+  // Guests see the import as a sign-in button. With several providers the
+  // guest banner's buttons already say it, so this would only repeat them.
   const importSignIn =
-    authConfigured && visionConfigured && providerList[0] ? (
+    authConfigured && visionConfigured && providerList.length === 1 ? (
       <form action={doSignIn} className="shot-bar">
         <button className="btn primary" name="provider" value={providerList[0].id}>
           <CameraIcon />
@@ -98,6 +102,23 @@ export default async function Home({ searchParams }: PageProps<"/">) {
         ) : null}
         </div>
       </header>
+
+      {authError ? (
+        <div className="banner" role="alert">
+          <p>
+            {authError === "OAuthAccountNotLinked" ? (
+              <>
+                <strong>That email already has a board.</strong> Sign in with the account you used first (Discord or
+                Google) to open it.
+              </>
+            ) : (
+              <>
+                <strong>Sign-in didn&apos;t finish.</strong> Try again, or use the other sign-in option.
+              </>
+            )}
+          </p>
+        </div>
+      ) : null}
 
       {deleted ? (
         <div className="banner" role="status">

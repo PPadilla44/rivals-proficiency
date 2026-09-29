@@ -4,6 +4,7 @@ import Google from "next-auth/providers/google";
 import { DrizzleAdapter } from "@auth/drizzle-adapter";
 import { getDb } from "@/db";
 import { accounts, sessions, users, verificationTokens } from "@/db/schema";
+import { SERVER_VISITOR, recordEvent } from "@/server/events";
 
 // Only offer providers that are configured, so one is enough to run.
 const providers: NextAuthConfig["providers"] = [];
@@ -30,6 +31,23 @@ export const { handlers, auth, signIn, signOut } = NextAuth(() => ({
   }),
   providers,
   session: { strategy: "database" },
+  // Show sign-in problems on the board instead of the bare Auth.js page.
+  pages: { error: "/" },
+  events: {
+    async signIn({ user, account, isNewUser }) {
+      if (!user.id) return;
+      try {
+        await recordEvent(getDb(), {
+          name: "sign_in",
+          visitorId: SERVER_VISITOR,
+          userId: user.id,
+          props: { new_user: Boolean(isNewUser), provider: account?.provider ?? null },
+        });
+      } catch (e) {
+        console.error("sign-in event failed", e);
+      }
+    },
+  },
   trustHost: true,
 }));
 

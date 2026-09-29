@@ -12,6 +12,7 @@ import {
 } from "@/lib/screenshot-import";
 import { clampLevel } from "@/lib/proficiency";
 import { CameraIcon } from "./bits";
+import { track } from "@/lib/track";
 
 type Props = {
   current: Record<string, number | undefined>;
@@ -106,6 +107,7 @@ export function ScreenshotImport({ current, onSave }: Props) {
       setPhase({ kind: "pick", error: notes.join(" ") || "No hero levels were readable. Try a full-screen capture." });
       return;
     }
+    track("import_read", { screenshots: images.length, heroes: proposals.length, failed: notes.length });
     setPhase({ kind: "review", proposals, unmatched, notes });
   }, []);
 
@@ -126,7 +128,13 @@ export function ScreenshotImport({ current, onSave }: Props) {
   if (phase.kind === "closed") {
     return (
       <div className="shot-bar">
-        <button className="btn primary" onClick={() => setPhase({ kind: "pick" })}>
+        <button
+          className="btn primary"
+          onClick={() => {
+            track("import_open");
+            setPhase({ kind: "pick" });
+          }}
+        >
           <CameraIcon />
           Import from screenshots
         </button>
@@ -260,6 +268,7 @@ export function ScreenshotImport({ current, onSave }: Props) {
           onClick={async () => {
             setSaving(true);
             const ok = await onSave(chosen.map((p) => ({ heroId: p.heroId, level: p.proposed })));
+            if (ok) track("import_save", { heroes: chosen.length });
             setSaving(false);
             if (ok) close();
           }}

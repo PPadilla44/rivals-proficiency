@@ -1,7 +1,8 @@
 "use server";
 
 import { z } from "zod";
-import { requireUserId, signOut } from "@/auth";
+import { auth, authConfigured, requireUserId, signOut } from "@/auth";
+import { recordEvent } from "@/server/events";
 import { getDb } from "@/db";
 import {
   applySync,
@@ -181,5 +182,24 @@ export async function scanScreenshotAction(form: FormData): Promise<ScanResult> 
     if (e instanceof VisionError) return { ok: false, error: e.message };
     console.error(e);
     return { ok: false, error: "Something went wrong reading that screenshot. Try again." };
+  }
+}
+
+/**
+ * Record an anonymous product event (see src/server/events.ts for the list).
+ * Signed-in visitors are tagged with their account; failures are ignored.
+ */
+export async function trackAction(name: unknown, visitorId: unknown, props?: unknown): Promise<void> {
+  if (!process.env.DATABASE_URL) return;
+  try {
+    const session = authConfigured ? await auth() : null;
+    await recordEvent(getDb(), {
+      name: String(name),
+      visitorId: String(visitorId),
+      userId: session?.user?.id ?? null,
+      props,
+    });
+  } catch (e) {
+    console.error("track failed", e);
   }
 }

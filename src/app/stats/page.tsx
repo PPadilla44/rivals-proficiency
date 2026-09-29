@@ -24,7 +24,7 @@ function Totals({ s, title }: { s: Stats; title: string }) {
     ["Interacted", s.interacted, `${pct(s.interacted, s.visitors)} of visitors changed a level or opened the import`],
     ["Signed-in visitors", s.signedInVisitors],
     ["Returning", s.returning, "visited on 2 or more days"],
-    ["Sign-ins", s.signIns, `${s.newAccounts} new accounts`],
+    ["Sign-ins", s.signIns, `${s.newAccounts} new account${s.newAccounts === 1 ? "" : "s"}`],
     ["Levels changed", s.levelSets],
     ["Imports saved", s.importsSaved, `${s.screenshotsRead} screenshots read`],
   ];

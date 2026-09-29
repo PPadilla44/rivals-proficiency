@@ -11,6 +11,7 @@ import {
   type Proposal,
 } from "@/lib/screenshot-import";
 import { clampLevel } from "@/lib/proficiency";
+import { CameraIcon } from "./bits";
 
 type Props = {
   current: Record<string, number | undefined>;
@@ -126,10 +127,7 @@ export function ScreenshotImport({ current, onSave }: Props) {
     return (
       <div className="shot-bar">
         <button className="btn primary" onClick={() => setPhase({ kind: "pick" })}>
-          <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-            <path d="M4 8h3l2-3h6l2 3h3v11H4z" />
-            <circle cx="12" cy="13" r="3.5" />
-          </svg>
+          <CameraIcon />
           Import from screenshot
         </button>
         <span>Snap the in-game Heroes tab and every rank fills in.</span>

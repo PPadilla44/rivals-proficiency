@@ -28,6 +28,8 @@ type Props = {
   portraits: Record<string, string>;
   /** Server can read screenshots (vision key configured). */
   screenshotImport: boolean;
+  /** Guest-only: a button that signs in and leads to the screenshot import. */
+  importSignIn?: ReactNode;
   /** Playtime sync is available (stats API key configured). */
   syncEnabled: boolean;
 };
@@ -46,11 +48,11 @@ function readLocal(): Record<string, number> {
   }
 }
 
-export function Board({ mode, initial, signInSlot, portraits, screenshotImport, syncEnabled }: Props) {
+export function Board({ mode, initial, signInSlot, portraits, screenshotImport, importSignIn, syncEnabled }: Props) {
   const [board, setBoard] = useState<BoardData>(initial ?? EMPTY);
   const [q, setQ] = useState("");
   const [sort, setSort] = useState<Sort>("level-desc");
-  const [view, setView] = useState<View>("cards");
+  const [view, setView] = useState<View>("list");
   const [role, setRole] = useState<Role | "all">("all");
   const [goal, setGoal] = useState<Goal>("all");
   const [rank, setRank] = useState<number | null>(null);
@@ -233,6 +235,8 @@ export function Board({ mode, initial, signInSlot, portraits, screenshotImport, 
         />
       ) : null}
 
+      {mode === "guest" ? importSignIn : null}
+
       {mode === "user" && screenshotImport ? (
         <ScreenshotImport
           current={currentLevels}
@@ -363,8 +367,12 @@ export function Board({ mode, initial, signInSlot, portraits, screenshotImport, 
 
       {!rows.some((r) => r.touched) ? (
         <p className="start-here">
-          <strong>Start here:</strong> tap a hero&apos;s level and type where it is in game. The rank panels above fill in as
-          you go.
+          <strong>Start here:</strong>{" "}
+          {screenshotImport && mode === "user"
+            ? "use Import from screenshot above to fill in every hero's rank at once, then tap a level to set exact numbers."
+            : screenshotImport && importSignIn
+              ? "tap a hero's level and type where it is in game, or sign in to fill in every rank from one screenshot."
+              : "tap a hero's level and type where it is in game. The rank panels above fill in as you go."}
         </p>
       ) : null}
 

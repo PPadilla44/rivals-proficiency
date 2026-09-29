@@ -2,6 +2,7 @@ import { auth, authConfigured, providerList, signIn, signOut } from "@/auth";
 import { getDb } from "@/db";
 import { getBoard } from "@/server/board";
 import { Board } from "@/components/Board";
+import { CameraIcon } from "@/components/bits";
 import { getHeroPortraits } from "@/lib/portraits";
 import { KOFI_URL } from "@/lib/site";
 import { visionConfigured } from "@/lib/vision";
@@ -41,6 +42,18 @@ export default async function Home({ searchParams }: PageProps<"/">) {
     "use server";
     await signOut({ redirectTo: "/" });
   }
+
+  // Guests see the import too, as a button that signs them in first.
+  const importSignIn =
+    authConfigured && visionConfigured && providerList[0] ? (
+      <form action={doSignIn} className="shot-bar">
+        <button className="btn primary" name="provider" value={providerList[0].id}>
+          <CameraIcon />
+          Sign in to import from a screenshot
+        </button>
+        <span>Snap the in-game Heroes tab and every rank fills in.</span>
+      </form>
+    ) : null;
 
   const signInButtons = authConfigured ? (
     <form action={doSignIn} className="actions">
@@ -96,6 +109,7 @@ export default async function Home({ searchParams }: PageProps<"/">) {
 
       <Board mode={board ? "user" : "guest"} initial={board} signInSlot={signInButtons} portraits={portraits}
         screenshotImport={visionConfigured}
+        importSignIn={importSignIn}
         syncEnabled={!!process.env.MARVEL_RIVALS_API_KEY}
       />
     </div>

@@ -4,7 +4,7 @@ import { memo } from "react";
 import type { HeroRow } from "@/lib/board-model";
 import { ROLE_LABEL } from "@/lib/heroes";
 import { MAX_LEVEL, RANKS, formatHours, nextMilestone, tierOf } from "@/lib/proficiency";
-import { LevelStepper, Portrait, Shield, tierColor } from "./bits";
+import { LevelStepper, Portrait, Shield, portraitTier, tierColor } from "./bits";
 
 export type LevelHandler = (heroId: string, level: number, fromEstimate?: boolean) => void;
 
@@ -69,7 +69,7 @@ export const HeroCard = memo(function HeroCard({ row, portrait, onLevel }: Props
   return (
     <article className={`card role-${row.role}${t >= 10 ? " champ" : t >= 4 ? " lord" : ""}`} aria-label={row.name}>
       <div className="card-art">
-        <Portrait name={row.name} role={row.role} src={portrait} />
+        <Portrait heroId={row.id} name={row.name} role={row.role} tier={portraitTier(t)} fallbackSrc={portrait} />
         <span className={`role-tag role-${row.role}`}>{ROLE_LABEL[row.role]}</span>
         <span className="rank-sticker">
           <Shield tier={t} size={22} />
@@ -92,7 +92,7 @@ export const HeroLine = memo(function HeroLine({ row, portrait, onLevel }: Props
   return (
     <div className="hero">
       <div className="name">
-        <Portrait name={row.name} role={row.role} src={portrait} className="thumb" />
+        <Portrait heroId={row.id} name={row.name} role={row.role} tier={portraitTier(t)} fallbackSrc={portrait} variant="thumb" />
         <span className="name-text">
           <span>{row.name}</span>
           <Estimate row={row} onLevel={onLevel} />

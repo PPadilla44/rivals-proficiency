@@ -61,6 +61,16 @@ function Estimate({ row, onLevel }: { row: HeroRow; onLevel: LevelHandler }) {
   );
 }
 
+/** Flags a level that came from a screenshot: the rank is right, the exact level is not known yet. */
+function RankOnly({ row }: { row: HeroRow }) {
+  if (!row.approx) return null;
+  return (
+    <span className="approx" title="Set from a screenshot, which only shows the rank. Change the level to set it exactly.">
+      Rank only · set exact level
+    </span>
+  );
+}
+
 type Props = { row: HeroRow; portrait?: string; onLevel: LevelHandler };
 
 /** Card: portrait up top (gold for Lord and up, animated for Champion), rank, big level, progress. */
@@ -78,6 +88,7 @@ export const HeroCard = memo(function HeroCard({ row, portrait, onLevel }: Props
       </div>
       <div className="card-body">
         <h3 className="card-name">{row.name}</h3>
+        <RankOnly row={row} />
         <Estimate row={row} onLevel={onLevel} />
         <LevelStepper id={row.id} name={row.name} level={row.level} onLevel={onLevel} big />
         <Progress row={row} />
@@ -96,6 +107,7 @@ export const HeroLine = memo(function HeroLine({ row, portrait, onLevel }: Props
         <span className="name-text">
           <span>{row.name}</span>
           <span className={`role role-${row.role}`}>{ROLE_LABEL[row.role]}</span>
+          <RankOnly row={row} />
           <Estimate row={row} onLevel={onLevel} />
         </span>
       </div>

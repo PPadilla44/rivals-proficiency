@@ -10,13 +10,15 @@ import {
   type Estimate,
 } from "./proficiency";
 
-export type LevelEntry = { level: number; baselinePlaytimeSec: number | null };
+export type LevelEntry = { level: number; baselinePlaytimeSec: number | null; approx?: boolean };
 
 export type HeroRow = Hero & {
   /** Level the player set (1 if never set). */
   level: number;
   /** True once the player has entered a level for this hero. */
   touched: boolean;
+  /** Only the rank is known (from a screenshot import); the level is that rank's first level. */
+  approx: boolean;
   /** Estimate from playtime since the level was set, when stats are linked. */
   estimate: Estimate | null;
   /** The level used for sorting, filtering and progress: the estimate if higher. */
@@ -45,7 +47,7 @@ export function buildRows(
       opts.linked && entry && effective < MAX_LEVEL
         ? hoursToLevel(estimate ?? { level: effective, fraction: 0 }, m.to, rate)
         : null;
-    return { ...h, level, touched: !!entry, estimate, effective, hoursToNext };
+    return { ...h, level, touched: !!entry, approx: !!entry?.approx, estimate, effective, hoursToNext };
   });
 }
 

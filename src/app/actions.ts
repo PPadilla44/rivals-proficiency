@@ -30,7 +30,7 @@ export type ActionResult =
   | { ok: false; error: string };
 
 const updatesSchema = z
-  .array(z.object({ heroId: z.string().max(64), level: z.number().int().min(1).max(70) }))
+  .array(z.object({ heroId: z.string().max(64), level: z.number().int().min(1).max(70), approx: z.boolean().optional() }))
   .max(100);
 
 const SYNC_COOLDOWN_MS = 5 * 60 * 1000;

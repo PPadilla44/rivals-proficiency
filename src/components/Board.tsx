@@ -118,7 +118,7 @@ export function Board({ mode, initial, signInSlot, portraits, screenshotImport, 
     // Keep any edits made while the request was in flight.
     const merged: BoardData = { ...res.board, levels: { ...res.board.levels } };
     for (const [id, level] of pending.current) {
-      merged.levels[id] = { level, baselinePlaytimeSec: merged.levels[id]?.baselinePlaytimeSec ?? null };
+      merged.levels[id] = { level, baselinePlaytimeSec: merged.levels[id]?.baselinePlaytimeSec ?? null, approx: false };
     }
     setBoard(merged);
     if (reorder) setLoadVersion((v) => v + 1);
@@ -144,7 +144,7 @@ export function Board({ mode, initial, signInSlot, portraits, screenshotImport, 
       if (Date.now() - levelEdits.current.last > 60_000) flushLevelEvent();
       setBoard((b) => ({
         ...b,
-        levels: { ...b.levels, [heroId]: { level: v, baselinePlaytimeSec: b.levels[heroId]?.baselinePlaytimeSec ?? null } },
+        levels: { ...b.levels, [heroId]: { level: v, baselinePlaytimeSec: b.levels[heroId]?.baselinePlaytimeSec ?? null, approx: false } },
       }));
       if (mode === "guest") {
         setGuestLevels((g) => {

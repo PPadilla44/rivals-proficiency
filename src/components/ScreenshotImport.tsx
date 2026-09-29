@@ -16,7 +16,7 @@ import { track } from "@/lib/track";
 
 type Props = {
   current: Record<string, number | undefined>;
-  onSave: (updates: { heroId: string; level: number }[]) => Promise<boolean>;
+  onSave: (updates: { heroId: string; level: number; approx: boolean }[]) => Promise<boolean>;
 };
 
 type Phase =
@@ -258,7 +258,7 @@ export function ScreenshotImport({ current, onSave }: Props) {
                 value={p.proposed}
                 onChange={(e) => {
                   const v = clampLevel(Number(e.target.value));
-                  update(p.heroId, { proposed: v, selected: v !== (p.current ?? 1) });
+                  update(p.heroId, { proposed: v, selected: v !== (p.current ?? 1), edited: true });
                 }}
               />
             </span>
@@ -272,7 +272,10 @@ export function ScreenshotImport({ current, onSave }: Props) {
           disabled={saving || !chosen.length}
           onClick={async () => {
             setSaving(true);
-            const ok = await onSave(chosen.map((p) => ({ heroId: p.heroId, level: p.proposed })));
+            // A rank read without a number is only a floor, unless the player typed the level in review.
+            const ok = await onSave(
+              chosen.map((p) => ({ heroId: p.heroId, level: p.proposed, approx: p.detectedLevel == null && !p.edited })),
+            );
             if (ok) track("import_save", { heroes: chosen.length });
             setSaving(false);
             if (ok) close();

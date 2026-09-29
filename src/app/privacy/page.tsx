@@ -49,7 +49,7 @@ export default async function PrivacyPage() {
         <h2>Analytics</h2>
         <p>
           Page visits are counted with Vercel Web Analytics, which does not use cookies or track you across sites. It records
-          things like the page, the referring site and your country, so I can see which posts bring people in.
+          things like the page, the referring site and your country, so I can see which posts bring people in. Vercel Speed Insights measures how fast pages load on real devices, also without cookies.
         </p>
         <p>
           The board also records a few anonymous actions so I can tell whether it is useful: a visit, changing levels (how

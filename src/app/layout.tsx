@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import localFont from "next/font/local";
 import Link from "next/link";
 import { Analytics } from "@vercel/analytics/next";
+import { SpeedInsights } from "@vercel/speed-insights/next";
 import { FEEDBACK_URL, KOFI_URL } from "@/lib/site";
 import { SITE_URL } from "@/lib/site-url";
 import { SiteNav } from "@/components/SiteNav";
@@ -77,6 +78,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
           </span>
         </footer>
         <Analytics />
+        <SpeedInsights />
       </body>
     </html>
   );

@@ -11,7 +11,7 @@ import type { PlayerStats } from "@/lib/rivals-api";
 export type AnyDb = PgDatabase<PgQueryResultHKT, typeof schema, any>;
 
 export type BoardData = {
-  levels: Record<string, { level: number; baselinePlaytimeSec: number | null }>;
+  levels: Record<string, { level: number; baselinePlaytimeSec: number | null; approx?: boolean }>;
   playtime: Record<string, number>;
   link: {
     rivalsUid: string;
@@ -30,7 +30,7 @@ export async function getBoard(db: AnyDb, userId: string): Promise<BoardData> {
   const link = links[0];
   return {
     levels: Object.fromEntries(
-      levels.map((r) => [r.heroId, { level: r.level, baselinePlaytimeSec: r.baselinePlaytimeSec }]),
+      levels.map((r) => [r.heroId, { level: r.level, baselinePlaytimeSec: r.baselinePlaytimeSec, approx: r.approx }]),
     ),
     playtime: Object.fromEntries(playtime.map((r) => [r.heroId, r.playtimeSec])),
     link: link
@@ -44,7 +44,8 @@ export async function getBoard(db: AnyDb, userId: string): Promise<BoardData> {
   };
 }
 
-export type LevelUpdate = { heroId: string; level: number };
+/** `approx`: only the rank is known (a screenshot import); such levels never train the earn rate. */
+export type LevelUpdate = { heroId: string; level: number; approx?: boolean };
 
 /**
  * Save levels a player typed in. Each save resets that hero's baseline to its
@@ -57,7 +58,11 @@ export async function setLevels(
   updates: LevelUpdate[],
   opts: { onlyIfMissing?: boolean; learnRate?: boolean } = {},
 ): Promise<void> {
-  const clean = dedupe(updates.filter((u) => isHeroId(u.heroId)).map((u) => ({ heroId: u.heroId, level: clampLevel(u.level) })));
+  const clean = dedupe(
+    updates
+      .filter((u) => isHeroId(u.heroId))
+      .map((u) => ({ heroId: u.heroId, level: clampLevel(u.level), approx: u.approx === true })),
+  );
   if (!clean.length) return;
   const ids = clean.map((u) => u.heroId);
 
@@ -75,13 +80,13 @@ export async function setLevels(
   for (const u of clean) {
     const old = prev.get(u.heroId);
     if (opts.onlyIfMissing && old) continue;
-    if (old && old.level === u.level) continue;
+    if (old && old.level === u.level && old.approx === u.approx) continue;
     const now = play.get(u.heroId) ?? null;
-    if (opts.learnRate !== false && link && old && old.baselinePlaytimeSec != null && now != null) {
+    if (opts.learnRate !== false && !u.approx && !old?.approx && link && old && old.baselinePlaytimeSec != null && now != null) {
       const observed = observedRate(old.level, u.level, now - old.baselinePlaytimeSec);
       if (observed) rate = blendRate(rate, observed);
     }
-    rows.push({ userId, heroId: u.heroId, level: u.level, baselinePlaytimeSec: now, setAt: new Date() });
+    rows.push({ userId, heroId: u.heroId, level: u.level, approx: u.approx ?? false, baselinePlaytimeSec: now, setAt: new Date() });
   }
   if (!rows.length) return;
 
@@ -92,6 +97,7 @@ export async function setLevels(
       target: [heroLevels.userId, heroLevels.heroId],
       set: {
         level: sql`excluded.level`,
+        approx: sql`excluded.approx`,
         baselinePlaytimeSec: sql`excluded.baseline_playtime_sec`,
         setAt: sql`excluded.set_at`,
       },

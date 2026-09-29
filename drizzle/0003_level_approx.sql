@@ -1,0 +1,1 @@
+ALTER TABLE "hero_level" ADD COLUMN "approx" boolean DEFAULT false NOT NULL;

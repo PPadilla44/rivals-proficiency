@@ -1,4 +1,5 @@
 import {
+  boolean,
   index,
   integer,
   jsonb,
@@ -90,6 +91,8 @@ export const heroLevels = pgTable(
     heroId: text("hero_id").notNull(),
     level: integer("level").notNull(),
     baselinePlaytimeSec: integer("baseline_playtime_sec"),
+    /** True when only the rank is known (set from a Heroes tab screenshot). */
+    approx: boolean("approx").notNull().default(false),
     setAt: timestamp("set_at", { mode: "date", withTimezone: true }).notNull().defaultNow(),
   },
   (t) => [primaryKey({ columns: [t.userId, t.heroId] })],

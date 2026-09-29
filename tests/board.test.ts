@@ -140,3 +140,20 @@ describe("screenshot scan limit", () => {
     expect(await takeScanSlot(db, USER, 2, day, new Date(t0.getTime() + day + 1000))).toBe(true);
   });
 });
+
+describe("rank-only levels", () => {
+  it("stores the flag, clears it on a typed save of the same level, and never trains the rate", async () => {
+    await linkPlayer(db, USER, "42", "Tester");
+    await applySync(db, USER, stats(3600));
+    await setLevels(db, USER, [{ heroId: "thor", level: 20, approx: true }]);
+    let b = await getBoard(db, USER);
+    expect(b.levels.thor).toMatchObject({ level: 20, approx: true });
+
+    // Two hours later the player types the real level: rank-only start must not teach a pace.
+    await applySync(db, USER, stats(3600 * 3));
+    await setLevels(db, USER, [{ heroId: "thor", level: 20 }]);
+    b = await getBoard(db, USER);
+    expect(b.levels.thor).toMatchObject({ level: 20, approx: false });
+    expect(b.link?.pointsPerHour).toBeNull();
+  });
+});

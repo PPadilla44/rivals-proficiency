@@ -18,6 +18,8 @@ export type Proposal = {
   status: ProposalStatus;
   /** Pre-checked in the review list. Lowering a level is never pre-checked. */
   selected: boolean;
+  /** The player typed this level in the review list. */
+  edited?: boolean;
 };
 
 const RANK_INDEX = new Map(RANKS.map((r, i) => [r.toLowerCase(), i]));

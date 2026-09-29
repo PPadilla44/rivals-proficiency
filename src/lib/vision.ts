@@ -12,6 +12,9 @@ const MODEL = process.env.SCREENSHOT_MODEL ?? "claude-haiku-4-5-20251001";
 
 export class VisionError extends Error {}
 
+/** Models that accept a forced tool choice. */
+const FORCE_TOOL = /haiku-4-5/;
+
 const TOOL = {
   name: "report_heroes",
   description: "Report every hero card visible in the screenshot with its proficiency rank badge.",
@@ -57,7 +60,8 @@ How to tell badges apart:
 Rules:
 - Report every hero card you can see, using names from this list: ${HEROES.map((h) => h.name).join(", ")}. The game may print "Bruce Banner" for Hulk.
 - Describe the badge first, then choose the rank whose reference badge matches best. Compare colors carefully: teal versus blue, orange (Elite) versus pink (Guardian) versus purple (Warrior).
-- Only give a level when a level number is actually printed. Never guess numbers.`;
+- Only give a level when a level number is actually printed. Never guess numbers.
+- Answer only by calling report_heroes once with every hero.`;
 
 const resultSchema = z.object({
   is_proficiency_screen: z.boolean(),
@@ -99,10 +103,11 @@ export async function readScreenshot(tiles: ImagePart[], model = MODEL): Promise
       },
       body: JSON.stringify({
         model,
-        max_tokens: 4000,
+        max_tokens: 8000,
         system: SYSTEM,
         tools: [TOOL],
-        tool_choice: { type: "tool", name: TOOL.name },
+        // Newer models reject a forced tool choice; they are told to call it.
+        tool_choice: FORCE_TOOL.test(model) ? { type: "tool", name: TOOL.name } : { type: "auto" },
         messages: [
           {
             role: "user",
@@ -117,7 +122,7 @@ export async function readScreenshot(tiles: ImagePart[], model = MODEL): Promise
                     : "Screenshot:",
               },
               ...tiles.map((t) => ({ type: "image", source: { type: "base64", media_type: t.mediaType, data: t.base64 } })),
-              { type: "text", text: "Report every hero card and its rank badge." },
+              { type: "text", text: `Report every hero card and its rank badge by calling ${TOOL.name}.` },
             ],
           },
         ],
@@ -131,12 +136,19 @@ export async function readScreenshot(tiles: ImagePart[], model = MODEL): Promise
     console.error("vision error", res.status, (await res.text().catch(() => "")).slice(0, 500));
     throw new VisionError(res.status === 429 || res.status === 529 ? "The screenshot reader is busy. Try again in a minute." : "The screenshot reader failed. Try again.");
   }
-  const body = (await res.json()) as { content?: { type: string; name?: string; input?: unknown }[] };
+  const body = (await res.json()) as {
+    stop_reason?: string;
+    content?: { type: string; name?: string; input?: unknown; text?: string }[];
+  };
   const call = body.content?.find((c) => c.type === "tool_use" && c.name === TOOL.name);
-  if (!call) throw new VisionError("Could not read that screenshot. Try a full-screen capture.");
   try {
-    return parseToolInput(call.input);
+    if (call) return parseToolInput(call.input);
+    // Fall back to a JSON object written as text.
+    const text = body.content?.find((c) => c.type === "text")?.text ?? "";
+    const json = text.slice(text.indexOf("{"), text.lastIndexOf("}") + 1);
+    return parseToolInput(JSON.parse(json));
   } catch {
+    console.error("vision unreadable", model, body.stop_reason, JSON.stringify(body.content ?? []).slice(0, 600));
     throw new VisionError("Could not read that screenshot. Try a full-screen capture.");
   }
 }

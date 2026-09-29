@@ -74,23 +74,31 @@ export function ScreenshotImport({ current, onSave }: Props) {
       return;
     }
     setPhase({ kind: "reading", done: 0, total: images.length });
-    const lists: Detection[][] = [];
-    const notes: string[] = [];
-    for (let i = 0; i < images.length; i++) {
-      const label = images.length > 1 ? `Screenshot ${i + 1}: ` : "";
-      try {
-        const form = new FormData();
-        for (const [n, tile] of (await prepare(images[i])).entries()) form.append("image", tile, `tile-${n}.jpg`);
-        const res = await scanScreenshotAction(form);
-        if (!res.ok) notes.push(label + res.error);
-        else if (!res.heroes.length)
-          notes.push(label + (res.isProficiencyScreen ? "No hero levels were readable." : "This does not look like a hero proficiency screen."));
-        else lists.push(res.heroes);
-      } catch {
-        notes.push(label + "Could not open that image.");
-      }
-      setPhase({ kind: "reading", done: i + 1, total: images.length });
-    }
+    let done = 0;
+    // Read all screenshots at once; each takes around ten seconds.
+    const results = await Promise.all(
+      images.map(async (image, i): Promise<{ heroes?: Detection[]; note?: string }> => {
+        const label = images.length > 1 ? `Screenshot ${i + 1}: ` : "";
+        try {
+          const form = new FormData();
+          for (const [n, tile] of (await prepare(image)).entries()) form.append("image", tile, `tile-${n}.jpg`);
+          const res = await scanScreenshotAction(form);
+          if (!res.ok) return { note: label + res.error };
+          if (!res.heroes.length)
+            return {
+              note: label + (res.isProficiencyScreen ? "No hero ranks were readable." : "This does not look like the Heroes tab."),
+            };
+          return { heroes: res.heroes };
+        } catch {
+          return { note: label + "Could not open that image." };
+        } finally {
+          done += 1;
+          setPhase({ kind: "reading", done, total: images.length });
+        }
+      }),
+    );
+    const lists = results.flatMap((r) => (r.heroes ? [r.heroes] : []));
+    const notes = results.flatMap((r) => (r.note ? [r.note] : []));
     const { byHero, unmatched } = mergeDetections(lists);
     const proposals = buildProposals(byHero, currentRef.current);
     if (!proposals.length) {
@@ -155,7 +163,7 @@ export function ScreenshotImport({ current, onSave }: Props) {
         >
           {reading ? (
             <p className="drop-status" role="status">
-              Reading {phase.total > 1 ? `screenshot ${Math.min(phase.done + 1, phase.total)} of ${phase.total}` : "your screenshot"}
+              Reading {phase.total > 1 ? `${phase.total} screenshots (${phase.done} done)` : "your screenshot"}
               <span className="dots" aria-hidden="true" />
             </p>
           ) : (

@@ -144,7 +144,7 @@ export type ScanResult =
   | { ok: true; heroes: Detection[]; isProficiencyScreen: boolean }
   | { ok: false; error: string };
 
-const SCAN_LIMIT = 30;
+const SCAN_LIMIT = 16; // four full Heroes tab imports a day
 const SCAN_WINDOW_MS = 24 * 60 * 60 * 1000;
 const IMAGE_TYPES = new Set(["image/jpeg", "image/png", "image/webp"]);
 

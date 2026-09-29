@@ -8,7 +8,9 @@ import type { Detection } from "./screenshot-import";
 
 export const visionConfigured = !!process.env.ANTHROPIC_API_KEY;
 
-const MODEL = process.env.SCREENSHOT_MODEL ?? "claude-haiku-4-5-20251001";
+// Opus read all 54 rank badges on the Heroes tab fixtures correctly; Sonnet 5
+// and Haiku 4.5 confused the small winged badges (39 and 42 of 54).
+const MODEL = process.env.SCREENSHOT_MODEL ?? "claude-opus-5-5";
 
 export class VisionError extends Error {}
 

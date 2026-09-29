@@ -45,7 +45,7 @@ export function mergeDetections(lists: Detection[][]): { byHero: Map<string, Det
     const rank = d.rank && rankRange(d.rank) ? d.rank : null;
     if (level == null && rank == null) continue;
     const prev = byHero.get(id);
-    if (!prev || score({ level, rank }) > score(prev)) byHero.set(id, { name: HERO_BY_ID.get(id)!.name, level, rank });
+    if (!prev || score({ level, rank }) > score(prev)) byHero.set(id, { name: HERO_BY_ID.get(id)!.name, level, rank, badge: d.badge });
   }
   return { byHero, unmatched: [...unmatched] };
 }

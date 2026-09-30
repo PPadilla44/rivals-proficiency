@@ -28,3 +28,32 @@ export const playtimeSyncFlag = flag<boolean, Entities>({
     { value: true, label: "On" },
   ],
 });
+
+/**
+ * Most screenshot reads the whole site may make in 24 hours, so a traffic
+ * spike can't run through the Anthropic budget. Raise or lower it in the
+ * dashboard; only read when someone imports.
+ */
+export const screenshotDailyCapFlag = flag<number>({
+  key: "screenshot-daily-cap",
+  adapter: vercelAdapter(),
+  defaultValue: 100,
+  description: "Site-wide screenshot reads per 24 hours",
+  options: [
+    { value: 50, label: "50 (about $3 a day)" },
+    { value: 100, label: "100 (about $6 a day)" },
+    { value: 200, label: "200 (about $12 a day)" },
+    { value: 400, label: "400 (about $24 a day)" },
+  ],
+});
+
+/** The cap, falling back to 100 if the flag service can't be reached. */
+export async function screenshotDailyCap(): Promise<number> {
+  try {
+    const v = await screenshotDailyCapFlag();
+    return Number.isFinite(v) && v > 0 ? v : 100;
+  } catch (e) {
+    console.error("screenshot-daily-cap flag failed", e);
+    return 100;
+  }
+}

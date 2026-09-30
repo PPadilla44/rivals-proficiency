@@ -192,17 +192,37 @@ export async function deleteAccount(db: AnyDb, userId: string) {
   await db.delete(users).where(eq(users.id, userId));
 }
 
+export type ScanSlot = "ok" | "user_limit" | "site_limit";
+
 /**
- * Record a screenshot read if the user is under `limit` reads in the last
- * `windowMs`. Returns false when they are at the limit.
+ * Record a screenshot read if both the user and the whole site are under
+ * their limits for the last `windowMs`. Nothing is recorded when refused.
  */
-export async function takeScanSlot(db: AnyDb, userId: string, limit: number, windowMs: number, now = new Date()): Promise<boolean> {
-  const since = new Date(now.getTime() - windowMs);
+export async function takeScanSlot(
+  db: AnyDb,
+  userId: string,
+  opts: { perUser: number; site: number; windowMs: number; now?: Date },
+): Promise<ScanSlot> {
+  const now = opts.now ?? new Date();
+  const since = new Date(now.getTime() - opts.windowMs);
+  const [{ mine, all }] = await db
+    .select({
+      mine: sql<number>`count(*) filter (where ${screenshotScans.userId} = ${userId})::int`,
+      all: sql<number>`count(*)::int`,
+    })
+    .from(screenshotScans)
+    .where(gte(screenshotScans.createdAt, since));
+  if (mine >= opts.perUser) return "user_limit";
+  if (all >= opts.site) return "site_limit";
+  await db.insert(screenshotScans).values({ userId, createdAt: now });
+  return "ok";
+}
+
+/** Screenshot reads across the site since `since`, by default the last 24 hours (for /stats). */
+export async function countScans(db: AnyDb, since = new Date(Date.now() - 86_400_000)): Promise<number> {
   const [{ n }] = await db
     .select({ n: sql<number>`count(*)::int` })
     .from(screenshotScans)
-    .where(and(eq(screenshotScans.userId, userId), gte(screenshotScans.createdAt, since)));
-  if (n >= limit) return false;
-  await db.insert(screenshotScans).values({ userId, createdAt: now });
-  return true;
+    .where(gte(screenshotScans.createdAt, since));
+  return n;
 }

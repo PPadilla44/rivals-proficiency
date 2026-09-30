@@ -12,7 +12,22 @@ export const visionConfigured = !!process.env.ANTHROPIC_API_KEY;
 // and Haiku 4.5 confused the small winged badges (39 and 42 of 54).
 const MODEL = process.env.SCREENSHOT_MODEL ?? "claude-opus-5-5";
 
-export class VisionError extends Error {}
+/** Why a read failed. "budget" means the Anthropic spend limit or credit ran out. */
+export type VisionErrorCode = "not_configured" | "unreachable" | "busy" | "budget" | "failed" | "unreadable";
+
+export class VisionError extends Error {
+  constructor(
+    message: string,
+    public readonly code: VisionErrorCode = "failed",
+  ) {
+    super(message);
+  }
+}
+
+/** Anthropic answers a spent budget or credit with a 4xx whose message says so. */
+export function isBudgetError(status: number, body: string): boolean {
+  return [400, 402, 403, 429].includes(status) && /credit balance|usage limit|spend limit|billing/i.test(body);
+}
 
 /** Models that accept a forced tool choice. */
 const FORCE_TOOL = /haiku-4-5/;
@@ -107,7 +122,7 @@ export type ImagePart = { mediaType: string; base64: string };
 /** Read one screenshot, sent as one or more overlapping tiles. */
 export async function readScreenshot(tiles: ImagePart[], model = MODEL): Promise<VisionResult> {
   const key = process.env.ANTHROPIC_API_KEY;
-  if (!key) throw new VisionError("Screenshot import is not set up on this server yet.");
+  if (!key) throw new VisionError("Screenshot import is not set up on this server yet.", "not_configured");
 
   let res: Response;
   try {
@@ -147,11 +162,16 @@ export async function readScreenshot(tiles: ImagePart[], model = MODEL): Promise
       signal: AbortSignal.timeout(45_000),
     });
   } catch {
-    throw new VisionError("Could not reach the screenshot reader. Try again in a minute.");
+    throw new VisionError("Could not reach the screenshot reader. Try again in a minute.", "unreachable");
   }
   if (!res.ok) {
-    console.error("vision error", res.status, (await res.text().catch(() => "")).slice(0, 500));
-    throw new VisionError(res.status === 429 || res.status === 529 ? "The screenshot reader is busy. Try again in a minute." : "The screenshot reader failed. Try again.");
+    const text = (await res.text().catch(() => "")).slice(0, 500);
+    console.error("vision error", res.status, text);
+    if (isBudgetError(res.status, text)) {
+      throw new VisionError("Screenshot imports are paused for now. You can still set levels by hand.", "budget");
+    }
+    if (res.status === 429 || res.status === 529) throw new VisionError("The screenshot reader is busy. Try again in a minute.", "busy");
+    throw new VisionError("The screenshot reader failed. Try again.", "failed");
   }
   const body = (await res.json()) as {
     stop_reason?: string;
@@ -167,6 +187,6 @@ export async function readScreenshot(tiles: ImagePart[], model = MODEL): Promise
   } catch {
     const parts = (body.content ?? []).filter((c) => c.type !== "thinking");
     console.error("vision unreadable", model, body.stop_reason, JSON.stringify(parts).slice(0, 800));
-    throw new VisionError("Could not read that screenshot. Try a full-screen capture.");
+    throw new VisionError("Could not read that screenshot. Try a full-screen capture.", "unreadable");
   }
 }

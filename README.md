@@ -10,7 +10,8 @@ Every Marvel Rivals hero's proficiency level on one screen. See who is closest t
 - **Search, sort and filter**: by role, by rank, by goal (near Lord, near Champion, untouched), sorted by level, closest to Lord or Champion, name, role or release order
 - **Guest mode**: works without an account, saving levels in the browser. Sign in later and import them
 - **Sign in** with Discord or Google to keep your board on every device
-- **Screenshot import**: drop in screenshots of the in-game Heroes tab and every level it shows is read for you (with Claude's vision model), then you review before saving
+- **Screenshot import**: drop in screenshots or phone photos of the in-game Heroes tab and every hero's rank is read for you (with Claude's vision model), then you review before saving. Limited to 16 reads per account and a site-wide daily cap (the `screenshot-daily-cap` flag in Vercel Flags)
+- **Problem alerts**: failed imports, a spent API budget, the daily cap, unknown hero names and server errors show on `/stats` and, with `ALERT_WEBHOOK_URL` set, ping a Discord channel
 - **Playtime sync** through [MarvelRivalsAPI.com](https://marvelrivalsapi.com): link your in-game name or UID and the board estimates how many levels you gained since you last set each hero, plus hours to the next milestone
 - **Learns your pace**: each time you correct a level after playing, it compares points earned to hours played and updates your points-per-hour
 

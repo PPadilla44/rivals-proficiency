@@ -4,7 +4,9 @@ import { z } from "zod";
 import { auth, authConfigured, requireUserId, signOut } from "@/auth";
 import { recordEvent } from "@/server/events";
 import { playtimeSyncEnabled } from "@/lib/flags";
-import { playtimeSyncFlag } from "@/flags";
+import { playtimeSyncFlag, screenshotDailyCap } from "@/flags";
+import { reportProblem } from "@/server/alerts";
+import { heroIdFromName } from "@/lib/heroes";
 import { getDb } from "@/db";
 import {
   applySync,
@@ -38,6 +40,11 @@ const updatesSchema = z
 const SYNC_COOLDOWN_MS = 5 * 60 * 1000;
 const UPDATE_REQUEST_COOLDOWN_MS = 30 * 60 * 1000;
 
+async function reportServerError(e: unknown): Promise<void> {
+  if (!process.env.DATABASE_URL) return;
+  await reportProblem(getDb(), "server_error", e instanceof Error ? e.message : String(e));
+}
+
 async function run(fn: (userId: string) => Promise<string | void>): Promise<ActionResult> {
   try {
     const userId = await requireUserId();
@@ -49,6 +56,7 @@ async function run(fn: (userId: string) => Promise<string | void>): Promise<Acti
     }
     if (e instanceof Error && e.message.startsWith("Sign in")) return { ok: false, error: e.message };
     console.error(e);
+    await reportServerError(e);
     return { ok: false, error: "Something went wrong saving that. Try again." };
   }
 }
@@ -147,6 +155,7 @@ export async function deleteAccountAction(confirmation: unknown): Promise<{ ok: 
     await deleteAccount(getDb(), userId);
   } catch (e) {
     console.error(e);
+    await reportServerError(e);
     return { ok: false, error: "Could not delete your account. Try again." };
   }
   // The session row is already gone; this clears the cookie and goes home.
@@ -181,18 +190,32 @@ export async function scanScreenshotAction(form: FormData): Promise<ScanResult> 
     if (f.size > 1_200_000 || total > 3_500_000) return { ok: false, error: "That image is too large. Try a smaller screenshot." };
   }
 
+  const db = getDb();
   try {
-    if (!(await takeScanSlot(getDb(), userId, SCAN_LIMIT, SCAN_WINDOW_MS))) {
-      return { ok: false, error: `You have read ${SCAN_LIMIT} screenshots today. Try again tomorrow.` };
+    const slot = await takeScanSlot(db, userId, { perUser: SCAN_LIMIT, site: await screenshotDailyCap(), windowMs: SCAN_WINDOW_MS });
+    if (slot === "user_limit") return { ok: false, error: `You have read ${SCAN_LIMIT} screenshots today. Try again tomorrow.` };
+    if (slot === "site_limit") {
+      await reportProblem(db, "import_site_cap");
+      return { ok: false, error: "Screenshot imports are busy today. Try again tomorrow, or set levels by hand." };
     }
     const tiles = await Promise.all(
       (files as File[]).map(async (f) => ({ mediaType: f.type, base64: Buffer.from(await f.arrayBuffer()).toString("base64") })),
     );
     const result = await readScreenshot(tiles);
+    // A name the roster doesn't know usually means a new season's hero.
+    for (const name of new Set(result.heroes.map((h) => h.name.trim()).filter((n) => n && !heroIdFromName(n)))) {
+      await reportProblem(db, "unknown_hero", name);
+    }
     return { ok: true, heroes: result.heroes, isProficiencyScreen: result.isProficiencyScreen };
   } catch (e) {
-    if (e instanceof VisionError) return { ok: false, error: e.message };
+    if (e instanceof VisionError) {
+      if (e.code === "budget") await reportProblem(db, "import_budget");
+      else if (e.code === "unreadable") await reportProblem(db, "import_unreadable");
+      else if (e.code !== "not_configured") await reportProblem(db, "import_failed", e.code);
+      return { ok: false, error: e.message };
+    }
     console.error(e);
+    await reportServerError(e);
     return { ok: false, error: "Something went wrong reading that screenshot. Try again." };
   }
 }

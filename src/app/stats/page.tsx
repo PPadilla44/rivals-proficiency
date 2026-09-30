@@ -5,7 +5,9 @@ import { auth, authConfigured } from "@/auth";
 import { getDb } from "@/db";
 import { getStats, type Stats } from "@/server/events";
 import { isAdminEmail as isAdmin, playtimeSyncEnabled } from "@/lib/flags";
-import { playtimeSyncFlag } from "@/flags";
+import { playtimeSyncFlag, screenshotDailyCap } from "@/flags";
+import { getProblems } from "@/server/alerts";
+import { countScans } from "@/server/board";
 
 export const metadata: Metadata = { title: "Stats", robots: { index: false, follow: false } };
 
@@ -42,10 +44,13 @@ export default async function StatsPage() {
   if (!isAdmin(session?.user?.email)) notFound();
 
   const db = getDb();
-  const [week, month, syncForYou] = await Promise.all([
+  const [week, month, syncForYou, problems, readsToday, cap] = await Promise.all([
     getStats(db, 7),
     getStats(db, 30),
     playtimeSyncEnabled(session?.user, () => playtimeSyncFlag()),
+    getProblems(db, 7),
+    countScans(db),
+    screenshotDailyCap(),
   ]);
   const syncNote = !process.env.MARVEL_RIVALS_API_KEY
     ? "off for everyone (no MARVEL_RIVALS_API_KEY yet)"
@@ -60,8 +65,45 @@ export default async function StatsPage() {
           <p className="sub">
             Playtime sync: <b>{syncNote}</b>
           </p>
+          <p className="sub">
+            Screenshot reads in the last 24 hours:{" "}
+            <b>
+              {readsToday} of {cap}
+            </b>{" "}
+            (site-wide cap, set by the screenshot-daily-cap flag). Alerts go to{" "}
+            <b>{process.env.ALERT_WEBHOOK_URL ? "your alert webhook" : "nowhere yet: set ALERT_WEBHOOK_URL"}</b>.
+          </p>
         </div>
       </header>
+      <section className="panel rank-table-wrap">
+        <h2>Problems, last 7 days</h2>
+        {problems.length ? (
+          <div className="table-scroll">
+            <table className="rank-table">
+              <thead>
+                <tr>
+                  <th scope="col">What</th>
+                  <th scope="col">Count</th>
+                  <th scope="col">Last seen (UTC)</th>
+                  <th scope="col">Last detail</th>
+                </tr>
+              </thead>
+              <tbody>
+                {problems.map((p) => (
+                  <tr key={p.kind}>
+                    <th scope="row">{p.label}</th>
+                    <td>{p.count}</td>
+                    <td>{p.lastAt.slice(0, 16).replace("T", " ")}</td>
+                    <td>{p.lastDetail ?? ""}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        ) : (
+          <p className="muted-note">None. Failed imports, a spent API budget, the daily cap, unknown hero names and server errors show up here.</p>
+        )}
+      </section>
       <Totals s={week} title="Last 7 days" />
       <Totals s={month} title="Last 30 days" />
       <section className="panel rank-table-wrap">

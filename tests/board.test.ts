@@ -4,7 +4,7 @@ import { drizzle } from "drizzle-orm/pglite";
 import { migrate } from "drizzle-orm/pglite/migrator";
 import * as schema from "@/db/schema";
 import { eq } from "drizzle-orm";
-import { applySync, deleteAccount, getBoard, linkPlayer, setLevels, takeScanSlot, unlinkPlayer, type AnyDb } from "@/server/board";
+import { applySync, countScans, deleteAccount, getBoard, linkPlayer, setLevels, takeScanSlot, unlinkPlayer, type AnyDb } from "@/server/board";
 
 let db: AnyDb;
 const USER = "u1";
@@ -131,13 +131,26 @@ describe("board storage", () => {
 });
 
 describe("screenshot scan limit", () => {
-  it("allows up to the limit inside the window, then frees up", async () => {
-    const day = 24 * 60 * 60 * 1000;
-    const t0 = new Date("2026-09-28T10:00:00Z");
-    expect(await takeScanSlot(db, USER, 2, day, t0)).toBe(true);
-    expect(await takeScanSlot(db, USER, 2, day, t0)).toBe(true);
-    expect(await takeScanSlot(db, USER, 2, day, t0)).toBe(false);
-    expect(await takeScanSlot(db, USER, 2, day, new Date(t0.getTime() + day + 1000))).toBe(true);
+  const day = 24 * 60 * 60 * 1000;
+  const t0 = new Date("2026-09-28T10:00:00Z");
+
+  it("allows up to the per-user limit inside the window, then frees up", async () => {
+    const o = { perUser: 2, site: 100, windowMs: day };
+    expect(await takeScanSlot(db, USER, { ...o, now: t0 })).toBe("ok");
+    expect(await takeScanSlot(db, USER, { ...o, now: t0 })).toBe("ok");
+    expect(await takeScanSlot(db, USER, { ...o, now: t0 })).toBe("user_limit");
+    expect(await takeScanSlot(db, USER, { ...o, now: new Date(t0.getTime() + day + 1000) })).toBe("ok");
+  });
+
+  it("stops everyone at the site-wide cap without recording the refused read", async () => {
+    await db.insert(schema.users).values({ id: "u2", name: "Other" });
+    const o = { perUser: 10, site: 3, windowMs: day, now: t0 };
+    expect(await takeScanSlot(db, USER, o)).toBe("ok");
+    expect(await takeScanSlot(db, USER, o)).toBe("ok");
+    expect(await takeScanSlot(db, "u2", o)).toBe("ok");
+    expect(await takeScanSlot(db, "u2", o)).toBe("site_limit");
+    expect(await takeScanSlot(db, USER, o)).toBe("site_limit");
+    expect(await countScans(db, new Date(t0.getTime() - day))).toBe(3);
   });
 });
 

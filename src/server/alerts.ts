@@ -48,6 +48,12 @@ const sendWebhook: Send = async (content) => {
   if (!res.ok) throw new Error(`alert webhook ${res.status}`);
 };
 
+/** Send a one-off test message to the alert channel. Throws if it fails. */
+export async function sendTestAlert(send: Send = sendWebhook): Promise<void> {
+  if (!process.env.ALERT_WEBHOOK_URL && send === sendWebhook) throw new Error("ALERT_WEBHOOK_URL is not set");
+  await send(`✅ Proficiency Board: test alert. Problems will post here. ${SITE_URL}/stats`);
+}
+
 /**
  * Record a problem for /stats and, at most once per window per kind, ping the
  * alert channel. Never throws: a failing alert must not break the request.

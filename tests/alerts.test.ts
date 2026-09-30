@@ -60,3 +60,12 @@ describe("budget errors", () => {
     expect(isBudgetError(500, "credit balance")).toBe(false);
   });
 });
+
+describe("test alert", () => {
+  it("sends one message through the channel", async () => {
+    const send = vi.fn<(content: string) => Promise<void>>(async () => {});
+    const { sendTestAlert } = await import("@/server/alerts");
+    await sendTestAlert(send);
+    expect(send).toHaveBeenCalledWith(expect.stringContaining("test alert"));
+  });
+});

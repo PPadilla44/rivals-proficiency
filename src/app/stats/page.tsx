@@ -6,7 +6,8 @@ import { getDb } from "@/db";
 import { getStats, type Stats } from "@/server/events";
 import { isAdminEmail as isAdmin, playtimeSyncEnabled } from "@/lib/flags";
 import { playtimeSyncFlag, screenshotDailyCap } from "@/flags";
-import { getProblems } from "@/server/alerts";
+import { getProblems, sendTestAlert } from "@/server/alerts";
+import { redirect } from "next/navigation";
 import { countScans } from "@/server/board";
 
 export const metadata: Metadata = { title: "Stats", robots: { index: false, follow: false } };
@@ -38,10 +39,26 @@ function Totals({ s, title }: { s: Stats; title: string }) {
   );
 }
 
-export default async function StatsPage() {
+/** Admin-only: post a test message to the alert webhook, then come back with the result. */
+async function testAlertAction() {
+  "use server";
+  const session = authConfigured ? await auth() : null;
+  if (!isAdmin(session?.user?.email)) notFound();
+  let result = "sent";
+  try {
+    await sendTestAlert();
+  } catch (e) {
+    console.error("test alert failed", e);
+    result = "failed";
+  }
+  redirect(`/stats?alert=${result}`);
+}
+
+export default async function StatsPage({ searchParams }: PageProps<"/stats">) {
   await connection(); // always per request, never prerendered
   const session = authConfigured ? await auth() : null;
   if (!isAdmin(session?.user?.email)) notFound();
+  const alertResult = (await searchParams).alert;
 
   const db = getDb();
   const [week, month, syncForYou, problems, readsToday, cap] = await Promise.all([
@@ -73,6 +90,15 @@ export default async function StatsPage() {
             (site-wide cap, set by the screenshot-daily-cap flag). Alerts go to{" "}
             <b>{process.env.ALERT_WEBHOOK_URL ? "your alert webhook" : "nowhere yet: set ALERT_WEBHOOK_URL"}</b>.
           </p>
+          {process.env.ALERT_WEBHOOK_URL ? (
+            <form action={testAlertAction} className="actions" style={{ display: "flex", gap: 10, alignItems: "center", marginTop: 8 }}>
+              <button className="btn small">Send test alert</button>
+              {alertResult === "sent" ? <span className="sub">Sent. Check your Discord channel.</span> : null}
+              {alertResult === "failed" ? (
+                <span className="sub danger-error">Couldn&apos;t send. Check the webhook URL in Vercel.</span>
+              ) : null}
+            </form>
+          ) : null}
         </div>
       </header>
       <section className="panel rank-table-wrap">

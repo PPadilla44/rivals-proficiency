@@ -1,18 +1,4 @@
-/**
- * Feature flags, read from environment variables so they change with a
- * Vercel env edit and a redeploy, no code change.
- */
-
-/** Who sees a flagged feature. */
-export type FlagMode = "off" | "admin" | "on";
-
-export function parseFlagMode(value: string | undefined, fallback: FlagMode): FlagMode {
-  const v = value?.trim().toLowerCase();
-  if (v === "off" || v === "false" || v === "0") return "off";
-  if (v === "on" || v === "true" || v === "1" || v === "everyone") return "on";
-  if (v === "admin" || v === "admins") return "admin";
-  return fallback;
-}
+/** Helpers shared by feature flags and admin-only pages. */
 
 /** Accounts listed in ADMIN_EMAILS (comma separated), by sign-in email. */
 export function isAdminEmail(email: string | null | undefined): boolean {
@@ -24,18 +10,21 @@ export function isAdminEmail(email: string | null | undefined): boolean {
     .includes(email.toLowerCase());
 }
 
-/**
- * Playtime sync through MarvelRivalsAPI.com. FEATURE_PLAYTIME_SYNC is
- * off, admin (only ADMIN_EMAILS accounts) or on (everyone); it defaults to
- * admin so a newly added API key can be tried on your own account first.
- * Without MARVEL_RIVALS_API_KEY it is off whatever the flag says.
- */
-export function playtimeSyncMode(): FlagMode {
-  if (!process.env.MARVEL_RIVALS_API_KEY) return "off";
-  return parseFlagMode(process.env.FEATURE_PLAYTIME_SYNC, "admin");
-}
+export type Viewer = { id?: string | null; email?: string | null } | null | undefined;
 
-export function playtimeSyncEnabledFor(email: string | null | undefined): boolean {
-  const mode = playtimeSyncMode();
-  return mode === "on" || (mode === "admin" && isAdminEmail(email));
+/**
+ * Whether playtime sync is on for this viewer. Sync needs the stats API key
+ * and an account, so the flag is only checked (and only counts toward the
+ * Vercel Flags quota) for signed-in users once the key is set. `evaluate`
+ * reads the Vercel flag; if that fails, admins keep access and everyone else
+ * stays off.
+ */
+export async function playtimeSyncEnabled(viewer: Viewer, evaluate: () => Promise<boolean>): Promise<boolean> {
+  if (!process.env.MARVEL_RIVALS_API_KEY || !viewer?.id) return false;
+  try {
+    return await evaluate();
+  } catch (e) {
+    console.error("playtime-sync flag failed", e);
+    return isAdminEmail(viewer.email);
+  }
 }

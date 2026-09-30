@@ -1,19 +1,13 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { isAdminEmail, parseFlagMode, playtimeSyncEnabledFor, playtimeSyncMode } from "@/lib/flags";
+import { isAdminEmail, playtimeSyncEnabled } from "@/lib/flags";
 
-afterEach(() => vi.unstubAllEnvs());
+afterEach(() => {
+  vi.unstubAllEnvs();
+  vi.restoreAllMocks();
+});
 
-describe("flag modes", () => {
-  it("parses common spellings and falls back otherwise", () => {
-    expect(parseFlagMode("ON", "off")).toBe("on");
-    expect(parseFlagMode("everyone", "off")).toBe("on");
-    expect(parseFlagMode("false", "on")).toBe("off");
-    expect(parseFlagMode(" admins ", "off")).toBe("admin");
-    expect(parseFlagMode(undefined, "admin")).toBe("admin");
-    expect(parseFlagMode("maybe", "off")).toBe("off");
-  });
-
-  it("matches admin emails case-insensitively", () => {
+describe("admin emails", () => {
+  it("match case-insensitively", () => {
     vi.stubEnv("ADMIN_EMAILS", "Me@Example.com, other@x.io");
     expect(isAdminEmail("me@example.com")).toBe(true);
     expect(isAdminEmail("OTHER@X.IO")).toBe(true);
@@ -22,30 +16,38 @@ describe("flag modes", () => {
   });
 });
 
-describe("playtime sync flag", () => {
-  it("is off without an API key, whatever the flag says", () => {
+describe("playtime sync gate", () => {
+  const me = { id: "u1", email: "me@example.com" };
+
+  it("never checks the flag without the API key", async () => {
     vi.stubEnv("MARVEL_RIVALS_API_KEY", "");
-    vi.stubEnv("FEATURE_PLAYTIME_SYNC", "on");
-    expect(playtimeSyncMode()).toBe("off");
-    expect(playtimeSyncEnabledFor("anyone@x.io")).toBe(false);
+    const evaluate = vi.fn(async () => true);
+    expect(await playtimeSyncEnabled(me, evaluate)).toBe(false);
+    expect(evaluate).not.toHaveBeenCalled();
   });
 
-  it("defaults to admins only once the key is set", () => {
+  it("never checks the flag for guests", async () => {
     vi.stubEnv("MARVEL_RIVALS_API_KEY", "k");
-    vi.stubEnv("FEATURE_PLAYTIME_SYNC", "");
-    vi.stubEnv("ADMIN_EMAILS", "me@example.com");
-    expect(playtimeSyncMode()).toBe("admin");
-    expect(playtimeSyncEnabledFor("me@example.com")).toBe(true);
-    expect(playtimeSyncEnabledFor("friend@example.com")).toBe(false);
-    expect(playtimeSyncEnabledFor(undefined)).toBe(false);
+    const evaluate = vi.fn(async () => true);
+    expect(await playtimeSyncEnabled(null, evaluate)).toBe(false);
+    expect(await playtimeSyncEnabled({ id: null }, evaluate)).toBe(false);
+    expect(evaluate).not.toHaveBeenCalled();
   });
 
-  it("opens to everyone when on, and closes when off", () => {
+  it("follows the flag for signed-in users", async () => {
     vi.stubEnv("MARVEL_RIVALS_API_KEY", "k");
-    vi.stubEnv("FEATURE_PLAYTIME_SYNC", "on");
-    expect(playtimeSyncEnabledFor("friend@example.com")).toBe(true);
-    vi.stubEnv("FEATURE_PLAYTIME_SYNC", "off");
+    expect(await playtimeSyncEnabled(me, async () => true)).toBe(true);
+    expect(await playtimeSyncEnabled(me, async () => false)).toBe(false);
+  });
+
+  it("keeps admins on and others off if the flag service fails", async () => {
+    vi.stubEnv("MARVEL_RIVALS_API_KEY", "k");
     vi.stubEnv("ADMIN_EMAILS", "me@example.com");
-    expect(playtimeSyncEnabledFor("me@example.com")).toBe(false);
+    vi.spyOn(console, "error").mockImplementation(() => {});
+    const boom = async () => {
+      throw new Error("down");
+    };
+    expect(await playtimeSyncEnabled(me, boom)).toBe(true);
+    expect(await playtimeSyncEnabled({ id: "u2", email: "friend@x.io" }, boom)).toBe(false);
   });
 });

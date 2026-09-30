@@ -38,7 +38,7 @@ pnpm db:migrate              # create tables
 pnpm dev
 ```
 
-You need a Postgres database (a free [Neon](https://neon.tech) project works, or `docker run -p 5432:5432 -e POSTGRES_PASSWORD=postgres postgres:16`) and at least one sign-in provider. Without `MARVEL_RIVALS_API_KEY` everything except sync works. With it, `FEATURE_PLAYTIME_SYNC` decides who sees sync: `admin` (the default, only accounts in `ADMIN_EMAILS`), `on` (everyone) or `off`.
+You need a Postgres database (a free [Neon](https://neon.tech) project works, or `docker run -p 5432:5432 -e POSTGRES_PASSWORD=postgres postgres:16`) and at least one sign-in provider. Without `MARVEL_RIVALS_API_KEY` everything except sync works. With it, the `playtime-sync` flag in Vercel Flags decides who gets sync. Its rules can use `user.id`, `user.email` and `user.admin` (true for accounts in `ADMIN_EMAILS`); by default only admins get it. The flag is only checked for signed-in users once the key is set.
 
 OAuth redirect URLs:
 

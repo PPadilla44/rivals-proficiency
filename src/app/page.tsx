@@ -5,7 +5,8 @@ import { Board } from "@/components/Board";
 import { CameraIcon } from "@/components/bits";
 import { getHeroPortraits } from "@/lib/portraits";
 import { visionConfigured } from "@/lib/vision";
-import { playtimeSyncEnabledFor } from "@/lib/flags";
+import { playtimeSyncEnabled } from "@/lib/flags";
+import { playtimeSyncFlag } from "@/flags";
 import { SITE_URL } from "@/lib/site-url";
 import Link from "next/link";
 import type { Metadata } from "next";
@@ -44,9 +45,10 @@ export default async function Home({ searchParams }: PageProps<"/">) {
   const authError = typeof params.error === "string" ? params.error : null;
   const session = authConfigured ? await auth() : null;
   const userId = session?.user?.id;
-  const [board, portraits] = await Promise.all([
+  const [board, portraits, syncEnabled] = await Promise.all([
     userId ? getBoard(getDb(), userId) : Promise.resolve(null),
     getHeroPortraits(),
+    playtimeSyncEnabled(session?.user, () => playtimeSyncFlag()),
   ]);
 
   async function doSignIn(formData: FormData) {
@@ -134,7 +136,7 @@ export default async function Home({ searchParams }: PageProps<"/">) {
       <Board mode={board ? "user" : "guest"} initial={board} signInSlot={signInButtons} portraits={portraits}
         screenshotImport={visionConfigured}
         importSignIn={importSignIn}
-        syncEnabled={playtimeSyncEnabledFor(session?.user?.email)}
+        syncEnabled={syncEnabled}
       />
     </div>
   );

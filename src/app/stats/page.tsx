@@ -4,7 +4,8 @@ import { connection } from "next/server";
 import { auth, authConfigured } from "@/auth";
 import { getDb } from "@/db";
 import { getStats, type Stats } from "@/server/events";
-import { isAdminEmail as isAdmin, playtimeSyncMode } from "@/lib/flags";
+import { isAdminEmail as isAdmin, playtimeSyncEnabled } from "@/lib/flags";
+import { playtimeSyncFlag } from "@/flags";
 
 export const metadata: Metadata = { title: "Stats", robots: { index: false, follow: false } };
 
@@ -35,19 +36,20 @@ function Totals({ s, title }: { s: Stats; title: string }) {
   );
 }
 
-const SYNC_LABEL = {
-  off: process.env.MARVEL_RIVALS_API_KEY ? "off (FEATURE_PLAYTIME_SYNC=off)" : "off (no MARVEL_RIVALS_API_KEY)",
-  admin: "admins only",
-  on: "everyone",
-} as const;
-
 export default async function StatsPage() {
   await connection(); // always per request, never prerendered
   const session = authConfigured ? await auth() : null;
   if (!isAdmin(session?.user?.email)) notFound();
 
   const db = getDb();
-  const [week, month] = await Promise.all([getStats(db, 7), getStats(db, 30)]);
+  const [week, month, syncForYou] = await Promise.all([
+    getStats(db, 7),
+    getStats(db, 30),
+    playtimeSyncEnabled(session?.user, () => playtimeSyncFlag()),
+  ]);
+  const syncNote = !process.env.MARVEL_RIVALS_API_KEY
+    ? "off for everyone (no MARVEL_RIVALS_API_KEY yet)"
+    : `${syncForYou ? "on" : "off"} for you; set who gets it with the playtime-sync flag in Vercel → Flags`;
 
   return (
     <div className="wrap prose-page">
@@ -56,7 +58,7 @@ export default async function StatsPage() {
           <h1 className="page-title">Stats</h1>
           <p className="sub">Anonymous events from the board. Only accounts in ADMIN_EMAILS can see this page. Times are UTC.</p>
           <p className="sub">
-            Playtime sync: <b>{SYNC_LABEL[playtimeSyncMode()]}</b>
+            Playtime sync: <b>{syncNote}</b>
           </p>
         </div>
       </header>

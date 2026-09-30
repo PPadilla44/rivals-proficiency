@@ -3,7 +3,8 @@
 import { z } from "zod";
 import { auth, authConfigured, requireUserId, signOut } from "@/auth";
 import { recordEvent } from "@/server/events";
-import { playtimeSyncEnabledFor } from "@/lib/flags";
+import { playtimeSyncEnabled } from "@/lib/flags";
+import { playtimeSyncFlag } from "@/flags";
 import { getDb } from "@/db";
 import {
   applySync,
@@ -73,7 +74,7 @@ export async function importLevelsAction(updates: unknown) {
 /** Link and sync are behind the playtime sync flag on the server too, not only hidden in the UI. */
 async function requireSyncAccess(): Promise<void> {
   const session = await auth();
-  if (!playtimeSyncEnabledFor(session?.user?.email)) {
+  if (!(await playtimeSyncEnabled(session?.user, () => playtimeSyncFlag()))) {
     throw new RivalsApiError("Playtime sync isn't available yet.", "not_configured");
   }
 }

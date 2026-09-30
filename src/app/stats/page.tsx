@@ -4,18 +4,9 @@ import { connection } from "next/server";
 import { auth, authConfigured } from "@/auth";
 import { getDb } from "@/db";
 import { getStats, type Stats } from "@/server/events";
+import { isAdminEmail as isAdmin, playtimeSyncMode } from "@/lib/flags";
 
 export const metadata: Metadata = { title: "Stats", robots: { index: false, follow: false } };
-
-/** Accounts allowed to see this page, by sign-in email (comma separated). */
-function isAdmin(email: string | null | undefined): boolean {
-  if (!email) return false;
-  const list = (process.env.ADMIN_EMAILS ?? "")
-    .split(",")
-    .map((e) => e.trim().toLowerCase())
-    .filter(Boolean);
-  return list.includes(email.toLowerCase());
-}
 
 function Totals({ s, title }: { s: Stats; title: string }) {
   const pct = (a: number, b: number) => (b ? `${Math.round((a / b) * 100)}%` : "0%");
@@ -44,6 +35,12 @@ function Totals({ s, title }: { s: Stats; title: string }) {
   );
 }
 
+const SYNC_LABEL = {
+  off: process.env.MARVEL_RIVALS_API_KEY ? "off (FEATURE_PLAYTIME_SYNC=off)" : "off (no MARVEL_RIVALS_API_KEY)",
+  admin: "admins only",
+  on: "everyone",
+} as const;
+
 export default async function StatsPage() {
   await connection(); // always per request, never prerendered
   const session = authConfigured ? await auth() : null;
@@ -58,6 +55,9 @@ export default async function StatsPage() {
         <div>
           <h1 className="page-title">Stats</h1>
           <p className="sub">Anonymous events from the board. Only accounts in ADMIN_EMAILS can see this page. Times are UTC.</p>
+          <p className="sub">
+            Playtime sync: <b>{SYNC_LABEL[playtimeSyncMode()]}</b>
+          </p>
         </div>
       </header>
       <Totals s={week} title="Last 7 days" />

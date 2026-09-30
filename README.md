@@ -38,7 +38,7 @@ pnpm db:migrate              # create tables
 pnpm dev
 ```
 
-You need a Postgres database (a free [Neon](https://neon.tech) project works, or `docker run -p 5432:5432 -e POSTGRES_PASSWORD=postgres postgres:16`) and at least one sign-in provider. Without `MARVEL_RIVALS_API_KEY` everything except sync works.
+You need a Postgres database (a free [Neon](https://neon.tech) project works, or `docker run -p 5432:5432 -e POSTGRES_PASSWORD=postgres postgres:16`) and at least one sign-in provider. Without `MARVEL_RIVALS_API_KEY` everything except sync works. With it, `FEATURE_PLAYTIME_SYNC` decides who sees sync: `admin` (the default, only accounts in `ADMIN_EMAILS`), `on` (everyone) or `off`.
 
 OAuth redirect URLs:
 

@@ -3,6 +3,7 @@
 import { z } from "zod";
 import { auth, authConfigured, requireUserId, signOut } from "@/auth";
 import { recordEvent } from "@/server/events";
+import { playtimeSyncEnabledFor } from "@/lib/flags";
 import { getDb } from "@/db";
 import {
   applySync,
@@ -69,8 +70,17 @@ export async function importLevelsAction(updates: unknown) {
   });
 }
 
+/** Link and sync are behind the playtime sync flag on the server too, not only hidden in the UI. */
+async function requireSyncAccess(): Promise<void> {
+  const session = await auth();
+  if (!playtimeSyncEnabledFor(session?.user?.email)) {
+    throw new RivalsApiError("Playtime sync isn't available yet.", "not_configured");
+  }
+}
+
 export async function linkPlayerAction(query: unknown) {
   return run(async (userId) => {
+    await requireSyncAccess();
     const q = z.string().trim().min(2).max(64).parse(query);
     const player = await resolvePlayer(q);
     const db = getDb();
@@ -90,6 +100,7 @@ export async function unlinkPlayerAction() {
 
 export async function syncAction() {
   return run(async (userId) => {
+    await requireSyncAccess();
     const db = getDb();
     const link = await getLink(db, userId);
     if (!link) throw new RivalsApiError("Link your Marvel Rivals account first.", "not_found");

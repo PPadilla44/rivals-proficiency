@@ -5,6 +5,7 @@ import { Board } from "@/components/Board";
 import { CameraIcon } from "@/components/bits";
 import { getHeroPortraits } from "@/lib/portraits";
 import { visionConfigured } from "@/lib/vision";
+import { playtimeSyncEnabledFor } from "@/lib/flags";
 import { SITE_URL } from "@/lib/site-url";
 import Link from "next/link";
 import type { Metadata } from "next";
@@ -133,7 +134,7 @@ export default async function Home({ searchParams }: PageProps<"/">) {
       <Board mode={board ? "user" : "guest"} initial={board} signInSlot={signInButtons} portraits={portraits}
         screenshotImport={visionConfigured}
         importSignIn={importSignIn}
-        syncEnabled={!!process.env.MARVEL_RIVALS_API_KEY}
+        syncEnabled={playtimeSyncEnabledFor(session?.user?.email)}
       />
     </div>
   );

@@ -479,10 +479,14 @@ footer.foot a { color: var(--ink-2); font-weight: 600; }
 
 /* First step on an empty signed-in board */
 .shot-start { display: flex; flex-direction: row; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 14px 24px; border-color: color-mix(in srgb, var(--pop) 55%, var(--line)); background: color-mix(in srgb, var(--pop) 8%, var(--panel)); }
-.shot-start > div:first-child { flex: 1 1 320px; display: grid; gap: 6px; }
+.shot-start > div:first-of-type { flex: 1 1 320px; display: grid; gap: 6px; }
 .shot-start h2 { margin: 0; font-size: 18px; }
 .shot-start p { margin: 0; color: var(--ink-2); font-size: 14.5px; }
 .shot-start p strong { color: var(--ink); }
 .shot-start-actions { display: grid; justify-items: start; gap: 6px; }
 .shot-start-actions .btn { display: inline-flex; align-items: center; gap: 8px; }
 .shot-start-actions span { font-size: 13px; color: var(--ink-3); }
+.shot-start { position: relative; padding-right: 44px; }
+.shot-start-x { position: absolute; top: 8px; right: 8px; width: 28px; height: 28px; display: grid; place-items: center; border: 0; border-radius: 6px; background: transparent; color: var(--ink-3); cursor: pointer; }
+.shot-start-x:hover { color: var(--ink); background: color-mix(in srgb, var(--ink) 8%, transparent); }
+.shot-start-x:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }

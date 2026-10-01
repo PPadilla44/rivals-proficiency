@@ -28,6 +28,7 @@ type Phase =
   | { kind: "review"; proposals: Proposal[]; unmatched: string[]; notes: string[] };
 
 const MAX_FILES = 6;
+const LS_CARD = "pb-import-card-hidden";
 const LONG_EDGE = 1568; // the vision model scales larger images down to this anyway
 const MAX_BYTES = 900_000;
 
@@ -66,6 +67,14 @@ export function ScreenshotImport({ current, empty, onSave }: Props) {
   const [saving, setSaving] = useState(false);
   const [dragging, setDragging] = useState(false);
   const input = useRef<HTMLInputElement>(null);
+  // The big first-run card can be dismissed; remembered in this browser.
+  const [cardHidden, setCardHidden] = useState(false);
+  useEffect(() => {
+    try {
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- reading browser storage after mount
+      if (localStorage.getItem(LS_CARD)) setCardHidden(true);
+    } catch {}
+  }, []);
   const currentRef = useRef(current);
   useEffect(() => {
     currentRef.current = current;
@@ -129,12 +138,28 @@ export function ScreenshotImport({ current, empty, onSave }: Props) {
 
   if (phase.kind === "closed") {
     const open = () => {
-      track("import_open", { from: empty ? "empty" : "bar" });
+      track("import_open", { from: empty && !cardHidden ? "empty" : "bar" });
       setPhase({ kind: "pick" });
     };
-    if (empty) {
+    if (empty && !cardHidden) {
       return (
         <section className="panel shot-start" aria-label="Fill in your board">
+          <button
+            type="button"
+            className="shot-start-x"
+            aria-label="Hide this"
+            title="Hide this"
+            onClick={() => {
+              setCardHidden(true);
+              try {
+                localStorage.setItem(LS_CARD, "1");
+              } catch {}
+            }}
+          >
+            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden="true">
+              <path d="M6 6l12 12M18 6L6 18" />
+            </svg>
+          </button>
           <div>
             <h2>Fill in your whole board from screenshots</h2>
             <p>

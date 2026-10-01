@@ -16,6 +16,8 @@ import { track } from "@/lib/track";
 
 type Props = {
   current: Record<string, number | undefined>;
+  /** No hero is set yet: show the import as the first step instead of a small bar. */
+  empty?: boolean;
   onSave: (updates: { heroId: string; level: number; approx: boolean }[]) => Promise<boolean>;
 };
 
@@ -59,7 +61,7 @@ async function prepare(file: File): Promise<Blob[]> {
   }
 }
 
-export function ScreenshotImport({ current, onSave }: Props) {
+export function ScreenshotImport({ current, empty, onSave }: Props) {
   const [phase, setPhase] = useState<Phase>({ kind: "closed" });
   const [saving, setSaving] = useState(false);
   const [dragging, setDragging] = useState(false);
@@ -126,14 +128,35 @@ export function ScreenshotImport({ current, onSave }: Props) {
   }, [phase.kind, read]);
 
   if (phase.kind === "closed") {
+    const open = () => {
+      track("import_open", { from: empty ? "empty" : "bar" });
+      setPhase({ kind: "pick" });
+    };
+    if (empty) {
+      return (
+        <section className="panel shot-start" aria-label="Fill in your board">
+          <div>
+            <h2>Fill in your whole board from screenshots</h2>
+            <p>
+              In game, open <strong>Heroes</strong>, then the <strong>Heroes</strong> tab at the top. Screenshot each page and
+              add them here. Every hero&apos;s rank fills in at once, no typing.
+            </p>
+          </div>
+          <div className="shot-start-actions">
+            <button className="btn primary" onClick={open}>
+              <CameraIcon />
+              Import from screenshots
+            </button>
+            <span>or tap any level below to type it in</span>
+          </div>
+        </section>
+      );
+    }
     return (
       <div className="shot-bar">
         <button
           className="btn primary"
-          onClick={() => {
-            track("import_open");
-            setPhase({ kind: "pick" });
-          }}
+          onClick={open}
         >
           <CameraIcon />
           Import from screenshots

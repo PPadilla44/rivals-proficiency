@@ -61,4 +61,11 @@ describe("events", () => {
     const s = await getStats(db, 7);
     expect(s.visitors).toBe(1);
   });
+
+  it("records one identify per browser and account, and only when signed in", async () => {
+    const V9 = "visitor-identify-9";
+    expect(await recordEvent(db, { name: "identify", visitorId: V9 })).toBe(false);
+    expect(await recordEvent(db, { name: "identify", visitorId: V9, userId: "u1" })).toBe(true);
+    expect(await recordEvent(db, { name: "identify", visitorId: V9, userId: "u1" })).toBe(false);
+  });
 });

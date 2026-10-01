@@ -58,12 +58,17 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
             54 heroes as of Season 10 (Gorr the God Butcher). A new rank every 5 levels: Lord at 20, Champion at 50, max 70.
           </span>
           <span>
-            Estimates use playtime from the unofficial{" "}
-            <a href="https://marvelrivalsapi.com" target="_blank" rel="noreferrer">
-              MarvelRivalsAPI.com
-            </a>{" "}
-            and learn your pace each time you correct a level. Hero art © Marvel and NetEase Games, used for this free fan tool. Not affiliated
-            with NetEase or Marvel.
+            {/* Only mention playtime estimates when sync can actually run. */}
+            {process.env.MARVEL_RIVALS_API_KEY ? (
+              <>
+                Playtime estimates use the unofficial{" "}
+                <a href="https://marvelrivalsapi.com" target="_blank" rel="noreferrer">
+                  MarvelRivalsAPI.com
+                </a>{" "}
+                and learn your pace each time you correct a level.{" "}
+              </>
+            ) : null}
+            Hero art © Marvel and NetEase Games, used for this free fan tool. Not affiliated with NetEase or Marvel.
           </span>
           <span>
             Free and fan-made. If it saves you some clicking,{" "}
@@ -74,7 +79,8 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
             <a href={FEEDBACK_URL} target="_blank" rel="noreferrer">
               Report a bug or suggest an idea
             </a>
-            . <Link href="/ranks">Proficiency ranks and points</Link> · <Link href="/privacy">Privacy</Link>
+            . <Link href="/ranks">Proficiency ranks and points</Link> · <Link href="/privacy">Privacy</Link> ·{" "}
+            <Link href="/terms">Terms</Link>
           </span>
         </footer>
         <Analytics />

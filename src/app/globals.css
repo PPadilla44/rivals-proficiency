@@ -189,7 +189,8 @@ button, input, select { font: inherit; color: inherit; }
 .legend button:focus-visible { outline: 2px solid var(--focus); }
 .legend button.active { background: var(--pop); color: var(--pop-ink); font-weight: 600; }
 .legend b { margin-left: auto; font-family: var(--mono); font-weight: 600; }
-.legend .zero { opacity: 0.45; }
+.legend .zero { color: var(--ink-3); }
+.legend .zero .rank-badge { opacity: 0.4; }
 .next { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 10px; }
 .next li { display: grid; grid-template-columns: 1fr auto; gap: 5px 10px; align-items: center; font-size: 14px; font-weight: 500; }
 .next .nm { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }

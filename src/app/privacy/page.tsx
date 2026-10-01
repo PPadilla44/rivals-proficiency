@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { auth, authConfigured } from "@/auth";
 import { DeleteAccount } from "@/components/DeleteAccount";
+import Link from "next/link";
 import { FEEDBACK_URL } from "@/lib/site";
 
 export const metadata: Metadata = {
@@ -17,7 +18,7 @@ export default async function PrivacyPage() {
       <header className="top">
         <div>
           <h1 className="page-title">Privacy</h1>
-          <p className="sub">Updated September 28, 2026. Short version: only what the board needs, never sold.</p>
+          <p className="sub">Updated September 30, 2026. Short version: only what the board needs, never sold.</p>
         </div>
       </header>
 
@@ -38,7 +39,22 @@ export default async function PrivacyPage() {
           <li>
             <strong>A session cookie</strong> that keeps you signed in. It is removed when you sign out.
           </li>
+          <li>
+            <strong>A count of the screenshots you import,</strong> with the time of each, to enforce the daily limit. The
+            screenshots themselves are not stored (see below).
+          </li>
         </ul>
+
+        <h2>Screenshot import</h2>
+        <p>
+          When you import screenshots or photos of the Heroes tab, they are resized in your browser and sent to{" "}
+          <a href="https://www.anthropic.com" target="_blank" rel="noreferrer">
+            Anthropic
+          </a>{" "}
+          (Claude), which reads each hero&apos;s rank badge and sends the result back. The board keeps only the ranks you
+          choose to save, never the images. Anthropic processes the images under its commercial terms, which do not allow
+          using them to train its models. Avoid including anything else personal in the screenshots you upload.
+        </p>
 
         <h2>Guest mode</h2>
         <p>
@@ -68,7 +84,7 @@ export default async function PrivacyPage() {
           <a href="https://neon.tech" target="_blank" rel="noreferrer">
             Neon
           </a>{" "}
-          (database). Syncing sends your Marvel Rivals UID to{" "}
+          (database), and screenshots you import go to Anthropic as described above. When playtime sync is available, syncing sends your Marvel Rivals UID to{" "}
           <a href="https://marvelrivalsapi.com" target="_blank" rel="noreferrer">
             MarvelRivalsAPI.com
           </a>{" "}
@@ -87,6 +103,13 @@ export default async function PrivacyPage() {
           <p className="muted">Sign in on the board to see the delete option for your account.</p>
         )}
 
+        <h2>Children</h2>
+        <p>
+          Proficiency Board is not meant for children under 13, and it does not knowingly collect their information. If you
+          are under 13, please use the board as a guest and don&apos;t sign in. If you believe a child has signed up, contact
+          me through the link below and I will delete the account.
+        </p>
+
         <h2>Contact</h2>
         <p>
           Proficiency Board is a free fan project by Pablo Padilla, not affiliated with NetEase Games or Marvel. Questions and requests go
@@ -94,7 +117,7 @@ export default async function PrivacyPage() {
           <a href={FEEDBACK_URL} target="_blank" rel="noreferrer">
             the project&apos;s GitHub page
           </a>
-          .
+          . See also the <Link href="/terms">terms of use</Link>.
         </p>
       </section>
     </div>

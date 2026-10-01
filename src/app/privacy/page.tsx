@@ -85,9 +85,7 @@ export default async function PrivacyPage() {
             Neon
           </a>{" "}
           (database), and screenshots you import go to Anthropic as described above. When playtime sync is available, syncing sends your Marvel Rivals UID to{" "}
-          <a href="https://marvelrivalsapi.com" target="_blank" rel="noreferrer">
-            MarvelRivalsAPI.com
-          </a>{" "}
+          MarvelRivalsAPI.com{" "}
           to look up playtime.
         </p>
 

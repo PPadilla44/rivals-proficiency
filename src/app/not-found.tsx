@@ -6,6 +6,8 @@ export const metadata: Metadata = { title: "Page not found", robots: { index: fa
 export default function NotFound() {
   return (
     <div className="wrap prose-page">
+      {/* Next skips metadata on not-found pages, so set the title directly (React hoists it into <head>). */}
+      <title>Page not found | Proficiency Board</title>
       <header className="top">
         <div>
           <h1 className="page-title">Page not found</h1>

@@ -94,6 +94,17 @@ export function Board({ mode, initial, signInSlot, portraits, screenshotImport, 
     track("visit", { mode });
   }, [mode]);
 
+  // Tie this browser's anonymous id to the signed-in account (the server keeps one row per pair),
+  // so activity from before sign-in can be connected to the account.
+  useEffect(() => {
+    if (mode !== "user") return;
+    try {
+      if (sessionStorage.getItem("pb-identify")) return;
+      sessionStorage.setItem("pb-identify", "1");
+    } catch {}
+    track("identify");
+  }, [mode]);
+
   // Level changes are batched: at most one event a minute, plus one when the tab is hidden.
   const levelEdits = useRef({ count: 0, last: 0 });
   const flushLevelEvent = useCallback(() => {
@@ -264,6 +275,7 @@ export function Board({ mode, initial, signInSlot, portraits, screenshotImport, 
       {mode === "user" && screenshotImport ? (
         <ScreenshotImport
           current={currentLevels}
+          empty={!rows.some((r) => r.touched)}
           onSave={async (updates) => {
             const ok = await withBusy(() => saveLevelsAction(updates));
             if (ok)
@@ -396,12 +408,10 @@ export function Board({ mode, initial, signInSlot, portraits, screenshotImport, 
         </div>
       </section>
 
-      {!rows.some((r) => r.touched) ? (
+      {!rows.some((r) => r.touched) && !(screenshotImport && mode === "user") ? (
         <p className="start-here">
           <strong>Start here:</strong>{" "}
-          {screenshotImport && mode === "user"
-            ? "use Import from screenshots above to fill in every hero's rank at once, then tap a level to set exact numbers."
-            : screenshotImport && mode === "guest"
+          {screenshotImport && mode === "guest"
               ? "tap a hero's level and type where it is in game, or sign in to fill in every rank from a few Heroes tab screenshots."
               : "tap a hero's level and type where it is in game. The rank panels above fill in as you go."}
         </p>

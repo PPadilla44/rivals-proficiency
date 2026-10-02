@@ -1,9 +1,9 @@
-import { sql } from "drizzle-orm";
+import { and, eq, sql } from "drizzle-orm";
 import { events } from "@/db/schema";
 import type { AnyDb } from "./board";
 
 /** Events the site records. Anything else is dropped. */
-export const EVENT_NAMES = ["visit", "level_set", "import_open", "import_read", "import_save", "sign_in", "problem", "alert_sent"] as const;
+export const EVENT_NAMES = ["visit", "level_set", "import_open", "import_read", "import_save", "sign_in", "identify", "problem", "alert_sent"] as const;
 export type EventName = (typeof EVENT_NAMES)[number];
 
 export type EventProps = Record<string, string | number | boolean | null>;
@@ -35,6 +35,16 @@ export async function recordEvent(
   e: { name: string; visitorId: string; userId?: string | null; props?: unknown; at?: Date },
 ): Promise<boolean> {
   if (!NAMES.has(e.name) || !isVisitorId(e.visitorId)) return false;
+  // "identify" ties a browser to the account signed in on it; one row per pair.
+  if (e.name === "identify") {
+    if (!e.userId) return false;
+    const seen = await db
+      .select({ id: events.id })
+      .from(events)
+      .where(and(eq(events.name, "identify"), eq(events.visitorId, e.visitorId), eq(events.userId, e.userId)))
+      .limit(1);
+    if (seen.length) return false;
+  }
   await db.insert(events).values({
     name: e.name,
     visitorId: e.visitorId,

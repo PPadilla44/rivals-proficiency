@@ -25,9 +25,19 @@ export function visitorId(): string {
   }
 }
 
+/** Phone or tablet versus computer, from the browser's own description of itself. */
+export function deviceKind(): "mobile" | "desktop" {
+  try {
+    const ua = navigator.userAgent;
+    // iPads report themselves as Macs; a Mac with a touch screen is an iPad.
+    if (/Mobi|Android|iPhone|iPad|iPod/i.test(ua) || (/Macintosh/.test(ua) && navigator.maxTouchPoints > 1)) return "mobile";
+  } catch {}
+  return "desktop";
+}
+
 /** Fire and forget; tracking must never break the page. */
 export function track(name: string, props?: Record<string, string | number | boolean | null>): void {
   try {
-    void trackAction(name, visitorId(), props).catch(() => {});
+    void trackAction(name, visitorId(), { ...props, device: deviceKind() }).catch(() => {});
   } catch {}
 }

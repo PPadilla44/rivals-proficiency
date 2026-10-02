@@ -68,4 +68,19 @@ describe("events", () => {
     expect(await recordEvent(db, { name: "identify", visitorId: V9, userId: "u1" })).toBe(true);
     expect(await recordEvent(db, { name: "identify", visitorId: V9, userId: "u1" })).toBe(false);
   });
+
+  it("splits visitors and interaction by device", async () => {
+    const at = new Date("2026-03-01T12:00:00Z");
+    const now = new Date("2026-03-02T00:00:00Z");
+    await recordEvent(db, { name: "visit", visitorId: "device-phone-1", props: { device: "mobile" }, at });
+    await recordEvent(db, { name: "visit", visitorId: "device-phone-2", props: { device: "mobile" }, at });
+    await recordEvent(db, { name: "level_set", visitorId: "device-phone-2", props: { heroes: 4, device: "mobile" }, at });
+    await recordEvent(db, { name: "visit", visitorId: "device-desk-1", props: { device: "desktop" }, at });
+    await recordEvent(db, { name: "visit", visitorId: "device-none-1", props: { mode: "guest" }, at });
+    const s = await getStats(db, 1, now);
+    expect(s.devices).toEqual([
+      { device: "desktop", visitors: 1, interacted: 0, signedIn: 0, levelSets: 0 },
+      { device: "mobile", visitors: 2, interacted: 1, signedIn: 0, levelSets: 4 },
+    ]);
+  });
 });

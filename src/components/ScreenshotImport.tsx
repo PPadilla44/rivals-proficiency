@@ -28,7 +28,7 @@ type Phase =
   | { kind: "review"; proposals: Proposal[]; unmatched: string[]; notes: string[] };
 
 const MAX_FILES = 6;
-const LS_CARD = "pb-import-card-hidden";
+export const LS_CARD = "pb-import-card-hidden";
 const LONG_EDGE = 1568; // the vision model scales larger images down to this anyway
 const MAX_BYTES = 900_000;
 
@@ -163,8 +163,8 @@ export function ScreenshotImport({ current, empty, onSave }: Props) {
           <div>
             <h2>Fill in your whole board from screenshots</h2>
             <p>
-              In game, open <strong>Heroes</strong>, then the <strong>Heroes</strong> tab at the top. Screenshot each page and
-              add them here. Every hero&apos;s rank fills in at once, no typing.
+              In game, open <strong>Heroes</strong>, then the <strong>Heroes</strong> tab at the top. Add a screenshot of each
+              page, or a photo of your screen. Every hero&apos;s rank fills in at once, no typing.
             </p>
           </div>
           <div className="shot-start-actions">

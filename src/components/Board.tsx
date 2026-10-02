@@ -16,7 +16,7 @@ import { CHAMPION, LORD, RANKS, clampLevel, tierOf } from "@/lib/proficiency";
 import { StatTiles, Summary } from "./Summary";
 import { HeroCard, HeroLine } from "./HeroViews";
 import { Account } from "./Account";
-import { ScreenshotImport } from "./ScreenshotImport";
+import { LS_CARD, ScreenshotImport } from "./ScreenshotImport";
 import { track } from "@/lib/track";
 
 const LS_LEVELS = "proficiency-board-v1";
@@ -61,6 +61,7 @@ export function Board({ mode, initial, signInSlot, portraits, screenshotImport, 
   const [busy, setBusy] = useState(false);
   const [guestLevels, setGuestLevels] = useState<Record<string, number>>({});
   const [loadVersion, setLoadVersion] = useState(0);
+  const [guestCardHidden, setGuestCardHidden] = useState(false);
 
   const pending = useRef(new Map<string, number>());
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -78,6 +79,9 @@ export function Board({ mode, initial, signInSlot, portraits, screenshotImport, 
       });
       setLoadVersion((v) => v + 1);
     }
+    try {
+      if (localStorage.getItem(LS_CARD)) setGuestCardHidden(true);
+    } catch {}
     try {
       const ui = JSON.parse(localStorage.getItem(LS_UI) ?? "null");
       if (ui?.sort && ui.sort in SORTS) setSort(ui.sort);
@@ -250,9 +254,43 @@ export function Board({ mode, initial, signInSlot, portraits, screenshotImport, 
   const [importDismissed, setImportDismissed] = useState(false);
   const showImport = mode === "user" && localCount > 0 && !importDismissed && serverCount < localCount;
 
+  // A guest with nothing set yet sees the screenshot import first, as a sign-in card.
+  const untouched = !rows.some((r) => r.touched);
+  const guestCard = mode === "guest" && screenshotImport && !!signInSlot && untouched && !guestCardHidden;
+
   return (
     <>
-      {mode === "guest" ? (
+      {guestCard ? (
+        <section className="panel shot-start" aria-label="Fill in your board">
+          <button
+            type="button"
+            className="shot-start-x"
+            aria-label="Hide this"
+            title="Hide this"
+            onClick={() => {
+              setGuestCardHidden(true);
+              try {
+                localStorage.setItem(LS_CARD, "1");
+              } catch {}
+            }}
+          >
+            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden="true">
+              <path d="M6 6l12 12M18 6L6 18" />
+            </svg>
+          </button>
+          <div>
+            <h2>Fill in your whole board from screenshots</h2>
+            <p>
+              Sign in, then add screenshots or photos of the in-game <strong>Heroes</strong> tab. Every hero&apos;s rank fills in
+              at once, no typing.
+            </p>
+          </div>
+          <div className="shot-start-actions">
+            {signInSlot}
+            <span>or tap any level below to type it in. Levels save in this browser.</span>
+          </div>
+        </section>
+      ) : mode === "guest" ? (
         <div className="banner accent">
           <p>
             <strong>Playing as a guest.</strong> Levels save in this browser only. Sign in to keep them on every device
@@ -270,12 +308,12 @@ export function Board({ mode, initial, signInSlot, portraits, screenshotImport, 
         />
       ) : null}
 
-      {mode === "guest" ? importSignIn : null}
+      {mode === "guest" && !guestCard ? importSignIn : null}
 
       {mode === "user" && screenshotImport ? (
         <ScreenshotImport
           current={currentLevels}
-          empty={!rows.some((r) => r.touched)}
+          empty={untouched}
           onSave={async (updates) => {
             const ok = await withBusy(() => saveLevelsAction(updates));
             if (ok)
@@ -408,7 +446,7 @@ export function Board({ mode, initial, signInSlot, portraits, screenshotImport, 
         </div>
       </section>
 
-      {!rows.some((r) => r.touched) && !(screenshotImport && mode === "user") ? (
+      {untouched && !guestCard && !(screenshotImport && mode === "user") ? (
         <p className="start-here">
           <strong>Start here:</strong>{" "}
           {screenshotImport && mode === "guest"

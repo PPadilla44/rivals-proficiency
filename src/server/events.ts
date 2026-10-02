@@ -67,6 +67,8 @@ export type Stats = {
   importsSaved: number;
   screenshotsRead: number;
   daily: { day: string; visitors: number; interacted: number; levelSets: number; importsSaved: number }[];
+  /** Split by phone or computer. Only events recorded with a device are counted. */
+  devices: { device: string; visitors: number; interacted: number; signedIn: number; levelSets: number }[];
 };
 
 const n = (v: unknown) => Number(v ?? 0);
@@ -103,7 +105,27 @@ export async function getStats(db: AnyDb, days: number, now = new Date()): Promi
   `);
   const list = (dailyRows as unknown as { rows?: Record<string, unknown>[] }).rows ?? (dailyRows as unknown as Record<string, unknown>[]);
 
+  const deviceRows = await db.execute(sql`
+    select ${events.props}->>'device' as device,
+      count(distinct ${events.visitorId}) as visitors,
+      count(distinct ${events.visitorId}) filter (where ${events.name} in ('level_set', 'import_open', 'import_save')) as interacted,
+      count(distinct ${events.visitorId}) filter (where ${events.userId} is not null) as signed_in,
+      coalesce(sum(coalesce((${events.props}->>'heroes')::int, 1)) filter (where ${events.name} = 'level_set'), 0) as level_sets
+    from ${events}
+    where ${events.createdAt} >= ${since.toISOString()}::timestamptz and ${events.props}->>'device' in ('mobile', 'desktop')
+    group by 1 order by 1
+  `);
+  const deviceList =
+    (deviceRows as unknown as { rows?: Record<string, unknown>[] }).rows ?? (deviceRows as unknown as Record<string, unknown>[]);
+
   return {
+    devices: deviceList.map((d) => ({
+      device: String(d.device),
+      visitors: n(d.visitors),
+      interacted: n(d.interacted),
+      signedIn: n(d.signed_in),
+      levelSets: n(d.level_sets),
+    })),
     days,
     visitors: n(r?.visitors),
     interacted: n(r?.interacted),

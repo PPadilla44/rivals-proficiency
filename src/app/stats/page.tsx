@@ -133,6 +133,43 @@ export default async function StatsPage({ searchParams }: PageProps<"/stats">) {
       <Totals s={week} title="Last 7 days" />
       <Totals s={month} title="Last 30 days" />
       <section className="panel rank-table-wrap">
+        <h2>By device, last 30 days</h2>
+        <div className="table-scroll">
+          <table className="rank-table">
+            <thead>
+              <tr>
+                <th scope="col">Device</th>
+                <th scope="col">Visitors</th>
+                <th scope="col">Interacted</th>
+                <th scope="col">Signed in</th>
+                <th scope="col">Levels changed</th>
+              </tr>
+            </thead>
+            <tbody>
+              {month.devices.length ? (
+                month.devices.map((d) => (
+                  <tr key={d.device}>
+                    <th scope="row">{d.device === "mobile" ? "Phone or tablet" : "Computer"}</th>
+                    <td>{d.visitors}</td>
+                    <td>
+                      {d.interacted}
+                      {d.visitors ? ` (${Math.round((d.interacted / d.visitors) * 100)}%)` : ""}
+                    </td>
+                    <td>{d.signedIn}</td>
+                    <td>{d.levelSets}</td>
+                  </tr>
+                ))
+              ) : (
+                <tr>
+                  <td colSpan={5}>Nothing yet.</td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+        </div>
+        <p className="muted-note">Counted from October 2, 2026, when the site started recording the device. Earlier visits are not included.</p>
+      </section>
+      <section className="panel rank-table-wrap">
         <h2>By day</h2>
         <div className="table-scroll">
           <table className="rank-table">

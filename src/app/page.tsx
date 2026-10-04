@@ -1,6 +1,7 @@
 import { auth, authConfigured, providerList, signIn, signOut } from "@/auth";
 import { getDb } from "@/db";
 import { getBoard } from "@/server/board";
+import { PREVIEW_PROVIDER, previewLoginEnabled, previewSignIn } from "@/server/preview-login";
 import { Board } from "@/components/Board";
 import { CameraIcon } from "@/components/bits";
 import { getHeroPortraits } from "@/lib/portraits";
@@ -9,6 +10,7 @@ import { playtimeSyncEnabled } from "@/lib/flags";
 import { playtimeSyncFlag } from "@/flags";
 import { SITE_URL } from "@/lib/site-url";
 import Link from "next/link";
+import { notFound, redirect } from "next/navigation";
 import type { Metadata } from "next";
 
 export const metadata: Metadata = { alternates: { canonical: "/" } };
@@ -53,7 +55,13 @@ export default async function Home({ searchParams }: PageProps<"/">) {
 
   async function doSignIn(formData: FormData) {
     "use server";
-    await signIn(String(formData.get("provider")), { redirectTo: "/" });
+    const provider = String(formData.get("provider"));
+    if (provider === PREVIEW_PROVIDER) {
+      if (!previewLoginEnabled) notFound();
+      await previewSignIn(getDb());
+      redirect("/");
+    }
+    await signIn(provider, { redirectTo: "/" });
   }
   async function doSignOut() {
     "use server";
@@ -80,6 +88,11 @@ export default async function Home({ searchParams }: PageProps<"/">) {
           Sign in with {p.name}
         </button>
       ))}
+      {previewLoginEnabled ? (
+        <button className="btn" name="provider" value={PREVIEW_PROVIDER} title="Only on preview deployments">
+          Sign in as test user
+        </button>
+      ) : null}
     </form>
   ) : null;
 

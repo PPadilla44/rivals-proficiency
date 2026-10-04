@@ -491,3 +491,16 @@ footer.foot a { color: var(--ink-2); font-weight: 600; }
 .shot-start-x:hover { color: var(--ink); background: color-mix(in srgb, var(--ink) 8%, transparent); }
 .shot-start-x:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
 .shot-start-actions .actions { display: flex; flex-wrap: wrap; gap: 10px; }
+
+/* Example of the right screen, in the import panel */
+.shot-example { margin: 4px auto 0; display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 10px 16px; max-width: 560px; text-align: left; }
+.shot-example svg { width: 200px; max-width: 100%; height: auto; flex: none; }
+.shot-example figcaption { flex: 1 1 220px; font-size: 13.5px; color: var(--ink-2); }
+.shot-example .ex-bg { fill: var(--panel); stroke: var(--line-2); }
+.shot-example .ex-nav { fill: color-mix(in srgb, var(--ink) 12%, var(--panel)); }
+.shot-example .ex-dim { fill: color-mix(in srgb, var(--ink) 28%, var(--panel)); }
+.shot-example .ex-pop { fill: var(--pop); }
+.shot-example .ex-card { fill: color-mix(in srgb, var(--ink) 10%, var(--panel)); }
+.shot-example .ex-strip { fill: color-mix(in srgb, var(--ink) 30%, var(--panel)); }
+.shot-example .ex-name { fill: var(--panel); }
+.drop .btn { display: inline-flex; align-items: center; gap: 8px; }

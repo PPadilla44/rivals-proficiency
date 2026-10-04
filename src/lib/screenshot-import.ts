@@ -101,6 +101,14 @@ export function describeDetection(p: Pick<Proposal, "detectedLevel" | "detectedR
   return r ? `${p.detectedRank} (Lv ${r[0]} to ${r[1]})` : "Unreadable";
 }
 
+/**
+ * True when every image gave only one or two heroes: the player most likely
+ * captured single hero pages, not the Heroes tab grid (about 15 per page).
+ */
+export function looksLikeSingleHeroPages(lists: Detection[][]): boolean {
+  return lists.length > 0 && lists.every((l) => l.length <= 2);
+}
+
 export type Rect = { x: number; y: number; w: number; h: number };
 
 /**

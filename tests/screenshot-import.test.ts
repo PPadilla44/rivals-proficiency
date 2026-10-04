@@ -1,5 +1,12 @@
 import { describe, expect, it } from "vitest";
-import { buildProposals, describeDetection, mergeDetections, rankRange, tileRects } from "@/lib/screenshot-import";
+import {
+  buildProposals,
+  describeDetection,
+  looksLikeSingleHeroPages,
+  mergeDetections,
+  rankRange,
+  tileRects,
+} from "@/lib/screenshot-import";
 import { parseToolInput } from "@/lib/vision";
 
 describe("rank ranges", () => {
@@ -128,5 +135,19 @@ describe("tiling", () => {
     const t = tileRects(1290, 2796);
     expect(t).toHaveLength(3);
     expect(t[2].y + t[2].h).toBe(2796);
+  });
+});
+
+describe("wrong screen detection", () => {
+  const d = (name: string) => ({ name, level: null, rank: "Lord" });
+  it("flags pictures that each show one or two heroes", () => {
+    expect(looksLikeSingleHeroPages([[d("Hela")]])).toBe(true);
+    expect(looksLikeSingleHeroPages([[d("Hela")], [d("Thor"), d("Loki")]])).toBe(true);
+  });
+  it("does not flag a Heroes tab page, or nothing at all", () => {
+    const page = ["Hela", "Thor", "Loki", "Storm", "Magik"].map(d);
+    expect(looksLikeSingleHeroPages([page])).toBe(false);
+    expect(looksLikeSingleHeroPages([page, [d("Namor")]])).toBe(false);
+    expect(looksLikeSingleHeroPages([])).toBe(false);
   });
 });

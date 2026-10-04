@@ -5,6 +5,7 @@ import { scanScreenshotAction } from "@/app/actions";
 import {
   buildProposals,
   describeDetection,
+  looksLikeSingleHeroPages,
   mergeDetections,
   tileRects,
   type Detection,
@@ -12,7 +13,7 @@ import {
 } from "@/lib/screenshot-import";
 import { clampLevel } from "@/lib/proficiency";
 import { CameraIcon } from "./bits";
-import { track } from "@/lib/track";
+import { deviceKind, track } from "@/lib/track";
 
 type Props = {
   current: Record<string, number | undefined>;
@@ -23,9 +24,9 @@ type Props = {
 
 type Phase =
   | { kind: "closed" }
-  | { kind: "pick"; error?: string }
+  | { kind: "pick"; error?: string; wrongScreen?: boolean }
   | { kind: "reading"; done: number; total: number }
-  | { kind: "review"; proposals: Proposal[]; unmatched: string[]; notes: string[] };
+  | { kind: "review"; proposals: Proposal[]; unmatched: string[]; notes: string[]; wrongScreen: boolean };
 
 const MAX_FILES = 6;
 export const LS_CARD = "pb-import-card-hidden";
@@ -62,6 +63,48 @@ async function prepare(file: File): Promise<Blob[]> {
   }
 }
 
+/** A simple drawing of the in-game Heroes tab, so players capture the right screen. */
+function ExampleScreen() {
+  const cols = 8;
+  const cards = Array.from({ length: cols * 2 }, (_, i) => ({ x: 14 + (i % cols) * 27, y: i < cols ? 34 : 82 }));
+  return (
+    <figure className="shot-example">
+      <svg viewBox="0 0 240 135" role="img" aria-label="Drawing of the Heroes tab: two rows of hero cards, each with a name and a rank badge">
+        <rect className="ex-bg" x="0.5" y="0.5" width="239" height="134" rx="5" />
+        <rect className="ex-nav" x="0.5" y="0.5" width="239" height="14" rx="5" />
+        {[20, 62, 104, 188].map((x) => (
+          <rect key={x} className="ex-dim" x={x} y="5" width="30" height="4" rx="2" />
+        ))}
+        <rect className="ex-pop" x="146" y="5" width="30" height="4" rx="2" />
+        <rect className="ex-pop" x="96" y="20" width="26" height="6" rx="1.5" />
+        <rect className="ex-dim" x="124" y="20" width="26" height="6" rx="1.5" />
+        {cards.map((c, i) => (
+          <g key={i}>
+            <rect className="ex-card" x={c.x} y={c.y} width="23" height="40" rx="1.5" />
+            <rect className="ex-strip" x={c.x} y={c.y + 29} width="23" height="11" rx="1.5" />
+            <rect className="ex-name" x={c.x + 2} y={c.y + 31} width="14" height="2.4" rx="1" />
+            <circle className="ex-pop" cx={c.x + 4} cy={c.y + 37} r="1.8" />
+          </g>
+        ))}
+      </svg>
+      <figcaption>
+        The right screen looks like this: every hero in a grid, about 15 per picture. The small badge under each name is the
+        rank.
+      </figcaption>
+    </figure>
+  );
+}
+
+/** Shown when each picture gave one or two heroes: probably single hero pages. */
+function WrongScreenHint() {
+  return (
+    <p className="shot-note" role="note">
+      <strong>Only one hero per picture?</strong> That looks like a single hero&apos;s page. Open <strong>Heroes</strong>, then
+      the <strong>Heroes</strong> tab at the top. It shows every hero in a grid, so three or four pictures cover them all.
+    </p>
+  );
+}
+
 export function ScreenshotImport({ current, empty, onSave }: Props) {
   const [phase, setPhase] = useState<Phase>({ kind: "closed" });
   const [saving, setSaving] = useState(false);
@@ -69,11 +112,14 @@ export function ScreenshotImport({ current, empty, onSave }: Props) {
   const input = useRef<HTMLInputElement>(null);
   // The big first-run card can be dismissed; remembered in this browser.
   const [cardHidden, setCardHidden] = useState(false);
+  const [mobile, setMobile] = useState(false);
   useEffect(() => {
     try {
       // eslint-disable-next-line react-hooks/set-state-in-effect -- reading browser storage after mount
       if (localStorage.getItem(LS_CARD)) setCardHidden(true);
     } catch {}
+    // Phones get photo wording: the game runs on a TV or monitor, not on the phone.
+    setMobile(deviceKind() === "mobile");
   }, []);
   const currentRef = useRef(current);
   useEffect(() => {
@@ -114,12 +160,17 @@ export function ScreenshotImport({ current, empty, onSave }: Props) {
     const notes = results.flatMap((r) => (r.note ? [r.note] : []));
     const { byHero, unmatched } = mergeDetections(lists);
     const proposals = buildProposals(byHero, currentRef.current);
+    const wrongScreen = looksLikeSingleHeroPages(lists);
     if (!proposals.length) {
-      setPhase({ kind: "pick", error: notes.join(" ") || "No hero levels were readable. Try a full-screen capture." });
+      setPhase({
+        kind: "pick",
+        error: notes.join(" ") || "No hero levels were readable. Try a full-screen capture.",
+        wrongScreen,
+      });
       return;
     }
-    track("import_read", { screenshots: images.length, heroes: proposals.length, failed: notes.length });
-    setPhase({ kind: "review", proposals, unmatched, notes });
+    track("import_read", { screenshots: images.length, heroes: proposals.length, failed: notes.length, single: wrongScreen });
+    setPhase({ kind: "review", proposals, unmatched, notes, wrongScreen });
   }, []);
 
   // Paste a screenshot straight from the clipboard while the panel is open.
@@ -163,16 +214,20 @@ export function ScreenshotImport({ current, empty, onSave }: Props) {
           <div>
             <h2>Fill in your whole board from screenshots</h2>
             <p>
-              In game, open <strong>Heroes</strong>, then the <strong>Heroes</strong> tab at the top. Add a screenshot of each
-              page, or a photo of your screen. Every hero&apos;s rank fills in at once, no typing.
+              In game, open <strong>Heroes</strong>, then the <strong>Heroes</strong> tab at the top.{" "}
+              {mobile
+                ? "Take a photo of your TV or monitor, one per page."
+                : "Add a screenshot of each page, or a photo of your screen."}{" "}
+              Every hero&apos;s rank fills in at once, no typing.
             </p>
           </div>
           <div className="shot-start-actions">
             <button className="btn primary" onClick={open}>
               <CameraIcon />
-              Import from screenshots
+              {mobile ? "Take or choose photos" : "Import from screenshots"}
             </button>
             <span>or tap any level below to type it in</span>
+            {mobile ? <span>Not at your game right now? Your board is saved to your account, so come back any time.</span> : null}
           </div>
         </section>
       );
@@ -223,17 +278,29 @@ export function ScreenshotImport({ current, empty, onSave }: Props) {
             </p>
           ) : (
             <>
-              <p>
-                Drop screenshots here, paste one, or{" "}
-                <button type="button" className="linkish" onClick={() => input.current?.click()}>
-                  choose files
-                </button>
-                .
-              </p>
+              {mobile ? (
+                <p>
+                  <button type="button" className="btn primary" onClick={() => input.current?.click()}>
+                    <CameraIcon />
+                    Take or choose photos
+                  </button>
+                </p>
+              ) : (
+                <p>
+                  Drop screenshots here, paste one, or{" "}
+                  <button type="button" className="linkish" onClick={() => input.current?.click()}>
+                    choose files
+                  </button>
+                  .
+                </p>
+              )}
+              <ExampleScreen />
               <p className="muted">
-                Use full-screen captures of the Heroes tab (Heroes, then Heroes again at the top). Scroll and add one per page, up to{" "}
-                {MAX_FILES}. The tab shows ranks, not exact levels, so a level you already set inside that rank is kept.
-                Screenshots are read once and not stored.
+                {mobile
+                  ? "Photograph the whole screen, straight on, with the Heroes tab open (Heroes, then Heroes again at the top)."
+                  : "Use full-screen captures of the Heroes tab (Heroes, then Heroes again at the top)."}{" "}
+                Scroll and add one per page, up to {MAX_FILES}. The tab shows ranks, not exact levels, so a level you already set
+                inside that rank is kept. Pictures are read once and not stored.
               </p>
             </>
           )}
@@ -255,11 +322,12 @@ export function ScreenshotImport({ current, empty, onSave }: Props) {
             {phase.error}
           </p>
         ) : null}
+        {phase.kind === "pick" && phase.wrongScreen ? <WrongScreenHint /> : null}
       </section>
     );
   }
 
-  const { proposals, unmatched, notes } = phase;
+  const { proposals, unmatched, notes, wrongScreen } = phase;
   const chosen = proposals.filter((p) => p.selected && p.proposed !== (p.current ?? 1));
   const update = (heroId: string, patch: Partial<Proposal>) =>
     setPhase({ ...phase, proposals: proposals.map((p) => (p.heroId === heroId ? { ...p, ...patch } : p)) });
@@ -273,6 +341,7 @@ export function ScreenshotImport({ current, empty, onSave }: Props) {
           {proposals.length} read, {changes.length} different
         </b>
       </h2>
+      {wrongScreen ? <WrongScreenHint /> : null}
       <p className="shot-note" role="note">
         <strong>Ranks, not exact levels.</strong> The Heroes tab only shows each hero&apos;s rank badge, so a hero is set to the
         first level of its rank (Lord becomes 20) unless your saved level is already inside that rank. Afterwards, tap a

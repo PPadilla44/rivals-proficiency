@@ -2,7 +2,7 @@
 
 import { z } from "zod";
 import { auth, authConfigured, requireUserId, signOut } from "@/auth";
-import { recordEvent } from "@/server/events";
+import { eventCeiling, isVisitorId, recordEvent } from "@/server/events";
 import { playtimeSyncEnabled } from "@/lib/flags";
 import { playtimeSyncFlag, screenshotDailyCap } from "@/flags";
 import { reportProblem } from "@/server/alerts";
@@ -227,6 +227,11 @@ export async function scanScreenshotAction(form: FormData): Promise<ScanResult> 
 export async function trackAction(name: unknown, visitorId: unknown, props?: unknown): Promise<void> {
   if (!process.env.DATABASE_URL) return;
   try {
+    // Anyone can call this, so it has hourly ceilings; past them, events are dropped.
+    if (!isVisitorId(visitorId)) return;
+    const ceiling = await eventCeiling(getDb(), visitorId);
+    if (ceiling === "site_first") await reportProblem(getDb(), "event_flood");
+    if (ceiling !== "ok") return;
     const session = authConfigured ? await auth() : null;
     await recordEvent(getDb(), {
       name: String(name),

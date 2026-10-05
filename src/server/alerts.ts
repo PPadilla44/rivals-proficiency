@@ -11,7 +11,8 @@ export type ProblemKind =
   | "import_failed" // the reader errored or could not be reached
   | "import_unreadable" // the reader answered but nothing usable came back
   | "unknown_hero" // an import named a hero the roster doesn't know (new season?)
-  | "server_error"; // an unexpected error in a server action
+  | "server_error" // an unexpected error in a server action
+  | "event_flood"; // far more tracking events than real traffic would send; recording paused
 
 export const PROBLEM_LABEL: Record<ProblemKind, string> = {
   import_budget: "Screenshot imports stopped: Anthropic spend limit or credit ran out",
@@ -20,6 +21,7 @@ export const PROBLEM_LABEL: Record<ProblemKind, string> = {
   import_unreadable: "Screenshot came back unreadable",
   unknown_hero: "Import saw a hero name the roster doesn't know",
   server_error: "Server error",
+  event_flood: "Visitor tracking paused: too many events in the last hour",
 };
 
 /** How often each kind may ping the alert channel. */
@@ -30,6 +32,7 @@ const ALERT_EVERY_MS: Record<ProblemKind, number> = {
   import_unreadable: 6 * 60 * 60_000,
   unknown_hero: 24 * 60 * 60_000, // per name
   server_error: 60 * 60_000,
+  event_flood: 60 * 60_000,
 };
 
 type Send = (content: string) => Promise<void>;

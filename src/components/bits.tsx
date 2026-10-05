@@ -4,6 +4,11 @@ import { useEffect, useRef, useState } from "react";
 import type { Role } from "@/lib/heroes";
 import { MAX_LEVEL, RANKS } from "@/lib/proficiency";
 
+// Hold-to-repeat timing for the level buttons, in milliseconds.
+const HOLD_DELAY = 400;
+const HOLD_FIRST_GAP = 130;
+const HOLD_MIN_GAP = 35;
+
 export const tierColor = (t: number) => `var(--t${t})`;
 
 /** The in-game proficiency badge for a rank, on a dark tile like the Heroes tab. */
@@ -101,6 +106,94 @@ export function Portrait({
 }
 
 /** Minus, typed number, plus. Commits on blur or Enter. */
+/**
+ * A plus or minus button. A tap or click moves one level. Press and hold to
+ * keep counting, slowly at first and then faster. The single step happens on
+ * click, not on press, so a finger that lands here while scrolling changes nothing.
+ */
+function StepButton({
+  dir,
+  level,
+  label,
+  onStep,
+  children,
+}: {
+  dir: 1 | -1;
+  level: number;
+  label: string;
+  onStep: (level: number, held: boolean) => void;
+  children: React.ReactNode;
+}) {
+  const cur = useRef(level);
+  const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const repeated = useRef(false);
+  const step = useRef(onStep);
+  useEffect(() => {
+    step.current = onStep;
+    if (!timer.current) cur.current = level;
+  }, [level, onStep]);
+  const stop = () => {
+    if (timer.current) clearTimeout(timer.current);
+    timer.current = null;
+  };
+  // The click that ends a hold arrives right after the release; forget the hold once it has passed.
+  const release = () => {
+    stop();
+    setTimeout(() => (repeated.current = false), 0);
+  };
+  useEffect(
+    () => () => {
+      if (timer.current) clearTimeout(timer.current);
+    },
+    [],
+  );
+  const start = () => {
+    stop();
+    repeated.current = false;
+    cur.current = level;
+    let gap = HOLD_FIRST_GAP;
+    const tick = () => {
+      const next = cur.current + dir;
+      if (next < 1 || next > MAX_LEVEL) return stop();
+      repeated.current = true;
+      cur.current = next;
+      step.current(next, true);
+      gap = Math.max(HOLD_MIN_GAP, gap * 0.88);
+      timer.current = setTimeout(tick, gap);
+    };
+    timer.current = setTimeout(tick, HOLD_DELAY);
+  };
+  const atEnd = dir === 1 ? level >= MAX_LEVEL : level <= 1;
+  return (
+    <button
+      type="button"
+      aria-label={label}
+      disabled={atEnd}
+      onPointerDown={(e) => {
+        if (e.button === 0) start();
+      }}
+      onPointerUp={() => release()}
+      onPointerLeave={() => release()}
+      onPointerCancel={() => release()}
+      onBlur={() => release()}
+      onContextMenu={(e) => {
+        if (timer.current || repeated.current) e.preventDefault();
+      }}
+      onClick={() => {
+        stop();
+        // After a hold, the release also fires a click: that one is not a step.
+        if (repeated.current) {
+          repeated.current = false;
+          return;
+        }
+        onStep(level + dir, false);
+      }}
+    >
+      {children}
+    </button>
+  );
+}
+
 export function LevelStepper({
   id,
   name,
@@ -111,7 +204,7 @@ export function LevelStepper({
   id: string;
   name: string;
   level: number;
-  onLevel: (heroId: string, level: number) => void;
+  onLevel: (heroId: string, level: number, fromEstimate?: boolean, held?: boolean) => void;
   big?: boolean;
 }) {
   const [draft, setDraft] = useState<string | null>(null);
@@ -121,11 +214,12 @@ export function LevelStepper({
     setDraft(null);
     if (Number.isFinite(n) && n !== level) onLevel(id, n);
   };
+
   return (
     <div className={`lvl${big ? " big" : ""}`}>
-      <button type="button" aria-label={`Lower ${name} level`} disabled={level <= 1} onClick={() => onLevel(id, level - 1)}>
+      <StepButton dir={-1} level={level} label={`Lower ${name} level`} onStep={(n, held) => onLevel(id, n, false, held)}>
         &minus;
-      </button>
+      </StepButton>
       <input
         id={`lv-${id}${big ? "-card" : ""}`}
         type="number"
@@ -134,6 +228,7 @@ export function LevelStepper({
         max={MAX_LEVEL}
         value={draft ?? String(level)}
         aria-label={`${name} level`}
+        title="Type a level"
         onChange={(e) => setDraft(e.target.value)}
         onFocus={(e) => e.target.select()}
         onBlur={commit}
@@ -142,9 +237,9 @@ export function LevelStepper({
           if (e.key === "Escape") setDraft(null);
         }}
       />
-      <button type="button" aria-label={`Raise ${name} level`} disabled={level >= MAX_LEVEL} onClick={() => onLevel(id, level + 1)}>
+      <StepButton dir={1} level={level} label={`Raise ${name} level`} onStep={(n, held) => onLevel(id, n, false, held)}>
         +
-      </button>
+      </StepButton>
     </div>
   );
 }

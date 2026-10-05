@@ -6,7 +6,7 @@ import { ROLE_LABEL } from "@/lib/heroes";
 import { MAX_LEVEL, RANKS, formatHours, nextMilestone, tierOf } from "@/lib/proficiency";
 import { LevelStepper, Portrait, RankBadge, portraitTier, tierColor } from "./bits";
 
-export type LevelHandler = (heroId: string, level: number, fromEstimate?: boolean) => void;
+export type LevelHandler = (heroId: string, level: number, fromEstimate?: boolean, held?: boolean) => void;
 
 export function progressOf(row: HeroRow) {
   const { effective, estimate } = row;

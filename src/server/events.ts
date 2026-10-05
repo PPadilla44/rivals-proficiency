@@ -64,6 +64,8 @@ export type Stats = {
   signIns: number;
   newAccounts: number;
   levelSets: number;
+  /** Every single change, counting each button tap. Equals levelSets for events before October 5, 2026. */
+  levelTaps: number;
   importsSaved: number;
   screenshotsRead: number;
   daily: { day: string; visitors: number; interacted: number; levelSets: number; importsSaved: number }[];
@@ -89,6 +91,7 @@ export async function getStats(db: AnyDb, days: number, now = new Date()): Promi
       (select count(*) from e where name = 'sign_in') as sign_ins,
       (select count(*) from e where name = 'sign_in' and props->>'new_user' = 'true') as new_accounts,
       (select coalesce(sum(coalesce((props->>'heroes')::int, 1)), 0) from e where name = 'level_set') as level_sets,
+      (select coalesce(sum(coalesce((props->>'taps')::int, (props->>'heroes')::int, 1)), 0) from e where name = 'level_set') as level_taps,
       (select count(*) from e where name = 'import_save') as imports_saved,
       (select coalesce(sum(coalesce((props->>'screenshots')::int, 1)), 0) from e where name = 'import_read') as screenshots_read
   `);
@@ -134,6 +137,7 @@ export async function getStats(db: AnyDb, days: number, now = new Date()): Promi
     signIns: n(r?.sign_ins),
     newAccounts: n(r?.new_accounts),
     levelSets: n(r?.level_sets),
+    levelTaps: n(r?.level_taps),
     importsSaved: n(r?.imports_saved),
     screenshotsRead: n(r?.screenshots_read),
     daily: list.map((d) => ({

@@ -83,4 +83,14 @@ describe("events", () => {
       { device: "mobile", visitors: 2, interacted: 1, signedIn: 0, levelSets: 4 },
     ]);
   });
+
+  it("counts heroes updated separately from button taps", async () => {
+    const at = new Date("2026-04-01T12:00:00Z");
+    const now = new Date("2026-04-02T00:00:00Z");
+    await recordEvent(db, { name: "level_set", visitorId: "taps-visitor-1", props: { heroes: 3, taps: 40 }, at });
+    await recordEvent(db, { name: "level_set", visitorId: "taps-visitor-2", props: { heroes: 5 }, at });
+    const s = await getStats(db, 1, now);
+    expect(s.levelSets).toBe(8);
+    expect(s.levelTaps).toBe(45);
+  });
 });

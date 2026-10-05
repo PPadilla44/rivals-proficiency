@@ -504,3 +504,9 @@ footer.foot a { color: var(--ink-2); font-weight: 600; }
 .shot-example .ex-strip { fill: color-mix(in srgb, var(--ink) 30%, var(--panel)); }
 .shot-example .ex-name { fill: var(--panel); }
 .drop .btn { display: inline-flex; align-items: center; gap: 8px; }
+
+/* Level field reads as something you can type into; buttons can be held */
+.lvl input { cursor: text; box-shadow: inset 0 -2px 0 color-mix(in srgb, var(--pop) 75%, transparent); }
+.lvl input:hover { background: color-mix(in srgb, var(--pop) 8%, var(--panel)); }
+.lvl input:focus { outline: none; background: color-mix(in srgb, var(--pop) 14%, var(--panel)); box-shadow: inset 0 0 0 2px var(--pop); }
+.lvl button { touch-action: manipulation; user-select: none; -webkit-user-select: none; -webkit-touch-callout: none; }

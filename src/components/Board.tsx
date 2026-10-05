@@ -21,6 +21,8 @@ import { track } from "@/lib/track";
 
 const LS_LEVELS = "proficiency-board-v1";
 const LS_UI = "proficiency-board-ui";
+const LS_TIP = "pb-tip-type-level";
+const TIP_AFTER_STEPS = 5;
 
 type Props = {
   mode: "guest" | "user";
@@ -62,6 +64,7 @@ export function Board({ mode, initial, signInSlot, portraits, screenshotImport, 
   const [guestLevels, setGuestLevels] = useState<Record<string, number>>({});
   const [loadVersion, setLoadVersion] = useState(0);
   const [guestCardHidden, setGuestCardHidden] = useState(false);
+  const [emptyAtLoad, setEmptyAtLoad] = useState(() => Object.keys(initial?.levels ?? {}).length === 0);
 
   const pending = useRef(new Map<string, number>());
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -71,6 +74,7 @@ export function Board({ mode, initial, signInSlot, portraits, screenshotImport, 
     const local = readLocal();
     // eslint-disable-next-line react-hooks/set-state-in-effect -- reading browser storage after mount
     setGuestLevels(local);
+    if (mode === "guest") setEmptyAtLoad(Object.keys(local).length === 0);
     if (mode === "guest") {
       setBoard({
         levels: Object.fromEntries(Object.entries(local).map(([id, level]) => [id, { level, baselinePlaytimeSec: null }])),
@@ -110,14 +114,31 @@ export function Board({ mode, initial, signInSlot, portraits, screenshotImport, 
   }, [mode]);
 
   // Level changes are batched: at most one event a minute, plus one when the tab is hidden.
-  const levelEdits = useRef({ count: 0, last: 0 });
+  // "heroes" is how many different heroes changed, "taps" every single change (a button tap counts as one).
+  const levelEdits = useRef({ count: 0, heroes: new Set<string>(), last: 0 });
   const flushLevelEvent = useCallback(() => {
     const e = levelEdits.current;
     if (!e.count) return;
-    track("level_set", { heroes: e.count, mode });
+    track("level_set", { heroes: e.heroes.size, taps: e.count, mode });
     e.count = 0;
+    e.heroes.clear();
     e.last = Date.now();
   }, [mode]);
+
+  // Someone stepping the same hero one level at a time gets a one-time tip about the faster ways.
+  const stepStreak = useRef<{ id: string; level: number; n: number }>({ id: "", level: 0, n: 0 });
+  const noteStep = useCallback((heroId: string, v: number) => {
+    const s = stepStreak.current;
+    s.n = s.id === heroId && Math.abs(v - s.level) === 1 ? s.n + 1 : 1;
+    s.id = heroId;
+    s.level = v;
+    if (s.n !== TIP_AFTER_STEPS) return;
+    try {
+      if (localStorage.getItem(LS_TIP)) return;
+      localStorage.setItem(LS_TIP, "1");
+    } catch {}
+    setToast({ text: "Tip: tap the number to type a level, or hold + to count up fast." });
+  }, []);
 
   useEffect(() => {
     if (!toast) return;
@@ -153,9 +174,13 @@ export function Board({ mode, initial, signInSlot, portraits, screenshotImport, 
   );
 
   const setLevel = useCallback(
-    (heroId: string, level: number, fromEstimate = false) => {
+    (heroId: string, level: number, fromEstimate = false, held = false) => {
       const v = clampLevel(level);
       levelEdits.current.count += 1;
+      levelEdits.current.heroes.add(heroId);
+      // Steps from holding a button are the fast way already; only single taps count toward the tip.
+      if (held) stepStreak.current.n = 0;
+      else if (!fromEstimate) noteStep(heroId, v);
       if (Date.now() - levelEdits.current.last > 60_000) flushLevelEvent();
       setBoard((b) => ({
         ...b,
@@ -176,7 +201,7 @@ export function Board({ mode, initial, signInSlot, portraits, screenshotImport, 
       if (fromEstimate) void flush(true);
       else timer.current = setTimeout(() => void flush(), 700);
     },
-    [mode, flush, flushLevelEvent],
+    [mode, flush, flushLevelEvent, noteStep],
   );
 
   // Save anything queued if the tab is closed or hidden.
@@ -255,7 +280,9 @@ export function Board({ mode, initial, signInSlot, portraits, screenshotImport, 
   const showImport = mode === "user" && localCount > 0 && !importDismissed && serverCount < localCount;
 
   // A guest with nothing set yet sees the screenshot import first, as a sign-in card.
-  const untouched = !rows.some((r) => r.touched);
+  // "Untouched" is decided when the board loads and then held for the visit. If the first tap
+  // removed the card above the list, every row would jump up under the player's finger.
+  const untouched = emptyAtLoad;
   const guestCard = mode === "guest" && screenshotImport && !!signInSlot && untouched && !guestCardHidden;
 
   return (
@@ -316,6 +343,7 @@ export function Board({ mode, initial, signInSlot, portraits, screenshotImport, 
           empty={untouched}
           onSave={async (updates) => {
             const ok = await withBusy(() => saveLevelsAction(updates));
+            if (ok) setEmptyAtLoad(false);
             if (ok)
               setToast({
                 text: `Saved ${updates.length} rank${updates.length === 1 ? "" : "s"}. Each starts at its rank's first level; tap a level to set it exactly.`,
@@ -339,7 +367,10 @@ export function Board({ mode, initial, signInSlot, portraits, screenshotImport, 
                 const ok = await withBusy(() =>
                   importLevelsAction(Object.entries(guestLevels).map(([heroId, level]) => ({ heroId, level }))),
                 );
-                if (ok) setImportDismissed(true);
+                if (ok) {
+                  setImportDismissed(true);
+                  setEmptyAtLoad(false);
+                }
               }}
             >
               Import levels

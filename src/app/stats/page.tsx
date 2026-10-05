@@ -20,7 +20,7 @@ function Totals({ s, title }: { s: Stats; title: string }) {
     ["Signed-in visitors", s.signedInVisitors],
     ["Returning", s.returning, "visited on 2 or more days"],
     ["Sign-ins", s.signIns, `${s.newAccounts} new account${s.newAccounts === 1 ? "" : "s"}`],
-    ["Levels changed", s.levelSets],
+    ["Heroes updated", s.levelSets, `${s.levelTaps} changes counting every button tap. Before October 5 the two were not separated.`],
     ["Imports saved", s.importsSaved, `${s.screenshotsRead} screenshots read`],
   ];
   return (
@@ -142,7 +142,7 @@ export default async function StatsPage({ searchParams }: PageProps<"/stats">) {
                 <th scope="col">Visitors</th>
                 <th scope="col">Interacted</th>
                 <th scope="col">Signed in</th>
-                <th scope="col">Levels changed</th>
+                <th scope="col">Heroes updated</th>
               </tr>
             </thead>
             <tbody>
@@ -178,7 +178,7 @@ export default async function StatsPage({ searchParams }: PageProps<"/stats">) {
                 <th scope="col">Day</th>
                 <th scope="col">Visitors</th>
                 <th scope="col">Interacted</th>
-                <th scope="col">Levels changed</th>
+                <th scope="col">Heroes updated</th>
                 <th scope="col">Imports saved</th>
               </tr>
             </thead>

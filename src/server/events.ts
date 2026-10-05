@@ -55,6 +55,36 @@ export async function recordEvent(
   return true;
 }
 
+/**
+ * Ceilings on events sent from browsers, per hour. Anyone can call the tracking
+ * action, so without these a script could fill the database with fake events.
+ * Real use is far below both: a busy visitor sends about one event a minute.
+ */
+export const EVENT_LIMITS = { visitorPerHour: 300, sitePerHour: 10_000 };
+
+export type EventCeiling =
+  | "ok"
+  | "visitor" // this browser id is over its hourly limit
+  | "site" // the whole site is over its hourly limit (already reported this hour)
+  | "site_first"; // the site limit was just reached: report it once
+
+/** Whether one more browser event may be recorded right now. */
+export async function eventCeiling(db: AnyDb, visitorId: string, now = new Date()): Promise<EventCeiling> {
+  const since = new Date(now.getTime() - 3_600_000);
+  const rows = await db.execute(sql`
+    select
+      count(*) filter (where ${events.visitorId} <> ${SERVER_VISITOR}) as total,
+      count(*) filter (where ${events.visitorId} = ${visitorId}) as mine,
+      count(*) filter (where ${events.name} = 'problem' and ${events.props}->>'kind' = 'event_flood') as flagged
+    from ${events}
+    where ${events.createdAt} >= ${since.toISOString()}::timestamptz and ${events.createdAt} <= ${now.toISOString()}::timestamptz
+  `);
+  const r = (rows as unknown as { rows?: Record<string, unknown>[] }).rows?.[0] ?? (rows as unknown as Record<string, unknown>[])[0];
+  if (Number(r?.total ?? 0) >= EVENT_LIMITS.sitePerHour) return Number(r?.flagged ?? 0) > 0 ? "site" : "site_first";
+  if (Number(r?.mine ?? 0) >= EVENT_LIMITS.visitorPerHour) return "visitor";
+  return "ok";
+}
+
 export type Stats = {
   days: number;
   visitors: number;

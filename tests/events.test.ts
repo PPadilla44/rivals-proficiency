@@ -3,7 +3,8 @@ import { PGlite } from "@electric-sql/pglite";
 import { drizzle } from "drizzle-orm/pglite";
 import { migrate } from "drizzle-orm/pglite/migrator";
 import * as schema from "@/db/schema";
-import { SERVER_VISITOR, cleanProps, getStats, recordEvent } from "@/server/events";
+import { EVENT_LIMITS, SERVER_VISITOR, cleanProps, eventCeiling, getStats, recordEvent } from "@/server/events";
+import { events as eventsTable } from "@/db/schema";
 import { deleteAccount, type AnyDb } from "@/server/board";
 
 let db: AnyDb;
@@ -92,5 +93,28 @@ describe("events", () => {
     const s = await getStats(db, 1, now);
     expect(s.levelSets).toBe(8);
     expect(s.levelTaps).toBe(45);
+  });
+
+  it("stops recording past the hourly ceilings and flags the site limit once", async () => {
+    const now = new Date("2026-05-01T12:00:00Z");
+    const at = new Date(now.getTime() - 60_000);
+    const row = (visitorId: string) => ({ name: "visit", visitorId, createdAt: at });
+    const noisy = "flood-visitor-1";
+    expect(await eventCeiling(db, noisy, now)).toBe("ok");
+
+    await db.insert(eventsTable).values(Array.from({ length: EVENT_LIMITS.visitorPerHour }, () => row(noisy)));
+    expect(await eventCeiling(db, noisy, now)).toBe("visitor");
+    expect(await eventCeiling(db, "calm-visitor-1", now)).toBe("ok");
+
+    // Events older than an hour, and the server's own, do not count.
+    expect(await eventCeiling(db, noisy, new Date(now.getTime() + 2 * 3_600_000))).toBe("ok");
+
+    const rest = EVENT_LIMITS.sitePerHour - EVENT_LIMITS.visitorPerHour;
+    for (let i = 0; i < rest; i += 1000) {
+      await db.insert(eventsTable).values(Array.from({ length: Math.min(1000, rest - i) }, (_, j) => row(`flood-many-${i + j}`)));
+    }
+    expect(await eventCeiling(db, "calm-visitor-1", now)).toBe("site_first");
+    await recordEvent(db, { name: "problem", visitorId: SERVER_VISITOR, props: { kind: "event_flood" }, at });
+    expect(await eventCeiling(db, "calm-visitor-1", now)).toBe("site");
   });
 });

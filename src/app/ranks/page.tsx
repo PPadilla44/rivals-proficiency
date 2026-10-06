@@ -9,7 +9,9 @@ import {
   pointsBetween,
   pointsToNext,
   rankLevels,
+  rankOf,
 } from "@/lib/proficiency";
+import { REWARDS, REWARD_KIND_LABEL } from "@/lib/proficiency-rewards";
 
 const fmt = (n: number) => n.toLocaleString("en-US");
 const hours = (points: number) => Math.round(points / DEFAULT_POINTS_PER_HOUR);
@@ -20,7 +22,7 @@ const TO_MAX = pointsBetween(1, MAX_LEVEL);
 
 // The search result is the pitch: lead with the numbers people are looking for.
 const title = "Marvel Rivals Proficiency Levels and Ranks: Points to Lord";
-const description = `Lord takes ${fmt(TO_LORD)} proficiency points, about ${hours(TO_LORD)} hours on one hero. Champion takes ${fmt(TO_CHAMPION)}. Table of all 11 ranks, levels 1 to ${MAX_LEVEL} and points per level.`;
+const description = `Lord takes ${fmt(TO_LORD)} proficiency points, about ${hours(TO_LORD)} hours on one hero. Champion takes ${fmt(TO_CHAMPION)}. All 11 ranks, points per level, and the reward at every level to ${MAX_LEVEL}.`;
 
 export const metadata: Metadata = {
   // Absolute, so the site name does not push the useful words out of the result.
@@ -46,6 +48,11 @@ const ROWS = RANKS.map((name, tier) => {
   };
 });
 
+const sumOf = (name: string) =>
+  REWARDS.filter((r) => r.kind === "currency" && r.what.endsWith(name)).reduce((n, r) => n + parseInt(r.what, 10), 0);
+const UM_TOTAL = sumOf("Unstable Molecules");
+const UNITS_TOTAL = sumOf("Units");
+
 const FAQ: { q: string; a: string }[] = [
   {
     q: "How long does it take to get Lord in Marvel Rivals?",
@@ -54,6 +61,14 @@ const FAQ: { q: string; a: string }[] = [
   {
     q: "How long does it take to get Champion?",
     a: `About ${hours(TO_CHAMPION)} hours on one hero at the same pace. Champion is level 50 and takes ${fmt(TO_CHAMPION)} points, almost nine times what Lord takes.`,
+  },
+  {
+    q: "What do you get for reaching Lord in Marvel Rivals?",
+    a: "The hero's Lord avatar at level 20. Before that you unlock a nameplate at level 3, a spray at 5, the Fantastic title at 8, and KO prompts at 10 and 15. The animated version of the Lord avatar comes at Champion, level 50.",
+  },
+  {
+    q: "What are the proficiency titles?",
+    a: `Five titles, each followed by the hero's name: Fantastic at level 8, Uncanny at 29, Amazing at 39, Immortal at 60 and Legendary at level ${MAX_LEVEL}.`,
   },
   {
     q: "How do hero proficiency ranks work in Marvel Rivals?",
@@ -157,6 +172,37 @@ export default function RanksPage() {
         <p className="muted-note">
           Hours assume about {DEFAULT_POINTS_PER_HOUR} points per hour, a common average. Your pace depends on how often you
           finish the hero&apos;s challenges.
+        </p>
+      </section>
+
+      <section className="panel rank-table-wrap" id="rewards">
+        <h2>Rewards at every level</h2>
+        <div className="table-scroll">
+          <table className="rank-table">
+            <thead>
+              <tr>
+                <th scope="col">Level</th>
+                <th scope="col">Rank</th>
+                <th scope="col">Reward</th>
+                <th scope="col">Type</th>
+              </tr>
+            </thead>
+            <tbody>
+              {REWARDS.map((r) => (
+                <tr key={r.level}>
+                  <th scope="row">{r.level}</th>
+                  <td>{rankOf(r.level)}</td>
+                  <td>{r.what}</td>
+                  <td>{REWARD_KIND_LABEL[r.kind]}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+        <p className="muted-note">
+          Read from the in-game reward track for Adam Warlock in Season 10. Every hero has the same track with its own art,
+          and each title ends with that hero&apos;s name, for example Legendary Adam Warlock. Across all 70 levels a hero
+          gives {UM_TOTAL} Unstable Molecules and {UNITS_TOTAL} Units.
         </p>
       </section>
 

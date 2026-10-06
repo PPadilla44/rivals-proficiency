@@ -125,6 +125,8 @@ export function Board({ mode, initial, signInSlot, portraits, screenshotImport, 
     e.last = Date.now();
   }, [mode]);
 
+  const holdRun = useRef({ id: "", at: 0 });
+
   // Someone stepping the same hero one level at a time gets a one-time tip about the faster ways.
   const stepStreak = useRef<{ id: string; level: number; n: number }>({ id: "", level: 0, n: 0 });
   const noteStep = useCallback((heroId: string, v: number) => {
@@ -176,7 +178,11 @@ export function Board({ mode, initial, signInSlot, portraits, screenshotImport, 
   const setLevel = useCallback(
     (heroId: string, level: number, fromEstimate = false, held = false) => {
       const v = clampLevel(level);
-      levelEdits.current.count += 1;
+      // One press-and-hold is one change, however many levels it passes through.
+      const t = Date.now();
+      const sameHold = held && holdRun.current.id === heroId && t - holdRun.current.at < 600;
+      if (held) holdRun.current = { id: heroId, at: t };
+      if (!sameHold) levelEdits.current.count += 1;
       levelEdits.current.heroes.add(heroId);
       // Steps from holding a button are the fast way already; only single taps count toward the tip.
       if (held) stepStreak.current.n = 0;

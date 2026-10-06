@@ -64,7 +64,7 @@ describe("daily digest", () => {
     const text = await buildDigest(db, { now, cap: 50 });
     expect(text).toContain("24 hours to Oct 6, 8:30 AM PT");
     expect(text).toContain("Visitors 3 (2) · returning 1 · phone 2, computer 1");
-    expect(text).toContain("Last 7 days: 1, 1, 3");
+    expect(text).toContain("Visitors by day, last 7 (today so far is last): 1, 1, 3");
     expect(text).toContain("From: google.com 2, direct 1");
     expect(text).toContain("Interacted 3, 100% (1, 50%) · guests 2, signed in 1");
     expect(text).toContain("One change and left 1 · updated 10+ heroes 0");

@@ -135,8 +135,11 @@ export async function buildDigest(
   const device = (d: string) => today.devices.find((x) => x.device === d)?.visitors ?? 0;
   const when = now.toLocaleString("en-US", { timeZone: "America/Los_Angeles", month: "short", day: "numeric", hour: "numeric", minute: "2-digit" });
   const tapsPerHero = today.levelSets ? (today.levelTaps / today.levelSets).toFixed(1) : "0";
-  // Oldest first, so the trend reads left to right. Days are UTC.
-  const trend = [...week.daily].reverse().map((d) => d.visitors);
+  // Oldest first, so the trend reads left to right. Days are UTC; a 7-day window touches 8 of them, so keep the last 7.
+  const trend = [...week.daily]
+    .reverse()
+    .map((d) => d.visitors)
+    .slice(-7);
 
   const lines = [
     `📊 **Proficiency Board** · 24 hours to ${when} PT (previous 24 hours in brackets)`,
@@ -144,12 +147,12 @@ export async function buildDigest(
     `**Traffic**`,
     `Visitors ${today.visitors} (${before.visitors}) · returning ${eng.returning} · phone ${device("mobile")}, computer ${device("desktop")}`,
     `From: ${refs.length ? refs.map((r) => `${r.ref} ${r.visitors}`).join(", ") : "not recorded yet"}`,
-    `Last 7 days: ${trend.length ? trend.join(", ") : "no data"}`,
+    `Visitors by day, last 7 (today so far is last): ${trend.length ? trend.join(", ") : "no data"}`,
     ``,
     `**What they did**`,
     `Interacted ${today.interacted}, ${pct(today.interacted, today.visitors)} (${before.interacted}, ${pct(before.interacted, before.visitors)}) · guests ${eng.activeGuests}, signed in ${eng.activeSignedIn}`,
     `One change and left ${eng.oneTap} · updated 10+ heroes ${eng.deep}`,
-    `Heroes updated ${today.levelSets} (${before.levelSets}) · ${tapsPerHero} changes per hero (1.0 means typed, higher means button taps)`,
+    `Heroes updated ${today.levelSets} (${before.levelSets}) · ${tapsPerHero} changes per hero (1.0 means typed or held, higher means repeated taps)`,
     ``,
     `**Accounts**`,
     `New ${today.newAccounts} (${before.newAccounts}) · ${accounts} in total`,

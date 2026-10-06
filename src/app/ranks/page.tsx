@@ -11,19 +11,25 @@ import {
   rankLevels,
 } from "@/lib/proficiency";
 
-const description =
-  "All 11 Marvel Rivals hero proficiency ranks from Agent to Champion: the level each rank starts at, points per level, and total points to Lord (6,100), Champion (54,100) and max level 70 (116,100).";
-
-export const metadata: Metadata = {
-  title: "Marvel Rivals Proficiency Ranks, Levels and Points",
-  description,
-  alternates: { canonical: "/ranks" },
-  openGraph: { title: "Marvel Rivals Proficiency Ranks, Levels and Points", description, url: "/ranks" },
-  twitter: { title: "Marvel Rivals Proficiency Ranks, Levels and Points", description },
-};
-
 const fmt = (n: number) => n.toLocaleString("en-US");
 const hours = (points: number) => Math.round(points / DEFAULT_POINTS_PER_HOUR);
+
+const TO_LORD = pointsBetween(1, LORD);
+const TO_CHAMPION = pointsBetween(1, CHAMPION);
+const TO_MAX = pointsBetween(1, MAX_LEVEL);
+
+// The search result is the pitch: lead with the numbers people are looking for.
+const title = "Marvel Rivals Proficiency Levels and Ranks: Points to Lord";
+const description = `Lord takes ${fmt(TO_LORD)} proficiency points, about ${hours(TO_LORD)} hours on one hero. Champion takes ${fmt(TO_CHAMPION)}. Table of all 11 ranks, levels 1 to ${MAX_LEVEL} and points per level.`;
+
+export const metadata: Metadata = {
+  // Absolute, so the site name does not push the useful words out of the result.
+  title: { absolute: title },
+  description,
+  alternates: { canonical: "/ranks" },
+  openGraph: { title, description, url: "/ranks" },
+  twitter: { title, description },
+};
 
 const ROWS = RANKS.map((name, tier) => {
   const [first, last] = rankLevels(tier);
@@ -40,11 +46,15 @@ const ROWS = RANKS.map((name, tier) => {
   };
 });
 
-const TO_LORD = pointsBetween(1, LORD);
-const TO_CHAMPION = pointsBetween(1, CHAMPION);
-const TO_MAX = pointsBetween(1, MAX_LEVEL);
-
 const FAQ: { q: string; a: string }[] = [
+  {
+    q: "How long does it take to get Lord in Marvel Rivals?",
+    a: `About ${hours(TO_LORD)} hours of play on one hero. Lord is level 20 and takes ${fmt(TO_LORD)} proficiency points, and most players earn around ${DEFAULT_POINTS_PER_HOUR} points an hour. Finishing the hero's proficiency challenges every match makes it faster.`,
+  },
+  {
+    q: "How long does it take to get Champion?",
+    a: `About ${hours(TO_CHAMPION)} hours on one hero at the same pace. Champion is level 50 and takes ${fmt(TO_CHAMPION)} points, almost nine times what Lord takes.`,
+  },
   {
     q: "How do hero proficiency ranks work in Marvel Rivals?",
     a: `Each hero has a proficiency level from 1 to ${MAX_LEVEL}. A new rank starts every 5 levels: Agent at 1, Knight at 5, Captain at 10, Centurion at 15, Lord at 20, then Count, Colonel, Warrior, Elite and Guardian, and Champion from level 50 to ${MAX_LEVEL}.`,
@@ -83,10 +93,11 @@ export default function RanksPage() {
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd).replace(/</g, "\\u003c") }} />
       <header className="top">
         <div>
-          <h1 className="page-title">Marvel Rivals proficiency ranks</h1>
+          <h1 className="page-title">Marvel Rivals proficiency levels and ranks</h1>
           <p className="sub">
-            Every rank from Agent to Champion, the level it starts at, and the points it takes. Checked against the in-game
-            badges.
+            Lord is level 20 and takes {fmt(TO_LORD)} points, about {hours(TO_LORD)} hours on one hero. Champion is level 50 at{" "}
+            {fmt(TO_CHAMPION)} points. Every rank, the level it starts at and the points it costs are below, checked against
+            the in-game badges.
           </p>
         </div>
       </header>

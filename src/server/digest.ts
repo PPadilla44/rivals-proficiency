@@ -4,6 +4,7 @@ import { SITE_URL } from "@/lib/site-url";
 import { getProblems, sendWebhook, type Send } from "./alerts";
 import { countScans, type AnyDb } from "./board";
 import { SERVER_VISITOR, getReferrers, getStats, recordEvent } from "./events";
+import { searchSection } from "./search-console";
 
 const DAY = 86_400_000;
 /** A second digest inside this window is skipped, so the route cannot be used to spam the channel. */
@@ -112,10 +113,14 @@ const DEVICE_LABEL: Record<string, string> = { mobile: "phone", desktop: "comput
  * The daily summary: the last 24 hours next to the 24 hours before, grouped so
  * it reads top to bottom as traffic, behaviour, accounts, import, health.
  */
-export async function buildDigest(db: AnyDb, opts: { now?: Date; cap?: number } = {}): Promise<string> {
+export async function buildDigest(
+  db: AnyDb,
+  opts: { now?: Date; cap?: number; search?: () => Promise<string[]> } = {},
+): Promise<string> {
   const now = opts.now ?? new Date();
   const dayAgo = new Date(now.getTime() - DAY);
-  const [today, before, week, refs, eng, fresh, problems, reads, [{ accounts }]] = await Promise.all([
+  const [search, today, before, week, refs, eng, fresh, problems, reads, [{ accounts }]] = await Promise.all([
+    (opts.search ?? (() => searchSection({ now })))(),
     getStats(db, 1, now),
     getStats(db, 1, dayAgo),
     getStats(db, 7, now),
@@ -155,6 +160,7 @@ export async function buildDigest(db: AnyDb, opts: { now?: Date; cap?: number } 
     ``,
     `**Import**`,
     `Opened ${eng.importOpens} (${eng.importOpensFromCard} from the card) · screenshots read ${eng.importReads} · saved ${eng.importSaves} · wrong screen ${eng.importWrongScreen} · cap ${reads}${opts.cap ? ` of ${opts.cap}` : ""}`,
+    ...(search.length ? [``, ...search] : []),
     ``,
     `**Health**`,
     `Problems: ${problems.length ? problems.map((p) => `${p.label} x${p.count}`).join("; ") : "none"}`,

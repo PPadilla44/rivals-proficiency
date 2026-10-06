@@ -5,6 +5,7 @@ import { auth, authConfigured } from "@/auth";
 import { getDb } from "@/db";
 import { getRecentReferrers, getStats, type Stats } from "@/server/events";
 import { sendDailyDigest } from "@/server/digest";
+import { searchConsoleConfigured } from "@/server/search-console";
 import { isAdminEmail as isAdmin, playtimeSyncEnabled } from "@/lib/flags";
 import { playtimeSyncFlag, screenshotDailyCap } from "@/flags";
 import { getProblems, sendTestAlert } from "@/server/alerts";
@@ -101,6 +102,10 @@ export default async function StatsPage({ searchParams }: PageProps<"/stats">) {
             </b>{" "}
             (site-wide cap, set by the screenshot-daily-cap flag). Alerts go to{" "}
             <b>{process.env.ALERT_WEBHOOK_URL ? "your alert webhook" : "nowhere yet: set ALERT_WEBHOOK_URL"}</b>.
+          </p>
+          <p className="sub">
+            Google Search in the daily digest:{" "}
+            <b>{searchConsoleConfigured() ? "connected" : "not connected (set GOOGLE_SERVICE_ACCOUNT_JSON in Vercel)"}</b>
           </p>
           {process.env.ALERT_WEBHOOK_URL ? (
             <form action={testAlertAction} className="actions" style={{ display: "flex", gap: 10, alignItems: "center", marginTop: 8 }}>

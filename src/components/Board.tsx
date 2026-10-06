@@ -17,7 +17,7 @@ import { StatTiles, Summary } from "./Summary";
 import { HeroCard, HeroLine } from "./HeroViews";
 import { Account } from "./Account";
 import { LS_CARD, ScreenshotImport } from "./ScreenshotImport";
-import { track } from "@/lib/track";
+import { referrerSite, track } from "@/lib/track";
 
 const LS_LEVELS = "proficiency-board-v1";
 const LS_UI = "proficiency-board-ui";
@@ -99,7 +99,7 @@ export function Board({ mode, initial, signInSlot, portraits, screenshotImport, 
       if (sessionStorage.getItem("pb-visit")) return;
       sessionStorage.setItem("pb-visit", "1");
     } catch {}
-    track("visit", { mode });
+    track("visit", { mode, ref: referrerSite() });
   }, [mode]);
 
   // Tie this browser's anonymous id to the signed-in account (the server keeps one row per pair),

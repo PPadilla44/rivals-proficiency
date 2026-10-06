@@ -35,10 +35,10 @@ const ALERT_EVERY_MS: Record<ProblemKind, number> = {
   event_flood: 60 * 60_000,
 };
 
-type Send = (content: string) => Promise<void>;
+export type Send = (content: string) => Promise<void>;
 
 /** Post to a Discord (or Slack-compatible) incoming webhook, if one is set. */
-const sendWebhook: Send = async (content) => {
+export const sendWebhook: Send = async (content) => {
   const url = process.env.ALERT_WEBHOOK_URL;
   if (!url) return;
   const res = await fetch(url, {

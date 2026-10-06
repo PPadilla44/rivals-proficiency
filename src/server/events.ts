@@ -3,7 +3,7 @@ import { events } from "@/db/schema";
 import type { AnyDb } from "./board";
 
 /** Events the site records. Anything else is dropped. */
-export const EVENT_NAMES = ["visit", "level_set", "import_open", "import_read", "import_save", "sign_in", "identify", "problem", "alert_sent"] as const;
+export const EVENT_NAMES = ["visit", "level_set", "import_open", "import_read", "import_save", "sign_in", "identify", "problem", "alert_sent", "digest_sent"] as const;
 export type EventName = (typeof EVENT_NAMES)[number];
 
 export type EventProps = Record<string, string | number | boolean | null>;
@@ -109,7 +109,7 @@ const n = (v: unknown) => Number(v ?? 0);
 export async function getStats(db: AnyDb, days: number, now = new Date()): Promise<Stats> {
   const since = new Date(now.getTime() - days * 86_400_000);
   const rows = await db.execute(sql`
-    with e as (select * from ${events} where ${events.createdAt} >= ${since.toISOString()}::timestamptz)
+    with e as (select * from ${events} where ${events.createdAt} >= ${since.toISOString()}::timestamptz and ${events.createdAt} <= ${now.toISOString()}::timestamptz)
     select
       (select count(distinct visitor_id) from e where visitor_id <> 'server-auth') as visitors,
       (select count(distinct visitor_id) from e where name in ('level_set', 'import_open', 'import_save')) as interacted,
@@ -133,7 +133,7 @@ export async function getStats(db: AnyDb, days: number, now = new Date()): Promi
       count(distinct ${events.visitorId}) filter (where ${events.name} in ('level_set', 'import_open', 'import_save')) as interacted,
       coalesce(sum(coalesce((${events.props}->>'heroes')::int, 1)) filter (where ${events.name} = 'level_set'), 0) as level_sets,
       count(*) filter (where ${events.name} = 'import_save') as imports_saved
-    from ${events} where ${events.createdAt} >= ${since.toISOString()}::timestamptz
+    from ${events} where ${events.createdAt} >= ${since.toISOString()}::timestamptz and ${events.createdAt} <= ${now.toISOString()}::timestamptz
     group by 1 order by 1 desc
   `);
   const list = (dailyRows as unknown as { rows?: Record<string, unknown>[] }).rows ?? (dailyRows as unknown as Record<string, unknown>[]);
@@ -145,7 +145,8 @@ export async function getStats(db: AnyDb, days: number, now = new Date()): Promi
       count(distinct ${events.visitorId}) filter (where ${events.userId} is not null) as signed_in,
       coalesce(sum(coalesce((${events.props}->>'heroes')::int, 1)) filter (where ${events.name} = 'level_set'), 0) as level_sets
     from ${events}
-    where ${events.createdAt} >= ${since.toISOString()}::timestamptz and ${events.props}->>'device' in ('mobile', 'desktop')
+    where ${events.createdAt} >= ${since.toISOString()}::timestamptz and ${events.createdAt} <= ${now.toISOString()}::timestamptz
+      and ${events.props}->>'device' in ('mobile', 'desktop')
     group by 1 order by 1
   `);
   const deviceList =
@@ -178,4 +179,27 @@ export async function getStats(db: AnyDb, days: number, now = new Date()): Promi
       importsSaved: n(d.imports_saved),
     })),
   };
+}
+
+export type Referrer = { ref: string; visitors: number };
+
+/**
+ * Where visitors came from in a window, by the site they arrived from
+ * ("direct" when there was none). Only visits recorded with a referrer count.
+ */
+export async function getReferrers(db: AnyDb, since: Date, until = new Date(), limit = 8): Promise<Referrer[]> {
+  const rows = await db.execute(sql`
+    select ${events.props}->>'ref' as ref, count(distinct ${events.visitorId}) as visitors
+    from ${events}
+    where ${events.name} = 'visit' and ${events.props}->>'ref' is not null
+      and ${events.createdAt} >= ${since.toISOString()}::timestamptz and ${events.createdAt} <= ${until.toISOString()}::timestamptz
+    group by 1 order by 2 desc, 1 limit ${limit}
+  `);
+  const list = (rows as unknown as { rows?: Record<string, unknown>[] }).rows ?? (rows as unknown as Record<string, unknown>[]);
+  return list.map((r) => ({ ref: String(r.ref), visitors: n(r.visitors) }));
+}
+
+/** Referrers for the last `days` days. */
+export function getRecentReferrers(db: AnyDb, days: number, limit = 8, now = new Date()): Promise<Referrer[]> {
+  return getReferrers(db, new Date(now.getTime() - days * 86_400_000), now, limit);
 }

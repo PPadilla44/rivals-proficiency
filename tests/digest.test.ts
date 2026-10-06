@@ -50,16 +50,31 @@ describe("daily digest", () => {
 
   it("writes the last 24 hours next to the previous 24", async () => {
     await seed();
+    // The new account set two heroes on a phone; one visitor came back from before the window.
+    await db.insert(schema.heroLevels).values([
+      { userId: "u1", heroId: "hela", level: 20 },
+      { userId: "u1", heroId: "thor", level: 5 },
+    ]);
+    await recordEvent(db, { name: "identify", visitorId: "digest-a-1", userId: "u1", props: { device: "mobile" }, at: hoursAgo(2) });
+    await recordEvent(db, { name: "visit", visitorId: "digest-b-1", props: { device: "mobile" }, at: hoursAgo(40) });
+    await recordEvent(db, { name: "level_set", visitorId: "digest-b-1", props: { heroes: 1, taps: 1, device: "mobile" }, at: hoursAgo(3) });
+    await recordEvent(db, { name: "import_open", visitorId: "digest-a-1", userId: "u1", props: { from: "empty" }, at: hoursAgo(2) });
+    await recordEvent(db, { name: "import_read", visitorId: "digest-a-1", userId: "u1", props: { screenshots: 3, single: true }, at: hoursAgo(2) });
+
     const text = await buildDigest(db, { now, cap: 50 });
-    expect(text).toContain("Visitors: **3** (1)");
-    expect(text).toContain("Interacted: **1**, 33% (1, 100%)");
-    expect(text).toContain("New accounts: **1** (0), 1 in total");
-    expect(text).toContain("Heroes updated: **6** (2), 40 changes counting taps");
-    expect(text).toContain("screenshots read 0 of 50");
-    expect(text).toContain("Devices: phone 2, computer 1");
-    expect(text).toContain("Came from: google.com 2, direct 1");
+    expect(text).toContain("24 hours to Oct 6, 8:30 AM PT");
+    expect(text).toContain("Visitors 3 (2) · returning 1 · phone 2, computer 1");
+    expect(text).toContain("Last 7 days: 1, 1, 3");
+    expect(text).toContain("From: google.com 2, direct 1");
+    expect(text).toContain("Interacted 3, 100% (1, 50%) · guests 2, signed in 1");
+    expect(text).toContain("One change and left 1 · updated 10+ heroes 0");
+    expect(text).toContain("Heroes updated 7 (2) · 5.9 changes per hero");
+    expect(text).toContain("New 1 (0) · 1 in total");
+    expect(text).toContain("• phone, 2 heroes set");
+    expect(text).toContain("Opened 1 (1 from the card) · screenshots read 3 · saved 0 · wrong screen 1 · cap 0 of 50");
     expect(text).toContain("Problems: Screenshot reader failed x1");
     expect(text).not.toContain("—");
+    expect(text).not.toContain("Tester");
     expect(text.length).toBeLessThan(2000);
   });
 

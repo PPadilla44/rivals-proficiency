@@ -88,7 +88,8 @@ export default async function PrivacyPage() {
           The board also records a few anonymous actions so I can tell whether
           it is useful: a visit, changing levels (how many, not which heroes),
           and opening, reading and saving a screenshot import. Each notes
-          whether you are on a phone or a computer and is tied to a random id
+          whether you are on a phone or a computer and which site you arrived from
+          (the site name only), and is tied to a random id
           stored in your browser, not a cookie, plus your account if you are
           signed in. Deleting your account deletes these too.
         </p>

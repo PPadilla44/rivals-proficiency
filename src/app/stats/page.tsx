@@ -3,7 +3,8 @@ import { notFound } from "next/navigation";
 import { connection } from "next/server";
 import { auth, authConfigured } from "@/auth";
 import { getDb } from "@/db";
-import { getStats, type Stats } from "@/server/events";
+import { getRecentReferrers, getStats, type Stats } from "@/server/events";
+import { sendDailyDigest } from "@/server/digest";
 import { isAdminEmail as isAdmin, playtimeSyncEnabled } from "@/lib/flags";
 import { playtimeSyncFlag, screenshotDailyCap } from "@/flags";
 import { getProblems, sendTestAlert } from "@/server/alerts";
@@ -54,6 +55,16 @@ async function testAlertAction() {
   redirect(`/stats?alert=${result}`);
 }
 
+/** Admin-only: post the daily digest to the alert channel right now. */
+async function digestNowAction() {
+  "use server";
+  const session = authConfigured ? await auth() : null;
+  if (!isAdmin(session?.user?.email)) notFound();
+  const cap = await screenshotDailyCap().catch(() => undefined);
+  const result = await sendDailyDigest(getDb(), { force: true, cap });
+  redirect(`/stats?alert=${result.sent ? "digest" : "failed"}`);
+}
+
 export default async function StatsPage({ searchParams }: PageProps<"/stats">) {
   await connection(); // always per request, never prerendered
   const session = authConfigured ? await auth() : null;
@@ -61,13 +72,14 @@ export default async function StatsPage({ searchParams }: PageProps<"/stats">) {
   const alertResult = (await searchParams).alert;
 
   const db = getDb();
-  const [week, month, syncForYou, problems, readsToday, cap] = await Promise.all([
+  const [week, month, syncForYou, problems, readsToday, cap, referrers] = await Promise.all([
     getStats(db, 7),
     getStats(db, 30),
     playtimeSyncEnabled(session?.user, () => playtimeSyncFlag()),
     getProblems(db, 7),
     countScans(db),
     screenshotDailyCap(),
+    getRecentReferrers(db, 7, 12),
   ]);
   const syncNote = !process.env.MARVEL_RIVALS_API_KEY
     ? "off for everyone (no MARVEL_RIVALS_API_KEY yet)"
@@ -93,7 +105,10 @@ export default async function StatsPage({ searchParams }: PageProps<"/stats">) {
           {process.env.ALERT_WEBHOOK_URL ? (
             <form action={testAlertAction} className="actions" style={{ display: "flex", gap: 10, alignItems: "center", marginTop: 8 }}>
               <button className="btn small">Send test alert</button>
-              {alertResult === "sent" ? <span className="sub">Sent. Check your Discord channel.</span> : null}
+              <button className="btn small" formAction={digestNowAction}>
+                Send daily digest now
+              </button>
+              {alertResult === "sent" || alertResult === "digest" ? <span className="sub">Sent. Check your Discord channel.</span> : null}
               {alertResult === "failed" ? (
                 <span className="sub danger-error">Couldn&apos;t send. Check the webhook URL in Vercel.</span>
               ) : null}
@@ -168,6 +183,34 @@ export default async function StatsPage({ searchParams }: PageProps<"/stats">) {
           </table>
         </div>
         <p className="muted-note">Counted from October 2, 2026, when the site started recording the device. Earlier visits are not included.</p>
+      </section>
+      <section className="panel rank-table-wrap">
+        <h2>Where visitors came from, last 7 days</h2>
+        <div className="table-scroll">
+          <table className="rank-table">
+            <thead>
+              <tr>
+                <th scope="col">Site</th>
+                <th scope="col">Visitors</th>
+              </tr>
+            </thead>
+            <tbody>
+              {referrers.length ? (
+                referrers.map((r) => (
+                  <tr key={r.ref}>
+                    <th scope="row">{r.ref === "direct" ? "Direct (typed, bookmark, or an app that hides the source)" : r.ref}</th>
+                    <td>{r.visitors}</td>
+                  </tr>
+                ))
+              ) : (
+                <tr>
+                  <td colSpan={2}>Nothing yet.</td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+        </div>
+        <p className="muted-note">Counted from October 6, 2026, when the site started recording this. A daily digest of this page posts to the alert channel each morning.</p>
       </section>
       <section className="panel rank-table-wrap">
         <h2>By day</h2>

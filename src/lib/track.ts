@@ -35,6 +35,17 @@ export function deviceKind(): "mobile" | "desktop" {
   return "desktop";
 }
 
+/** The site this visitor arrived from ("google.com"), or "direct". Only the site name, never the full address. */
+export function referrerSite(): string {
+  try {
+    if (!document.referrer) return "direct";
+    const host = new URL(document.referrer).hostname.replace(/^www\./, "");
+    return !host || host === location.hostname.replace(/^www\./, "") ? "direct" : host.slice(0, 40);
+  } catch {
+    return "direct";
+  }
+}
+
 /** Fire and forget; tracking must never break the page. */
 export function track(name: string, props?: Record<string, string | number | boolean | null>): void {
   try {

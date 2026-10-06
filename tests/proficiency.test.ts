@@ -132,3 +132,28 @@ describe("rank levels", () => {
     expect(rankLevels(10)).toEqual([50, 70]);
   });
 });
+
+import { REWARDS } from "@/lib/proficiency-rewards";
+
+describe("proficiency rewards", () => {
+  const count = (kind: string) => REWARDS.filter((r) => r.kind === kind).length;
+  const total = (name: string) =>
+    REWARDS.filter((r) => r.what.endsWith(name)).reduce((n, r) => n + parseInt(r.what, 10), 0);
+
+  it("matches the totals the game gives per hero", () => {
+    // Per hero: 500 of each currency, four nameplates, four avatar medals, two avatar frames, five titles.
+    expect(total("Unstable Molecules")).toBe(500);
+    expect(total("Units")).toBe(500);
+    expect(count("nameplate")).toBe(4);
+    expect(count("medal")).toBe(4);
+    expect(count("frame")).toBe(2);
+    expect(count("title")).toBe(5);
+  });
+
+  it("is in level order with one reward per level, from 1 to 70", () => {
+    const levels = REWARDS.map((r) => r.level);
+    expect(levels).toEqual([...new Set(levels)].sort((a, b) => a - b));
+    expect(levels[0]).toBe(1);
+    expect(levels.at(-1)).toBe(70);
+  });
+});

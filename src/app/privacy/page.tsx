@@ -87,7 +87,7 @@ export default async function PrivacyPage() {
         <p>
           The board also records a few anonymous actions so I can tell whether
           it is useful: a visit, changing levels (how many, not which heroes),
-          and opening, reading and saving a screenshot import. Each notes
+          and opening, reading and saving a screenshot import. When I am testing two versions of a page, it also records which one you were shown. Each notes
           whether you are on a phone or a computer and which site you arrived from
           (the site name only), and is tied to a random id
           stored in your browser, not a cookie, plus your account if you are

@@ -2,6 +2,7 @@ import { dedupe, flag } from "flags/next";
 import { vercelAdapter } from "@flags-sdk/vercel";
 import { auth, authConfigured } from "@/auth";
 import { isAdminEmail } from "@/lib/flags";
+import type { ExampleMode } from "@/lib/ab";
 
 /**
  * Feature flags managed in the Vercel dashboard (project → Flags). Targeting
@@ -55,5 +56,32 @@ export async function screenshotDailyCap(): Promise<number> {
   } catch (e) {
     console.error("screenshot-daily-cap flag failed", e);
     return 100;
+  }
+}
+
+/**
+ * What a first-time visitor sees: the empty board, or an example board they
+ * can read before starting their own. "test" shows the example to half.
+ */
+export const exampleBoardFlag = flag<ExampleMode>({
+  key: "example-board",
+  adapter: vercelAdapter(),
+  defaultValue: "off",
+  description: "Show first-time visitors an example board",
+  options: [
+    { value: "off", label: "Off: everyone sees the empty board" },
+    { value: "test", label: "Test: half see the example" },
+    { value: "on", label: "On: everyone sees the example" },
+  ],
+});
+
+/** The mode, falling back to off if the flag service can't be reached or the flag doesn't exist yet. */
+export async function exampleBoardMode(): Promise<ExampleMode> {
+  try {
+    const v = await exampleBoardFlag();
+    return v === "test" || v === "on" ? v : "off";
+  } catch (e) {
+    console.error("example-board flag failed", e);
+    return "off";
   }
 }

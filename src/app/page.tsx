@@ -4,10 +4,11 @@ import { getBoard } from "@/server/board";
 import { PREVIEW_PROVIDER, previewLoginEnabled, previewSignIn } from "@/server/preview-login";
 import { Board } from "@/components/Board";
 import { CameraIcon } from "@/components/bits";
+import { PreviewTools } from "@/components/PreviewTools";
 import { getHeroPortraits } from "@/lib/portraits";
 import { visionConfigured } from "@/lib/vision";
 import { playtimeSyncEnabled } from "@/lib/flags";
-import { playtimeSyncFlag } from "@/flags";
+import { exampleBoardMode, playtimeSyncFlag } from "@/flags";
 import { SITE_URL } from "@/lib/site-url";
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
@@ -52,6 +53,9 @@ export default async function Home({ searchParams }: PageProps<"/">) {
     getHeroPortraits(),
     playtimeSyncEnabled(session?.user, () => playtimeSyncFlag()),
   ]);
+
+  // Only an untouched board can show the example, so skip the flag lookup for everyone else.
+  const exampleMode = board && Object.keys(board.levels).length ? "off" : await exampleBoardMode();
 
   async function doSignIn(formData: FormData) {
     "use server";
@@ -150,7 +154,9 @@ export default async function Home({ searchParams }: PageProps<"/">) {
         screenshotImport={visionConfigured}
         importSignIn={importSignIn}
         syncEnabled={syncEnabled}
+        exampleMode={exampleMode}
       />
+      {previewLoginEnabled ? <PreviewTools /> : null}
     </div>
   );
 }

@@ -111,6 +111,97 @@ export async function getNewAccounts(db: AnyDb, since: Date, until: Date, limit 
   return list.map((r) => ({ device: (r.device as string | null) ?? null, heroes: num(r.heroes), imports: num(r.imports) }));
 }
 
+export type TestArm = {
+  arm: "a" | "b";
+  visitors: number;
+  /** Changed a level on their own board, or saved an import. */
+  started: number;
+  /** Updated ten or more heroes. */
+  built: number;
+  signedIn: number;
+  /** Seen on two or more days since joining the test. */
+  returned: number;
+  /** Example group only: pressed Get started or touched a level on the example. */
+  leftExample: number;
+};
+export type ExampleTest = { startedAt: Date; arms: TestArm[] };
+
+/**
+ * The example board test, from its first assignment to now: each half's
+ * visitors and what they went on to do. Null before anyone has been assigned.
+ */
+export async function getExampleTest(db: AnyDb, now = new Date()): Promise<ExampleTest | null> {
+  const list = rowsOf(
+    await db.execute(sql`
+      with arms as (
+        select visitor_id, min(props->>'arm') as arm, min(created_at) as joined
+        from ${events}
+        where name = 'ab' and props->>'exp' = 'example' and props->>'arm' in ('a', 'b')
+          and created_at <= ${now.toISOString()}::timestamptz
+        group by visitor_id
+      ),
+      per as (
+        select a.arm, a.visitor_id, a.joined,
+          coalesce(sum(coalesce((e.props->>'heroes')::int, 1)) filter (where e.name = 'level_set'), 0) as heroes,
+          count(*) filter (where e.name in ('level_set', 'import_save')) as acts,
+          bool_or(e.user_id is not null) as signed,
+          count(distinct date_trunc('day', e.created_at)) as days,
+          count(*) filter (where e.name = 'example_start') as left_example
+        from arms a
+        left join ${events} e
+          on e.visitor_id = a.visitor_id and e.created_at >= a.joined and e.created_at <= ${now.toISOString()}::timestamptz
+        group by a.arm, a.visitor_id, a.joined
+      )
+      select arm,
+        count(*) as visitors,
+        count(*) filter (where acts > 0) as started,
+        count(*) filter (where heroes >= 10) as built,
+        count(*) filter (where signed) as signed_in,
+        count(*) filter (where days > 1) as returned,
+        count(*) filter (where left_example > 0) as left_example,
+        min(joined) as first_joined
+      from per group by arm order by arm
+    `),
+  );
+  if (!list.length) return null;
+  const startedAt = new Date(Math.min(...list.map((r) => new Date(String(r.first_joined)).getTime())));
+  const arm = (name: "a" | "b"): TestArm => {
+    const r = list.find((x) => x.arm === name);
+    return {
+      arm: name,
+      visitors: num(r?.visitors),
+      started: num(r?.started),
+      built: num(r?.built),
+      signedIn: num(r?.signed_in),
+      returned: num(r?.returned),
+      leftExample: num(r?.left_example),
+    };
+  };
+  return { startedAt, arms: [arm("a"), arm("b")] };
+}
+
+/** Fewer visitors than this per group and the difference is noise. */
+export const TEST_MIN_PER_ARM = 100;
+
+/** The digest's example test section: empty board next to example board. */
+export function exampleTestLines(t: ExampleTest, now = new Date()): string[] {
+  const [a, b] = t.arms;
+  const day = Math.floor((now.getTime() - t.startedAt.getTime()) / DAY) + 1;
+  const cell = (n: number, of: number) => `${n} (${pct(n, of)})`;
+  const enough = Math.min(a.visitors, b.visitors) >= TEST_MIN_PER_ARM;
+  return [
+    `**Example board test** · day ${day} · empty board vs example board`,
+    `New visitors ${a.visitors} vs ${b.visitors}`,
+    `Started their board ${cell(a.started, a.visitors)} vs ${cell(b.started, b.visitors)}`,
+    `Updated 10+ heroes ${cell(a.built, a.visitors)} vs ${cell(b.built, b.visitors)}`,
+    `Signed in ${a.signedIn} vs ${b.signedIn} · came back ${a.returned} vs ${b.returned}`,
+    `Left the example to start: ${cell(b.leftExample, b.visitors)} of the example group`,
+    enough
+      ? `Both groups have ${TEST_MIN_PER_ARM}+ visitors: the comparison is worth reading.`
+      : `Too early to judge: wait for ${TEST_MIN_PER_ARM} visitors in each group.`,
+  ];
+}
+
 const DEVICE_LABEL: Record<string, string> = { mobile: "phone", desktop: "computer" };
 
 /**
@@ -123,7 +214,8 @@ export async function buildDigest(
 ): Promise<string> {
   const now = opts.now ?? new Date();
   const dayAgo = new Date(now.getTime() - DAY);
-  const [search, today, before, week, refs, eng, fresh, problems, reads, [{ accounts }]] = await Promise.all([
+  const [test, search, today, before, week, refs, eng, fresh, problems, reads, [{ accounts }]] = await Promise.all([
+    getExampleTest(db, now),
     (opts.search ?? (() => searchSection({ now })))(),
     getStats(db, 1, now),
     getStats(db, 1, dayAgo),
@@ -167,14 +259,34 @@ export async function buildDigest(
     ``,
     `**Import**`,
     `Opened ${eng.importOpens} (${eng.importOpensFromCard} from the card) · screenshots read ${eng.importReads} · saved ${eng.importSaves} · wrong screen ${eng.importWrongScreen} · cap ${reads}${opts.cap ? ` of ${opts.cap}` : ""}`,
+    ...(test ? [``, ...exampleTestLines(test, now)] : []),
     ...(search.length ? [``, ...search] : []),
     ``,
     `**Health**`,
     `Problems: ${problems.length ? problems.map((p) => `${p.label} x${p.count}`).join("; ") : "none"}`,
     `${SITE_URL}/stats`,
   ];
-  // Discord refuses messages over 2,000 characters.
-  return lines.join("\n").slice(0, 1990);
+  return lines.join("\n");
+}
+
+/**
+ * Discord refuses messages over 2,000 characters, so a long digest goes out
+ * as several, split between sections (blank lines), never mid-section.
+ */
+export function splitForDiscord(text: string, max = 1900): string[] {
+  const out: string[] = [];
+  let cur = "";
+  for (const section of text.split("\n\n")) {
+    const piece = section.slice(0, max);
+    if (cur && cur.length + 2 + piece.length > max) {
+      out.push(cur);
+      cur = piece;
+    } else {
+      cur = cur ? `${cur}\n\n${piece}` : piece;
+    }
+  }
+  if (cur) out.push(cur);
+  return out;
 }
 
 export type DigestResult = { sent: boolean; reason?: "too_soon" | "no_webhook" | "failed"; text?: string };
@@ -206,7 +318,7 @@ export async function sendDailyDigest(
   try {
     // Record first: if two requests race, the second sees this row and skips.
     await recordEvent(db, { name: "digest_sent", visitorId: SERVER_VISITOR, props: { manual: !!opts.force }, at: now });
-    await (opts.send ?? sendWebhook)(text);
+    for (const part of splitForDiscord(text)) await (opts.send ?? sendWebhook)(part);
     return { sent: true, text };
   } catch (e) {
     console.error("daily digest failed", e);

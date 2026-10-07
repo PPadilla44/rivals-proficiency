@@ -510,3 +510,20 @@ footer.foot a { color: var(--ink-2); font-weight: 600; }
 .lvl input:hover { background: color-mix(in srgb, var(--pop) 8%, var(--panel)); }
 .lvl input:focus { outline: none; background: color-mix(in srgb, var(--pop) 14%, var(--panel)); box-shadow: inset 0 0 0 2px var(--pop); }
 .lvl button { touch-action: manipulation; user-select: none; -webkit-user-select: none; -webkit-touch-callout: none; }
+
+/* Example board shown to first-time visitors */
+.example-bar { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px 20px; padding: 14px 18px; border-radius: 12px; border: 1px solid color-mix(in srgb, var(--pop) 60%, var(--line)); background: color-mix(in srgb, var(--pop) 12%, var(--panel)); }
+.example-bar p { margin: 0; display: flex; align-items: center; gap: 12px; flex: 1 1 300px; font-size: 15px; color: var(--ink-2); }
+.example-bar strong, .example-sticky strong { color: var(--ink); }
+.example-tag { flex: none; font-size: 11px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; padding: 4px 8px; border-radius: 6px; background: var(--pop); color: var(--pop-ink); }
+.example-bar .btn, .example-sticky .btn { font-size: 15px; padding: 10px 20px; flex: none; }
+.example-sticky { display: none; }
+@media (max-width: 640px) {
+  /* On phones the bar lives at the bottom, always in reach, so heroes show without scrolling. */
+  .example-bar { display: none; }
+  .example-sticky { display: flex; align-items: center; gap: 12px; position: fixed; left: 0; right: 0; bottom: 0; z-index: 40; padding: 10px 14px calc(10px + env(safe-area-inset-bottom)); background: var(--panel); border-top: 1px solid var(--line-2); box-shadow: 0 -6px 20px rgb(0 0 0 / 0.12); }
+  .example-sticky span { flex: 1; font-size: 13.5px; color: var(--ink-2); }
+  .wrap:has(.example-sticky) { padding-bottom: 84px; }
+}
+.preview-tools { margin: 18px 0 0; display: flex; align-items: center; gap: 10px; font-size: 13px; color: var(--ink-3); }
+.preview-tools span { text-transform: uppercase; letter-spacing: 0.06em; font-size: 11px; font-weight: 600; }

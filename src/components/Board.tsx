@@ -17,11 +17,15 @@ import { StatTiles, Summary } from "./Summary";
 import { HeroCard, HeroLine } from "./HeroViews";
 import { Account } from "./Account";
 import { LS_CARD, ScreenshotImport } from "./ScreenshotImport";
-import { referrerSite, track } from "@/lib/track";
+import { referrerSite, track, visitorId } from "@/lib/track";
+import { armFor, showsExample, type ExampleMode } from "@/lib/ab";
+import { EXAMPLE_BOARD } from "@/lib/example-board";
 
 const LS_LEVELS = "proficiency-board-v1";
 const LS_UI = "proficiency-board-ui";
 const LS_TIP = "pb-tip-type-level";
+const LS_EXAMPLE_DONE = "pb-example-done";
+const LS_AB_SENT = "pb-ab-example";
 const TIP_AFTER_STEPS = 5;
 
 type Props = {
@@ -35,6 +39,8 @@ type Props = {
   importSignIn?: ReactNode;
   /** Playtime sync is available (stats API key configured). */
   syncEnabled: boolean;
+  /** Whether first-time visitors see an example board (the example-board flag). */
+  exampleMode?: ExampleMode;
 };
 
 type View = "cards" | "list";
@@ -51,7 +57,7 @@ function readLocal(): Record<string, number> {
   }
 }
 
-export function Board({ mode, initial, signInSlot, portraits, screenshotImport, importSignIn, syncEnabled }: Props) {
+export function Board({ mode, initial, signInSlot, portraits, screenshotImport, importSignIn, syncEnabled, exampleMode = "off" }: Props) {
   const [board, setBoard] = useState<BoardData>(initial ?? EMPTY);
   const [q, setQ] = useState("");
   const [sort, setSort] = useState<Sort>("level-desc");
@@ -65,6 +71,17 @@ export function Board({ mode, initial, signInSlot, portraits, screenshotImport, 
   const [loadVersion, setLoadVersion] = useState(0);
   const [guestCardHidden, setGuestCardHidden] = useState(false);
   const [emptyAtLoad, setEmptyAtLoad] = useState(() => Object.keys(initial?.levels ?? {}).length === 0);
+
+  // First-time visitors may be shown an example board in place of their empty one. It is display
+  // only: nothing in it is saved, and the first press of Get started (or any level control) swaps
+  // in their own empty board for good.
+  const [example, setExample] = useState(false);
+  const exampleRef = useRef(false);
+  const exampleEndedAt = useRef(0);
+  const initialEmpty = useRef(Object.keys(initial?.levels ?? {}).length === 0);
+  useEffect(() => {
+    exampleRef.current = example;
+  }, [example]);
 
   const pending = useRef(new Map<string, number>());
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -86,12 +103,47 @@ export function Board({ mode, initial, signInSlot, portraits, screenshotImport, 
     try {
       if (localStorage.getItem(LS_CARD)) setGuestCardHidden(true);
     } catch {}
+    // Example board: only for a board nobody has touched, and only until they start their own.
+    const untouchedNow = mode === "guest" ? Object.keys(local).length === 0 : initialEmpty.current;
+    if (untouchedNow && exampleMode !== "off") {
+      let done = false;
+      let sent = false;
+      try {
+        done = !!localStorage.getItem(LS_EXAMPLE_DONE);
+        sent = !!localStorage.getItem(LS_AB_SENT);
+      } catch {}
+      if (!done) {
+        const id = visitorId();
+        // During the test, record which half this browser is in (the server keeps the first answer).
+        if (exampleMode === "test" && !sent) {
+          track("ab", { exp: "example", arm: armFor(id, "example") });
+          try {
+            localStorage.setItem(LS_AB_SENT, "1");
+          } catch {}
+        }
+        if (showsExample(exampleMode, id)) setExample(true);
+      }
+    }
     try {
       const ui = JSON.parse(localStorage.getItem(LS_UI) ?? "null");
       if (ui?.sort && ui.sort in SORTS) setSort(ui.sort);
       if (ui?.view === "cards" || ui?.view === "list") setView(ui.view);
     } catch {}
-  }, [mode]);
+  }, [mode, exampleMode]);
+
+  /** Leave the example for the visitor's own empty board. `via` is how they did it. */
+  const startOwnBoard = useCallback((via: "button" | "tap") => {
+    if (!exampleRef.current) return;
+    exampleRef.current = false;
+    exampleEndedAt.current = Date.now();
+    setExample(false);
+    try {
+      localStorage.setItem(LS_EXAMPLE_DONE, "1");
+    } catch {}
+    track("example_start", { via });
+    if (via === "tap") setToast({ text: "That was an example. This is your board: set your first level." });
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  }, []);
 
   // One "visit" per browser session.
   useEffect(() => {
@@ -177,6 +229,10 @@ export function Board({ mode, initial, signInSlot, portraits, screenshotImport, 
 
   const setLevel = useCallback(
     (heroId: string, level: number, fromEstimate = false, held = false) => {
+      // The example is not editable: touching a control starts the visitor's own board. A hold
+      // that began on the example keeps firing for a moment, so ignore changes right after.
+      if (exampleRef.current) return startOwnBoard("tap");
+      if (Date.now() - exampleEndedAt.current < 900) return;
       const v = clampLevel(level);
       // One press-and-hold is one change, however many levels it passes through.
       const t = Date.now();
@@ -207,7 +263,7 @@ export function Board({ mode, initial, signInSlot, portraits, screenshotImport, 
       if (fromEstimate) void flush(true);
       else timer.current = setTimeout(() => void flush(), 700);
     },
-    [mode, flush, flushLevelEvent, noteStep],
+    [mode, flush, flushLevelEvent, noteStep, startOwnBoard],
   );
 
   // Save anything queued if the tab is closed or hidden.
@@ -230,13 +286,14 @@ export function Board({ mode, initial, signInSlot, portraits, screenshotImport, 
     }
   };
 
+  const shownBoard = example ? EXAMPLE_BOARD : board;
   const rows = useMemo(
     () =>
-      buildRows(board.levels, board.playtime, {
-        linked: syncEnabled && !!board.link,
-        pointsPerHour: board.link?.pointsPerHour ?? null,
+      buildRows(shownBoard.levels, shownBoard.playtime, {
+        linked: syncEnabled && !!shownBoard.link,
+        pointsPerHour: shownBoard.link?.pointsPerHour ?? null,
       }),
-    [board, syncEnabled],
+    [shownBoard, syncEnabled],
   );
 
   const visible = useMemo(() => {
@@ -252,7 +309,7 @@ export function Board({ mode, initial, signInSlot, portraits, screenshotImport, 
 
   // Rows keep their position while you edit; re-sort only when the view or
   // the data source changes (filters, sort, a sync, a page load).
-  const viewKey = `${q}|${role}|${rank}|${goal}|${sort}|${mode}|${loadVersion}`;
+  const viewKey = `${q}|${role}|${rank}|${goal}|${sort}|${mode}|${loadVersion}|${example}`;
   const [frozen, setFrozen] = useState<{ key: string; order: string[] }>({ key: "", order: [] });
   if (frozen.key !== viewKey) setFrozen({ key: viewKey, order: visible.map((r) => r.id) });
   const byId = new Map(visible.map((r) => [r.id, r]));
@@ -293,7 +350,29 @@ export function Board({ mode, initial, signInSlot, portraits, screenshotImport, 
 
   return (
     <>
-      {guestCard ? (
+      {example ? (
+        <>
+          <section className="example-bar" aria-label="Example board">
+            <p>
+              <span className="example-tag">Example</span>
+              <span>
+                <strong>This is an example board.</strong> Yours starts empty.
+              </span>
+            </p>
+            <button type="button" className="btn primary" onClick={() => startOwnBoard("button")}>
+              Get started
+            </button>
+          </section>
+          <div className="example-sticky" role="region" aria-label="Example board">
+            <span>
+              <strong>Example board.</strong> Yours starts empty.
+            </span>
+            <button type="button" className="btn primary" onClick={() => startOwnBoard("button")}>
+              Get started
+            </button>
+          </div>
+        </>
+      ) : guestCard ? (
         <section className="panel shot-start" aria-label="Fill in your board">
           <button
             type="button"
@@ -341,9 +420,9 @@ export function Board({ mode, initial, signInSlot, portraits, screenshotImport, 
         />
       ) : null}
 
-      {mode === "guest" && !guestCard ? importSignIn : null}
+      {mode === "guest" && !guestCard && !example ? importSignIn : null}
 
-      {mode === "user" && screenshotImport ? (
+      {mode === "user" && screenshotImport && !example ? (
         <ScreenshotImport
           current={currentLevels}
           empty={untouched}
@@ -483,7 +562,7 @@ export function Board({ mode, initial, signInSlot, portraits, screenshotImport, 
         </div>
       </section>
 
-      {untouched && !guestCard && !(screenshotImport && mode === "user") ? (
+      {untouched && !example && !guestCard && !(screenshotImport && mode === "user") ? (
         <p className="start-here">
           <strong>Start here:</strong>{" "}
           {screenshotImport && mode === "guest"

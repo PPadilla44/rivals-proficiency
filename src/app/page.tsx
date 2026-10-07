@@ -4,6 +4,7 @@ import { getBoard } from "@/server/board";
 import { PREVIEW_PROVIDER, previewLoginEnabled, previewSignIn } from "@/server/preview-login";
 import { Board } from "@/components/Board";
 import { CameraIcon } from "@/components/bits";
+import { PreviewTools } from "@/components/PreviewTools";
 import { getHeroPortraits } from "@/lib/portraits";
 import { visionConfigured } from "@/lib/vision";
 import { playtimeSyncEnabled } from "@/lib/flags";
@@ -155,6 +156,7 @@ export default async function Home({ searchParams }: PageProps<"/">) {
         syncEnabled={syncEnabled}
         exampleMode={exampleMode}
       />
+      {previewLoginEnabled ? <PreviewTools /> : null}
     </div>
   );
 }

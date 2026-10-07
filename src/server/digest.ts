@@ -7,8 +7,12 @@ import { SERVER_VISITOR, getReferrers, getStats, recordEvent } from "./events";
 import { searchSection } from "./search-console";
 
 const DAY = 86_400_000;
-/** A second digest inside this window is skipped, so the route cannot be used to spam the channel. */
-const MIN_GAP_MS = 20 * 60 * 60_000;
+/**
+ * A second scheduled digest inside this window is skipped, so the route cannot
+ * be used to spam the channel. Digests sent by hand from /stats do not count:
+ * one sent at midday must not block the next morning's.
+ */
+const MIN_GAP_MS = 12 * 60 * 60_000;
 
 const pct = (a: number, b: number) => (b ? `${Math.round((a / b) * 100)}%` : "0%");
 const num = (v: unknown) => Number(v ?? 0);
@@ -177,7 +181,7 @@ export type DigestResult = { sent: boolean; reason?: "too_soon" | "no_webhook" |
 
 /**
  * Post the daily digest to the alert channel. Skipped when one already went
- * out in the last 20 hours, unless `force` (the admin button on /stats).
+ * out in the last 12 hours, unless `force` (the admin button on /stats).
  */
 export async function sendDailyDigest(
   db: AnyDb,
@@ -189,13 +193,19 @@ export async function sendDailyDigest(
     const [{ recent }] = await db
       .select({ recent: sql<number>`count(*)::int` })
       .from(events)
-      .where(and(eq(events.name, "digest_sent"), gte(events.createdAt, new Date(now.getTime() - MIN_GAP_MS))));
+      .where(
+        and(
+          eq(events.name, "digest_sent"),
+          gte(events.createdAt, new Date(now.getTime() - MIN_GAP_MS)),
+          sql`${events.props}->>'manual' is distinct from 'true'`,
+        ),
+      );
     if (recent > 0) return { sent: false, reason: "too_soon" };
   }
   const text = await buildDigest(db, { now, cap: opts.cap });
   try {
     // Record first: if two requests race, the second sees this row and skips.
-    await recordEvent(db, { name: "digest_sent", visitorId: SERVER_VISITOR, at: now });
+    await recordEvent(db, { name: "digest_sent", visitorId: SERVER_VISITOR, props: { manual: !!opts.force }, at: now });
     await (opts.send ?? sendWebhook)(text);
     return { sent: true, text };
   } catch (e) {

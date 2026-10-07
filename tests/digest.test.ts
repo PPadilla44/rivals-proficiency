@@ -78,13 +78,24 @@ describe("daily digest", () => {
     expect(text.length).toBeLessThan(2000);
   });
 
-  it("sends once, skips a repeat inside 20 hours, and sends again when forced", async () => {
+  it("sends once a day on schedule and skips a repeat soon after", async () => {
     await seed();
     const send = vi.fn(async () => {});
+    const later = (h: number) => new Date(now.getTime() + h * 3_600_000);
     expect((await sendDailyDigest(db, { now, send })).sent).toBe(true);
-    expect(await sendDailyDigest(db, { now: new Date(now.getTime() + 3_600_000), send })).toMatchObject({ sent: false, reason: "too_soon" });
-    expect((await sendDailyDigest(db, { now: new Date(now.getTime() + 3_600_000), send, force: true })).sent).toBe(true);
-    expect((await sendDailyDigest(db, { now: new Date(now.getTime() + 24 * 3_600_000), send })).sent).toBe(true);
+    expect(await sendDailyDigest(db, { now: later(1), send })).toMatchObject({ sent: false, reason: "too_soon" });
+    expect((await sendDailyDigest(db, { now: later(24), send })).sent).toBe(true);
+    expect(send).toHaveBeenCalledTimes(2);
+  });
+
+  it("a digest sent by hand does not block the next scheduled one", async () => {
+    await seed();
+    const send = vi.fn(async () => {});
+    // Sent by hand at 12:10 pm, then the schedule fires at 7:20 the next morning, 19 hours later.
+    expect((await sendDailyDigest(db, { now, send, force: true })).sent).toBe(true);
+    expect((await sendDailyDigest(db, { now: new Date(now.getTime() + 19 * 3_600_000), send })).sent).toBe(true);
+    // And a manual one right after a scheduled one still goes out.
+    expect((await sendDailyDigest(db, { now: new Date(now.getTime() + 19.1 * 3_600_000), send, force: true })).sent).toBe(true);
     expect(send).toHaveBeenCalledTimes(3);
   });
 

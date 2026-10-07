@@ -7,7 +7,7 @@ import { buildDigest, sendDailyDigest } from "@/server/digest";
  *
  * When CRON_SECRET is set in Vercel, Vercel sends it with the cron request and
  * anything else is refused. Without it, the route still cannot be abused much:
- * at most one digest goes out every 20 hours, and the reply never includes the numbers.
+ * at most one scheduled digest goes out every 12 hours, and the reply never includes the numbers.
  */
 export async function GET(req: Request) {
   if (!process.env.DATABASE_URL) return new Response("Not configured", { status: 404 });

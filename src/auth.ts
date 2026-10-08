@@ -8,7 +8,13 @@ import { SERVER_VISITOR, recordEvent } from "@/server/events";
 
 // Only offer providers that are configured, so one is enough to run.
 const providers: NextAuthConfig["providers"] = [];
-if (process.env.AUTH_DISCORD_ID) providers.push(Discord);
+// Discord started sending an "iss" value on its sign-in callback (Oct 2026).
+// Auth.js checks it against the provider's issuer, and its built-in Discord
+// provider has none, so every Discord sign-in failed. "https://discord.com"
+// is the issuer Discord publishes. The endpoints are all set explicitly, so
+// this adds no extra request.
+export const DISCORD_ISSUER = "https://discord.com";
+if (process.env.AUTH_DISCORD_ID) providers.push(Discord({ issuer: DISCORD_ISSUER }));
 if (process.env.AUTH_GOOGLE_ID) providers.push(Google);
 
 export const providerList = providers.map((p) => {

@@ -1,6 +1,7 @@
 import { getDb } from "@/db";
 import { screenshotDailyCap } from "@/flags";
 import { buildDigest, sendDailyDigest } from "@/server/digest";
+import { submitIndexNowOnce } from "@/server/indexnow";
 
 /**
  * Daily digest to the alert channel, called by Vercel Cron (see vercel.json).
@@ -23,5 +24,7 @@ export async function GET(req: Request) {
     return new Response(await buildDigest(db, { cap }), { headers: { "content-type": "text/plain; charset=utf-8" } });
   }
   const result = await sendDailyDigest(db, { cap });
-  return Response.json({ sent: result.sent, reason: result.reason ?? null });
+  // Once per deployed commit: tell Bing and other IndexNow engines the pages changed.
+  const indexNow = await submitIndexNowOnce(db).catch((e) => ({ submitted: false, reason: String(e).slice(0, 80) }));
+  return Response.json({ sent: result.sent, reason: result.reason ?? null, indexNow });
 }

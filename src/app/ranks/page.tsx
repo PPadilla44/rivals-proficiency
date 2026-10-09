@@ -12,6 +12,8 @@ import {
   rankOf,
 } from "@/lib/proficiency";
 import { REWARDS, REWARD_KIND_LABEL } from "@/lib/proficiency-rewards";
+import { SITE_URL } from "@/lib/site-url";
+import { DATA_CHECKED, DATA_CHECKED_TEXT, DATA_SEASON } from "@/lib/site";
 
 const fmt = (n: number) => n.toLocaleString("en-US");
 const hours = (points: number) => Math.round(points / DEFAULT_POINTS_PER_HOUR);
@@ -99,8 +101,13 @@ const FAQ: { q: string; a: string }[] = [
 export default function RanksPage() {
   const jsonLd = {
     "@context": "https://schema.org",
-    "@type": "FAQPage",
-    mainEntity: FAQ.map((f) => ({ "@type": "Question", name: f.q, acceptedAnswer: { "@type": "Answer", text: f.a } })),
+    "@graph": [
+      { "@type": "WebPage", name: title, description, url: `${SITE_URL}/ranks`, dateModified: DATA_CHECKED },
+      {
+        "@type": "FAQPage",
+        mainEntity: FAQ.map((f) => ({ "@type": "Question", name: f.q, acceptedAnswer: { "@type": "Answer", text: f.a } })),
+      },
+    ],
   };
 
   return (
@@ -112,7 +119,7 @@ export default function RanksPage() {
           <p className="sub">
             Lord is level 20 and takes {fmt(TO_LORD)} points, about {hours(TO_LORD)} hours on one hero. Champion is level 50 at{" "}
             {fmt(TO_CHAMPION)} points. Every rank, the level it starts at and the points it costs are below, checked against
-            the in-game badges.
+            the in-game badges. Last checked {DATA_CHECKED_TEXT} ({DATA_SEASON}).
           </p>
         </div>
       </header>
@@ -201,7 +208,8 @@ export default function RanksPage() {
           </table>
         </div>
         <p className="muted-note">
-          Read from the in-game reward track for Adam Warlock in Season 10. Every hero has the same track with its own art,
+          Read from the in-game reward track for Adam Warlock in Season 10 and checked against Angela in {DATA_SEASON}. Every
+          hero has the same track with its own art,
           and each title ends with that hero&apos;s name, for example Legendary Adam Warlock. Across all 70 levels a hero
           gives {UM_TOTAL} Unstable Molecules and {UNITS_TOTAL} Units.
         </p>

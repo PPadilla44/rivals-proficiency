@@ -3,9 +3,10 @@ import localFont from "next/font/local";
 import Link from "next/link";
 import { Analytics } from "@vercel/analytics/next";
 import { SpeedInsights } from "@vercel/speed-insights/next";
-import { FEEDBACK_URL, KOFI_URL } from "@/lib/site";
+import { DATA_SEASON, FEEDBACK_URL, KOFI_URL } from "@/lib/site";
 import { SITE_URL } from "@/lib/site-url";
 import { SiteNav } from "@/components/SiteNav";
+import { HEROES } from "@/lib/heroes";
 import "./globals.css";
 
 // Self-hosted (SIL Open Font License) so builds never depend on Google Fonts.
@@ -55,7 +56,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
         {children}
         <footer className="foot wrap">
           <span>
-            54 heroes as of Season 10 (Gorr the God Butcher). A new rank every 5 levels: Lord at 20, Champion at 50, max 70.
+            {HEROES.length} heroes as of {DATA_SEASON}. A new rank every 5 levels: Lord at 20, Champion at 50, max 70.
           </span>
           <span>
             {/* Only mention playtime estimates when sync can actually run. */}
@@ -79,7 +80,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
             <a href={FEEDBACK_URL} target="_blank" rel="noreferrer">
               Report a bug or suggest an idea
             </a>
-            . <Link href="/ranks">Proficiency ranks and points</Link> · <Link href="/privacy">Privacy</Link> ·{" "}
+            . <Link href="/calculator">Proficiency calculator</Link> · <Link href="/ranks">Proficiency ranks and points</Link> · <Link href="/privacy">Privacy</Link> ·{" "}
             <Link href="/terms">Terms</Link>
           </span>
         </footer>

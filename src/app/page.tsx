@@ -10,11 +10,44 @@ import { visionConfigured } from "@/lib/vision";
 import { playtimeSyncEnabled } from "@/lib/flags";
 import { exampleBoardMode, playtimeSyncFlag } from "@/flags";
 import { SITE_URL } from "@/lib/site-url";
+import { DATA_CHECKED, DATA_CHECKED_TEXT, DATA_SEASON } from "@/lib/site";
+import { HEROES } from "@/lib/heroes";
+import { CHAMPION, DEFAULT_POINTS_PER_HOUR, LORD, MAX_LEVEL, pointsBetween } from "@/lib/proficiency";
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import type { Metadata } from "next";
 
 export const metadata: Metadata = { alternates: { canonical: "/" } };
+
+const fmt = (n: number) => n.toLocaleString("en-US");
+const TO_LORD = pointsBetween(1, LORD);
+
+// Plain answers to what people search for. Shown under the board and sent as FAQPage data,
+// which search engines and AI answer tools read.
+const FAQ: { q: string; a: string; link?: { href: string; label: string } }[] = [
+  {
+    q: "How do I check my hero proficiency in Marvel Rivals?",
+    a: "Open a hero's Hero Profile and choose the Proficiency tab. It shows that hero's rank, level and the points toward the next level, but only one hero at a time. Proficiency Board puts all your heroes on one screen so you can see who is closest to Lord or Champion.",
+  },
+  {
+    q: "How long does it take to get Lord?",
+    a: `Lord is level ${LORD} and takes ${fmt(TO_LORD)} proficiency points, about ${Math.round(TO_LORD / DEFAULT_POINTS_PER_HOUR)} hours of play on one hero. Champion is level ${CHAMPION} and takes about ${Math.round(pointsBetween(1, CHAMPION) / DEFAULT_POINTS_PER_HOUR)} hours. The calculator works it out from any level.`,
+    link: { href: "/calculator", label: "Open the proficiency calculator" },
+  },
+  {
+    q: "What are the proficiency ranks?",
+    a: `Eleven ranks, a new one every 5 levels: Agent, Knight, Captain, Centurion, Lord at ${LORD}, Count, Colonel, Warrior, Elite, Guardian and Champion from ${CHAMPION} to the max of ${MAX_LEVEL}. Levels along the way unlock rewards such as titles, nameplates, the Lord avatar and currency.`,
+    link: { href: "/ranks", label: "See every rank and reward" },
+  },
+  {
+    q: "Do I need an account or my game login?",
+    a: "No. Type your levels and the board saves them in your browser. Signing in with Discord or Google keeps your board on every device and lets you fill in ranks from screenshots of the in-game Heroes tab. The site never asks for your game account or password.",
+  },
+  {
+    q: "Is Proficiency Board official?",
+    a: "No. It is a free tool made by a fan and is not affiliated with NetEase Games or Marvel.",
+  },
+];
 
 // Structured data: the WebSite entry is what Google uses for the site name
 // shown in results; the WebApplication entry describes the tool itself.
@@ -37,6 +70,11 @@ const JSON_LD = {
       description:
         "Track every Marvel Rivals hero's proficiency rank and level on one screen, see who is closest to Lord and Champion, and import ranks from Heroes tab screenshots.",
       offers: { "@type": "Offer", price: "0", priceCurrency: "USD" },
+      dateModified: DATA_CHECKED,
+    },
+    {
+      "@type": "FAQPage",
+      mainEntity: FAQ.map((f) => ({ "@type": "Question", name: f.q, acceptedAnswer: { "@type": "Answer", text: f.a } })),
     },
   ],
 };
@@ -157,6 +195,29 @@ export default async function Home({ searchParams }: PageProps<"/">) {
         exampleMode={exampleMode}
       />
       {previewLoginEnabled ? <PreviewTools /> : null}
+
+      <section className="panel prose home-about" aria-labelledby="about-title">
+        <h2 id="about-title">About this tracker</h2>
+        <p>
+          Marvel Rivals tracks proficiency separately for each of its {HEROES.length} heroes, and the game only shows one
+          hero&apos;s level at a time. Proficiency Board lists them all, sorts them by who is closest to Lord or Champion,
+          and shows the hours of play left. Data checked against the game on {DATA_CHECKED_TEXT} ({DATA_SEASON}).
+        </p>
+        {FAQ.map((f) => (
+          <div key={f.q} className="faq">
+            <h3>{f.q}</h3>
+            <p>
+              {f.a}
+              {f.link ? (
+                <>
+                  {" "}
+                  <Link href={f.link.href}>{f.link.label}</Link>.
+                </>
+              ) : null}
+            </p>
+          </div>
+        ))}
+      </section>
     </div>
   );
 }

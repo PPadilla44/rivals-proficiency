@@ -4,6 +4,7 @@ import { auth, authConfigured } from "@/auth";
 import { getDb } from "@/db";
 import { getBoard } from "@/server/board";
 import { Calculator } from "@/components/Calculator";
+import { hoursText } from "@/lib/calculator";
 import { CHAMPION, DEFAULT_POINTS_PER_HOUR, LORD, MAX_LEVEL, pointsBetween } from "@/lib/proficiency";
 
 const fmt = (n: number) => n.toLocaleString("en-US");
@@ -26,7 +27,7 @@ export const metadata: Metadata = {
 const FAQ: { q: string; a: string }[] = [
   {
     q: "How many hours does it take to get Lord?",
-    a: `About ${hours(TO_LORD)} hours on one hero from level 1. Lord is level 20 and takes ${fmt(TO_LORD)} proficiency points. From level 15 it is about ${hours(pointsBetween(15, LORD))} hours.`,
+    a: `About ${hours(TO_LORD)} hours on one hero from level 1. Lord is level 20 and takes ${fmt(TO_LORD)} proficiency points. From level 15 it is ${hoursText(pointsBetween(15, LORD) / DEFAULT_POINTS_PER_HOUR)}.`,
   },
   {
     q: "How many hours from Lord to Champion?",
@@ -34,7 +35,7 @@ const FAQ: { q: string; a: string }[] = [
   },
   {
     q: "How accurate is the estimate?",
-    a: `It assumes about ${DEFAULT_POINTS_PER_HOUR} proficiency points an hour, a common average. Finishing the hero's proficiency challenges every match is faster; playing without them is slower. The point cost of each level is exact.`,
+    a: `It assumes about ${DEFAULT_POINTS_PER_HOUR} proficiency points an hour, a common average. Finishing the hero's proficiency challenges every match is faster; playing without them is slower. The points each level costs were measured by players, since the game does not publish them.`,
   },
   {
     q: "Does time on one hero count toward another?",

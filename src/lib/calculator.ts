@@ -33,7 +33,15 @@ export function defaultGoal(current: number): number {
   return MAX_LEVEL;
 }
 
-export type Stop = { level: number; rank: RankName; points: number; hours: number; days: number | null };
+export type Stop = {
+  level: number;
+  rank: RankName;
+  /** What to call this stop: the rank, or "Level 70" for the max (Champion already starts at 50). */
+  label: string;
+  points: number;
+  hours: number;
+  days: number | null;
+};
 
 export type Plan = {
   from: number;
@@ -66,10 +74,11 @@ export function plan(
   const stops: Stop[] = [];
   RANKS.forEach((rank, tier) => {
     const [first] = rankLevels(tier);
-    if (first > from && first < to) stops.push({ level: first, rank, ...at(first) });
+    if (first > from && first < to) stops.push({ level: first, rank, label: rank, ...at(first) });
   });
-  const tierOfGoal = RANKS.findLastIndex((_, tier) => rankLevels(tier)[0] <= to);
-  stops.push({ level: to, rank: RANKS[tierOfGoal], ...at(to) });
+  const goalRank = RANKS[RANKS.findLastIndex((_, tier) => rankLevels(tier)[0] <= to)];
+  const startsRank = RANKS.some((_, tier) => rankLevels(tier)[0] === to);
+  stops.push({ level: to, rank: goalRank, label: startsRank ? goalRank : `Level ${to}`, ...at(to) });
 
   return {
     from,
@@ -101,11 +110,12 @@ export function finishDate(days: number, now: Date = new Date()): string {
   return d.toLocaleDateString("en-US", opts);
 }
 
-/** "3 days", "2 weeks", "5 months". */
+/** "3 days", "2 weeks", "5 months", "about 2 years". */
 export function daysText(days: number): string {
   const d = Math.max(1, Math.ceil(days));
   if (d < 14) return `${d} ${d === 1 ? "day" : "days"}`;
   if (d < 70) return `${Math.round(d / 7)} weeks`;
-  const m = Math.round(d / 30.4);
-  return `${m} ${m === 1 ? "month" : "months"}`;
+  if (d < 548) return `${Math.round(d / 30.4)} months`;
+  const y = Math.round((d / 365.25) * 2) / 2;
+  return `about ${y} years`;
 }

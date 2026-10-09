@@ -23,7 +23,23 @@ describe("calculator plan", () => {
 
   it("a goal inside a rank is named after that rank", () => {
     const p = plan(20, 29, null);
-    expect(p.stops.at(-1)).toMatchObject({ level: 29, rank: "Count" });
+    expect(p.stops.at(-1)).toMatchObject({ level: 29, rank: "Count", label: "Level 29" });
+  });
+
+  it("calls the max goal Level 70, not a second Champion", () => {
+    const labels = plan(1, 70, null).stops.map((s) => s.label);
+    expect(labels.slice(-2)).toEqual(["Champion", "Level 70"]);
+    expect(new Set(labels).size).toBe(labels.length);
+    expect(plan(55, 70, null).stops.map((s) => s.label)).toEqual(["Level 70"]);
+  });
+
+  it("never repeats a stop for any level and goal", () => {
+    for (let from = 1; from < 70; from++)
+      for (const g of goalOptions(from)) {
+        const labels = plan(from, g.level, 5).stops.map((s) => s.label);
+        expect(new Set(labels).size).toBe(labels.length);
+        expect(plan(from, g.level, 5).stops.at(-1)!.level).toBe(g.level);
+      }
   });
 
   it("turns hours per week into days", () => {
@@ -69,6 +85,8 @@ describe("text", () => {
     expect(daysText(9)).toBe("9 days");
     expect(daysText(30)).toBe("4 weeks");
     expect(daysText(200)).toBe("7 months");
+    expect(daysText(500)).toBe("16 months");
+    expect(daysText(2100)).toBe("about 5.5 years");
   });
   it("adds the year only when it changes", () => {
     const now = new Date(2026, 9, 9);

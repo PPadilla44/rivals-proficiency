@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { daysText, defaultGoal, finishDate, goalOptions, hoursText, plan } from "@/lib/calculator";
 import { HEROES } from "@/lib/heroes";
-import { MAX_LEVEL, clampLevel, pointsBetween } from "@/lib/proficiency";
+import { DEFAULT_POINTS_PER_HOUR, MAX_LEVEL, clampLevel, pointsBetween } from "@/lib/proficiency";
 import { REWARD_KIND_LABEL } from "@/lib/proficiency-rewards";
 import { referrerSite, track } from "@/lib/track";
 import { LevelStepper } from "./bits";
@@ -53,12 +53,15 @@ export function Calculator({ boardLevels }: Props) {
   const [goal, setGoal] = useState(defaultGoal(1));
   const [perWeek, setPerWeek] = useState("7");
   const used = useRef(false);
+  // Dates depend on the visitor's own clock and time zone, so they only render in the browser.
+  const [now, setNow] = useState<Date | null>(null);
 
   // Start from the board: the hero closest to a goal, at its saved level.
   useEffect(() => {
     const own = boardLevels ?? readGuestLevels();
     const first = closestHero(own);
     /* eslint-disable react-hooks/set-state-in-effect -- reads this browser's saved board once after mount */
+    setNow(new Date());
     setLevels(own);
     if (first) {
       setHeroId(first);
@@ -97,7 +100,9 @@ export function Calculator({ boardLevels }: Props) {
   const goals = goalOptions(level);
   const hero = HEROES.find((h) => h.id === heroId);
   const who = hero?.name ?? "your hero";
-  const goalName = result.stops.at(-1)?.rank;
+  const goalName = result.stops.at(-1)?.label;
+  const date = (days: number | null) => (days != null && now ? finishDate(days, now) : null);
+  const finish = date(result.days);
   const maxed = level >= MAX_LEVEL;
   const fromBoard = heroId && levels[heroId] != null && levels[heroId] === level;
 
@@ -163,7 +168,7 @@ export function Calculator({ boardLevels }: Props) {
       {maxed ? (
         <section className="panel calc-answer" aria-live="polite">
           <p className="calc-headline">
-            {hero ? `${hero.name} is` : "That hero is"} at level {MAX_LEVEL}, the max. Nothing left to earn.
+            {hero ? `${hero.name} is at level ${MAX_LEVEL}, the max.` : `Level ${MAX_LEVEL} is the max.`} Nothing left to earn.
           </p>
         </section>
       ) : (
@@ -171,9 +176,9 @@ export function Calculator({ boardLevels }: Props) {
           <section className="panel calc-answer" aria-live="polite">
             <p className="calc-headline">
               {goalName} on {who} takes <b>{hoursText(result.hours)}</b> of play
-              {result.days != null ? (
+              {finish ? (
                 <>
-                  , around <b>{finishDate(result.days)}</b> at {weekly} {weekly === 1 ? "hour" : "hours"} a week
+                  , around <b>{finish}</b> at {weekly} {weekly === 1 ? "hour" : "hours"} a week
                 </>
               ) : null}
               .
@@ -189,11 +194,11 @@ export function Calculator({ boardLevels }: Props) {
               <div className="stat">
                 <span>Hours of play</span>
                 <b>{Math.round(result.hours * 10) / 10}</b>
-                <small>at about 320 points an hour</small>
+                <small>at about {DEFAULT_POINTS_PER_HOUR} points an hour</small>
               </div>
               <div className="stat">
                 <span>Finish</span>
-                <b>{result.days != null ? finishDate(result.days) : "–"}</b>
+                <b>{finish ?? "–"}</b>
                 <small>{result.days != null ? `in ${daysText(result.days)}` : "set hours a week"}</small>
               </div>
             </div>
@@ -210,7 +215,7 @@ export function Calculator({ boardLevels }: Props) {
                       <th scope="col">Level</th>
                       <th scope="col">Points</th>
                       <th scope="col">Hours</th>
-                      {result.days != null ? <th scope="col">Around</th> : null}
+                      {finish ? <th scope="col">Around</th> : null}
                     </tr>
                   </thead>
                   <tbody>
@@ -220,13 +225,13 @@ export function Calculator({ boardLevels }: Props) {
                           <span className="rk">
                             {/* eslint-disable-next-line @next/next/no-img-element */}
                             <img src={`/ranks/${s.rank.toLowerCase()}.webp`} alt="" width={52} height={47} />
-                            {s.rank}
+                            {s.label}
                           </span>
                         </th>
                         <td>{s.level}</td>
                         <td>{fmt(s.points)}</td>
                         <td>{Math.round(s.hours * 10) / 10}</td>
-                        {s.days != null ? <td>{finishDate(s.days)}</td> : null}
+                        {finish ? <td>{date(s.days)}</td> : null}
                       </tr>
                     ))}
                   </tbody>

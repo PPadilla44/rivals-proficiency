@@ -34,6 +34,9 @@ export type Engagement = {
   importReads: number;
   importWrongScreen: number;
   importSaves: number;
+  /** Visitors who opened the calculator, and who changed something on it. */
+  calcViews: number;
+  calcUses: number;
 };
 
 /** How visitors used the board in a window: who stuck, who bounced, and the import funnel. */
@@ -73,7 +76,9 @@ export async function getEngagement(db: AnyDb, since: Date, until: Date): Promis
         count(*) filter (where ${events.name} = 'import_open' and ${events.props}->>'from' = 'empty') as from_card,
         coalesce(sum(coalesce((${events.props}->>'screenshots')::int, 1)) filter (where ${events.name} = 'import_read'), 0) as reads,
         count(*) filter (where ${events.name} = 'import_read' and ${events.props}->>'single' = 'true') as wrong_screen,
-        count(*) filter (where ${events.name} = 'import_save') as saves
+        count(*) filter (where ${events.name} = 'import_save') as saves,
+        count(distinct ${events.visitorId}) filter (where ${events.name} = 'calc' and ${events.props}->>'action' = 'view') as calc_views,
+        count(distinct ${events.visitorId}) filter (where ${events.name} = 'calc' and ${events.props}->>'action' = 'use') as calc_uses
       from ${events}
       where ${events.createdAt} >= ${from}::timestamptz and ${events.createdAt} <= ${to}::timestamptz
     `),
@@ -89,6 +94,8 @@ export async function getEngagement(db: AnyDb, since: Date, until: Date): Promis
     importReads: num(i?.reads),
     importWrongScreen: num(i?.wrong_screen),
     importSaves: num(i?.saves),
+    calcViews: num(i?.calc_views),
+    calcUses: num(i?.calc_uses),
   };
 }
 
@@ -259,6 +266,9 @@ export async function buildDigest(
     ``,
     `**Import**`,
     `Opened ${eng.importOpens} (${eng.importOpensFromCard} from the card) · screenshots read ${eng.importReads} · saved ${eng.importSaves} · wrong screen ${eng.importWrongScreen} · cap ${reads}${opts.cap ? ` of ${opts.cap}` : ""}`,
+    ``,
+    `**Calculator**`,
+    `Opened by ${eng.calcViews} · used by ${eng.calcUses}`,
     ...(test ? [``, ...exampleTestLines(test, now)] : []),
     ...(search.length ? [``, ...search] : []),
     ``,

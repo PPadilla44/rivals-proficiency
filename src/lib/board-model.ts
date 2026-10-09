@@ -23,7 +23,7 @@ export type HeroRow = Hero & {
   estimate: Estimate | null;
   /** The level used for sorting, filtering and progress: the estimate if higher. */
   effective: number;
-  /** Hours of play to the next milestone, when an earn rate is known. */
+  /** Hours of play to the next milestone for heroes the player has set: their learned rate when linked, else the default. */
   hoursToNext: number | null;
 };
 
@@ -44,7 +44,7 @@ export function buildRows(
     const effective = estimate ? estimate.level : level;
     const m = nextMilestone(effective);
     const hoursToNext =
-      opts.linked && entry && effective < MAX_LEVEL
+      entry && effective < MAX_LEVEL
         ? hoursToLevel(estimate ?? { level: effective, fraction: 0 }, m.to, rate)
         : null;
     return { ...h, level, touched: !!entry, approx: !!entry?.approx, estimate, effective, hoursToNext };

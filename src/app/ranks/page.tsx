@@ -171,7 +171,8 @@ export default function RanksPage() {
         </div>
         <p className="muted-note">
           Hours assume about {DEFAULT_POINTS_PER_HOUR} points per hour, a common average. Your pace depends on how often you
-          finish the hero&apos;s challenges.
+          finish the hero&apos;s challenges. For your own hero and level, use the{" "}
+          <Link href="/calculator">proficiency calculator</Link>.
         </p>
       </section>
 

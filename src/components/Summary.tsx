@@ -157,7 +157,9 @@ function NextList(props: { title: string; target: number; from: number; rows: He
                   {r.name} <small>Lv {r.effective}</small>
                 </span>
                 <span className="togo">
-                  {linked && r.hoursToNext != null ? `~${formatHours(r.hoursToNext)}` : `${target - r.effective} to go`}
+                  {linked && r.hoursToNext != null
+                    ? `~${formatHours(r.hoursToNext)}`
+                    : `${target - r.effective} to go${r.hoursToNext != null ? ` · ~${formatHours(r.hoursToNext)}` : ""}`}
                 </span>
                 <div className="mini">
                   <span style={{ width: `${pct}%`, background: tierColor(tierOf(r.effective)) }} />

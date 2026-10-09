@@ -36,7 +36,10 @@ function Progress({ row }: { row: HeroRow }) {
           </>
         ) : (
           <>
-            <span className={hot ? "hot" : ""}>
+            <span
+              className={hot ? "hot" : ""}
+              title={row.hoursToNext != null ? `About ${formatHours(row.hoursToNext)} of play on this hero to reach ${m.label}` : undefined}
+            >
               <b>{togo}</b> to {m.label}
               {row.hoursToNext != null ? ` · ~${formatHours(row.hoursToNext)}` : ""}
             </span>

@@ -6,6 +6,7 @@ import { eventCeiling, isVisitorId, recordEvent } from "@/server/events";
 import { playtimeSyncEnabled } from "@/lib/flags";
 import { playtimeSyncFlag, screenshotDailyCap } from "@/flags";
 import { reportProblem } from "@/server/alerts";
+import { reportBrowserError } from "@/server/report-error";
 import { heroIdFromName } from "@/lib/heroes";
 import { getDb } from "@/db";
 import {
@@ -241,5 +242,19 @@ export async function trackAction(name: unknown, visitorId: unknown, props?: unk
     });
   } catch (e) {
     console.error("track failed", e);
+  }
+}
+
+/**
+ * The error screen calls this when the page crashed in the browser. Anyone can
+ * call it, so it shares the tracking ceilings and has its own hourly cap.
+ */
+export async function reportBrowserErrorAction(visitorId: unknown, message: unknown, path: unknown): Promise<void> {
+  if (!process.env.DATABASE_URL || !isVisitorId(visitorId)) return;
+  try {
+    if ((await eventCeiling(getDb(), visitorId)) !== "ok") return;
+    await reportBrowserError(getDb(), String(message).slice(0, 160), String(path).slice(0, 100));
+  } catch (e) {
+    console.error("browser error report failed", e);
   }
 }

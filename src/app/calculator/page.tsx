@@ -5,6 +5,8 @@ import { getDb } from "@/db";
 import { getBoard } from "@/server/board";
 import { Calculator } from "@/components/Calculator";
 import { hoursText } from "@/lib/calculator";
+import { SITE_URL } from "@/lib/site-url";
+import { DATA_CHECKED, DATA_CHECKED_TEXT, DATA_SEASON } from "@/lib/site";
 import { CHAMPION, DEFAULT_POINTS_PER_HOUR, LORD, MAX_LEVEL, pointsBetween } from "@/lib/proficiency";
 
 const fmt = (n: number) => n.toLocaleString("en-US");
@@ -35,7 +37,7 @@ const FAQ: { q: string; a: string }[] = [
   },
   {
     q: "How accurate is the estimate?",
-    a: `It assumes about ${DEFAULT_POINTS_PER_HOUR} proficiency points an hour, a common average. Finishing the hero's proficiency challenges every match is faster; playing without them is slower. The points each level costs were measured by players, since the game does not publish them.`,
+    a: `It assumes about ${DEFAULT_POINTS_PER_HOUR} proficiency points an hour, a common average. Finishing the hero's proficiency missions every match is faster; playing without them is slower. The points each level costs were measured by players, since the game does not publish them.`,
   },
   {
     q: "Does time on one hero count toward another?",
@@ -53,8 +55,13 @@ export default async function CalculatorPage() {
 
   const jsonLd = {
     "@context": "https://schema.org",
-    "@type": "FAQPage",
-    mainEntity: FAQ.map((f) => ({ "@type": "Question", name: f.q, acceptedAnswer: { "@type": "Answer", text: f.a } })),
+    "@graph": [
+      { "@type": "WebPage", name: title, description, url: `${SITE_URL}/calculator`, dateModified: DATA_CHECKED },
+      {
+        "@type": "FAQPage",
+        mainEntity: FAQ.map((f) => ({ "@type": "Question", name: f.q, acceptedAnswer: { "@type": "Answer", text: f.a } })),
+      },
+    ],
   };
 
   return (
@@ -62,10 +69,11 @@ export default async function CalculatorPage() {
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd).replace(/</g, "\\u003c") }} />
       <header className="top">
         <div>
-          <h1 className="page-title">Proficiency calculator</h1>
+          <h1 className="page-title">Marvel Rivals proficiency calculator</h1>
           <p className="sub">
             How long until Lord on your hero? Set the level you are at and how much you play, and see the hours, the date and
-            the rewards on the way. Point costs per level are on the <Link href="/ranks">ranks guide</Link>.
+            the rewards on the way. Point costs per level are on the <Link href="/ranks">ranks guide</Link>. Checked against the
+            game on {DATA_CHECKED_TEXT} ({DATA_SEASON}).
           </p>
         </div>
       </header>

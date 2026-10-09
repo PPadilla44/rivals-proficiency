@@ -12,6 +12,8 @@ import {
   rankOf,
 } from "@/lib/proficiency";
 import { REWARDS, REWARD_KIND_LABEL } from "@/lib/proficiency-rewards";
+import { SITE_URL } from "@/lib/site-url";
+import { DATA_CHECKED, DATA_CHECKED_TEXT, DATA_SEASON } from "@/lib/site";
 
 const fmt = (n: number) => n.toLocaleString("en-US");
 const hours = (points: number) => Math.round(points / DEFAULT_POINTS_PER_HOUR);
@@ -56,7 +58,7 @@ const UNITS_TOTAL = sumOf("Units");
 const FAQ: { q: string; a: string }[] = [
   {
     q: "How long does it take to get Lord in Marvel Rivals?",
-    a: `About ${hours(TO_LORD)} hours of play on one hero. Lord is level 20 and takes ${fmt(TO_LORD)} proficiency points, and most players earn around ${DEFAULT_POINTS_PER_HOUR} points an hour. Finishing the hero's proficiency challenges every match makes it faster.`,
+    a: `About ${hours(TO_LORD)} hours of play on one hero. Lord is level 20 and takes ${fmt(TO_LORD)} proficiency points, and most players earn around ${DEFAULT_POINTS_PER_HOUR} points an hour. Finishing the hero's proficiency missions every match makes it faster.`,
   },
   {
     q: "How long does it take to get Champion?",
@@ -69,6 +71,12 @@ const FAQ: { q: string; a: string }[] = [
   {
     q: "What are the proficiency titles?",
     a: `Five titles, each followed by the hero's name: Fantastic at level 8, Uncanny at 29, Amazing at 39, Immortal at 60 and Legendary at level ${MAX_LEVEL}.`,
+  },
+  {
+    q: "What level is Captain in Marvel Rivals?",
+    a: `Captain is hero levels 10 to 14. Every rank and the level it starts at: ${RANKS.slice(1)
+      .map((name, i) => `${name} ${rankLevels(i + 1)[0]}`)
+      .join(", ")} (Champion runs to ${MAX_LEVEL}). Agent covers levels 1 to 4.`,
   },
   {
     q: "How do hero proficiency ranks work in Marvel Rivals?",
@@ -88,7 +96,7 @@ const FAQ: { q: string; a: string }[] = [
   },
   {
     q: "How do you earn proficiency points?",
-    a: "By playing matches as that hero and completing the hero's proficiency challenges. Each hero tracks its own points, so time on one hero never counts toward another.",
+    a: "By playing matches as that hero and completing that hero's proficiency missions, listed in the Missions tab next to Rewards on its Proficiency page. The missions are different for each hero and change as the hero levels up. Each hero tracks its own points, so time on one hero never counts toward another.",
   },
   {
     q: "Why do some charts say Agent is levels 1 to 5?",
@@ -99,8 +107,13 @@ const FAQ: { q: string; a: string }[] = [
 export default function RanksPage() {
   const jsonLd = {
     "@context": "https://schema.org",
-    "@type": "FAQPage",
-    mainEntity: FAQ.map((f) => ({ "@type": "Question", name: f.q, acceptedAnswer: { "@type": "Answer", text: f.a } })),
+    "@graph": [
+      { "@type": "WebPage", name: title, description, url: `${SITE_URL}/ranks`, dateModified: DATA_CHECKED },
+      {
+        "@type": "FAQPage",
+        mainEntity: FAQ.map((f) => ({ "@type": "Question", name: f.q, acceptedAnswer: { "@type": "Answer", text: f.a } })),
+      },
+    ],
   };
 
   return (
@@ -112,7 +125,7 @@ export default function RanksPage() {
           <p className="sub">
             Lord is level 20 and takes {fmt(TO_LORD)} points, about {hours(TO_LORD)} hours on one hero. Champion is level 50 at{" "}
             {fmt(TO_CHAMPION)} points. Every rank, the level it starts at and the points it costs are below, checked against
-            the in-game badges.
+            the in-game badges. Last checked {DATA_CHECKED_TEXT} ({DATA_SEASON}).
           </p>
         </div>
       </header>
@@ -171,7 +184,7 @@ export default function RanksPage() {
         </div>
         <p className="muted-note">
           Hours assume about {DEFAULT_POINTS_PER_HOUR} points per hour, a common average. Your pace depends on how often you
-          finish the hero&apos;s challenges. For your own hero and level, use the{" "}
+          finish the hero&apos;s missions. For your own hero and level, use the{" "}
           <Link href="/calculator">proficiency calculator</Link>.
         </p>
       </section>
@@ -201,7 +214,8 @@ export default function RanksPage() {
           </table>
         </div>
         <p className="muted-note">
-          Read from the in-game reward track for Adam Warlock in Season 10. Every hero has the same track with its own art,
+          Read from the in-game reward track for Adam Warlock in Season 10 and checked against Angela in {DATA_SEASON}. Every
+          hero has the same track with its own art,
           and each title ends with that hero&apos;s name, for example Legendary Adam Warlock. Across all 70 levels a hero
           gives {UM_TOTAL} Unstable Molecules and {UNITS_TOTAL} Units.
         </p>

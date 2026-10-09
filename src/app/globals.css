@@ -558,3 +558,6 @@ footer.foot a { color: var(--ink-2); font-weight: 600; }
   .calc-rewards li { grid-template-columns: 52px 1fr; }
   .calc-rewards small { display: none; }
 }
+
+/* Home page explainer under the board */
+.home-about { max-width: 820px; }

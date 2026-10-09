@@ -37,7 +37,7 @@ const FAQ: { q: string; a: string }[] = [
   },
   {
     q: "How accurate is the estimate?",
-    a: `It assumes about ${DEFAULT_POINTS_PER_HOUR} proficiency points an hour, a common average. Finishing the hero's proficiency challenges every match is faster; playing without them is slower. The points each level costs were measured by players, since the game does not publish them.`,
+    a: `It assumes about ${DEFAULT_POINTS_PER_HOUR} proficiency points an hour, a common average. Finishing the hero's proficiency missions every match is faster; playing without them is slower. The points each level costs were measured by players, since the game does not publish them.`,
   },
   {
     q: "Does time on one hero count toward another?",

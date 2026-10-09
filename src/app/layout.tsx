@@ -34,7 +34,7 @@ const mono = localFont({
 });
 
 const description =
-  "Free Marvel Rivals proficiency tracker. See every hero's rank and level on one screen, who is closest to Lord and Champion, and import your ranks from Heroes tab screenshots.";
+  "Free Marvel Rivals proficiency tracker. See every hero's level and rank on one screen, who is closest to Lord and Champion, how long each takes to level up, and import ranks from screenshots.";
 
 const homeTitle = "Marvel Rivals Proficiency Tracker";
 

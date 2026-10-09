@@ -44,7 +44,7 @@ Game data checked against the game on ${DATA_CHECKED} (${DATA_SEASON}), ${HEROES
 - A new rank starts every 5 levels. Lord is level ${LORD}; Champion is level ${CHAMPION} and covers ${CHAMPION} to ${MAX_LEVEL}.
 - Lord takes ${fmt(pointsBetween(1, LORD))} points from level 1, about ${hours(pointsBetween(1, LORD))} hours of play on one hero at about ${DEFAULT_POINTS_PER_HOUR} points an hour.
 - Champion takes ${fmt(pointsBetween(1, CHAMPION))} points (about ${hours(pointsBetween(1, CHAMPION))} hours); level ${MAX_LEVEL} takes ${fmt(pointsBetween(1, MAX_LEVEL))} (about ${hours(pointsBetween(1, MAX_LEVEL))} hours).
-- Points per level are measured by players; the game does not publish them. Hours are averages: finishing the hero's proficiency challenges is faster.
+- Points per level are measured by players; the game does not publish them. Hours are averages: finishing the hero's proficiency missions is faster.
 - In game, a hero's level shows on its Hero Profile under the Proficiency tab, one hero at a time.
 
 ## Ranks

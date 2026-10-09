@@ -30,6 +30,10 @@ const FAQ: { q: string; a: string; link?: { href: string; label: string } }[] = 
     a: "Open a hero's Hero Profile and choose the Proficiency tab. It shows that hero's rank, level and the points toward the next level, but only one hero at a time. Proficiency Board puts all your heroes on one screen so you can see who is closest to Lord or Champion.",
   },
   {
+    q: "How do you level up a hero in Marvel Rivals?",
+    a: "Play matches as that hero: every match adds proficiency points to that hero only. Each hero also has its own proficiency missions, in the Missions tab next to Rewards, that give extra points. The missions are different for every hero and change as it levels up, so check them before you queue. Hero proficiency is separate from your account level.",
+  },
+  {
     q: "How long does it take to get Lord?",
     a: `Lord is level ${LORD} and takes ${fmt(TO_LORD)} proficiency points, about ${Math.round(TO_LORD / DEFAULT_POINTS_PER_HOUR)} hours of play on one hero. Champion is level ${CHAMPION} and takes about ${Math.round(pointsBetween(1, CHAMPION) / DEFAULT_POINTS_PER_HOUR)} hours. The calculator works it out from any level.`,
     link: { href: "/calculator", label: "Open the proficiency calculator" },
@@ -57,13 +61,13 @@ const JSON_LD = {
     {
       "@type": "WebSite",
       name: "Proficiency Board",
-      alternateName: ["Rivals Proficiency", "Rivals Proficiency Tracker", "Marvel Rivals Proficiency Tracker"],
+      alternateName: ["Rivals Proficiency", "Rivals Proficiency Tracker", "Marvel Rivals Proficiency Tracker", "Marvel Rivals Hero Level Tracker"],
       url: `${SITE_URL}/`,
     },
     {
       "@type": "WebApplication",
       name: "Proficiency Board",
-      alternateName: "Marvel Rivals Proficiency Tracker",
+      alternateName: ["Marvel Rivals Proficiency Tracker", "Marvel Rivals Hero Level Tracker", "Marvel Rivals Character Level Tracker"],
       url: `${SITE_URL}/`,
       applicationCategory: "GameApplication",
       operatingSystem: "Any",
@@ -199,8 +203,8 @@ export default async function Home({ searchParams }: PageProps<"/">) {
       <section className="panel prose home-about" aria-labelledby="about-title">
         <h2 id="about-title">About this tracker</h2>
         <p>
-          Marvel Rivals tracks proficiency separately for each of its {HEROES.length} heroes, and the game only shows one
-          hero&apos;s level at a time. Proficiency Board lists them all, sorts them by who is closest to Lord or Champion,
+          Proficiency is each hero&apos;s own level in Marvel Rivals, also called hero level or character level. The
+          game tracks it separately for all {HEROES.length} heroes but only shows one hero&apos;s level at a time. Proficiency Board lists them all, sorts them by who is closest to Lord or Champion,
           and shows the hours of play left. Data checked against the game on {DATA_CHECKED_TEXT} ({DATA_SEASON}).
         </p>
         {FAQ.map((f) => (

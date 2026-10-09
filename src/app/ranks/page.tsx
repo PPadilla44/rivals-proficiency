@@ -234,16 +234,15 @@ export default function RanksPage() {
         </p>
         <ul>
           <li>
-            <strong>Play Quick Match or Competitive.</strong> Missions there repeat without limit. Missions in other modes, such
-            as Conquest and Doom Match, stop counting after a daily limit (10 completions a day, according to the community
-            wiki).
+            <strong>Play Quick Match or Competitive.</strong> Missions there repeat without limit. Missions in arcade modes, such
+            as Conquest, Doom Match and the 18v18 Annihilation mode, stop counting after a few completions a day.
           </li>
           <li>
             <strong>Play to the missions, not the clock.</strong> Time on the hero alone is worth about 60 points an hour,
             according to community guides, so most points come from finishing the damage, healing and KO missions.
           </li>
           <li>
-            <strong>Skip custom games and Practice vs AI.</strong> Community guides report they don&apos;t count.
+            <strong>Skip custom games and Practice vs AI.</strong> Players report they don&apos;t count.
           </li>
           <li>
             <strong>Pick one hero at a time.</strong> Points stay with the hero that earned them, so spreading your time

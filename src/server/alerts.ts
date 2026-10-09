@@ -12,7 +12,10 @@ export type ProblemKind =
   | "import_unreadable" // the reader answered but nothing usable came back
   | "unknown_hero" // an import named a hero the roster doesn't know (new season?)
   | "server_error" // an unexpected error in a server action
-  | "event_flood"; // far more tracking events than real traffic would send; recording paused
+  | "event_flood" // far more tracking events than real traffic would send; recording paused
+  | "page_error" // any server error Next.js caught: a page, API route or action crashed
+  | "sign_in_error" // sign-in failed inside Auth.js (a provider change, a bad secret)
+  | "browser_error"; // the page crashed in a visitor's browser and showed the error screen
 
 export const PROBLEM_LABEL: Record<ProblemKind, string> = {
   import_budget: "Screenshot imports stopped: Anthropic spend limit or credit ran out",
@@ -22,6 +25,9 @@ export const PROBLEM_LABEL: Record<ProblemKind, string> = {
   unknown_hero: "Import saw a hero name the roster doesn't know",
   server_error: "Server error",
   event_flood: "Visitor tracking paused: too many events in the last hour",
+  page_error: "Server error on a page or API route",
+  sign_in_error: "Sign-in failing",
+  browser_error: "Page crashed in a visitor's browser",
 };
 
 /** How often each kind may ping the alert channel. */
@@ -33,6 +39,9 @@ const ALERT_EVERY_MS: Record<ProblemKind, number> = {
   unknown_hero: 24 * 60 * 60_000, // per name
   server_error: 60 * 60_000,
   event_flood: 60 * 60_000,
+  page_error: 60 * 60_000, // per route
+  sign_in_error: 60 * 60_000, // per provider and error type
+  browser_error: 60 * 60_000, // per page
 };
 
 export type Send = (content: string) => Promise<void>;
@@ -65,14 +74,19 @@ export async function reportProblem(
   db: AnyDb,
   kind: ProblemKind,
   detail?: string,
-  opts: { now?: Date; send?: Send } = {},
+  opts: { now?: Date; send?: Send; /** Alert separately per value, e.g. per route, instead of once per kind. */ group?: string } = {},
 ): Promise<{ alerted: boolean }> {
   const now = opts.now ?? new Date();
-  const d = detail?.slice(0, 40) ?? null;
+  // The alert shows a readable message; the stored event keeps a short version.
+  const full = detail?.replace(/\s+/g, " ").trim().slice(0, 180) || null;
+  const d = full?.slice(0, 40) ?? null;
   try {
     await recordEvent(db, { name: "problem", visitorId: SERVER_VISITOR, props: { kind, detail: d }, at: now });
 
-    const key = kind === "unknown_hero" && d ? `${kind}:${d.toLowerCase()}` : kind;
+    // Event props keep at most 40 characters, so the key must fit or the lookup never matches.
+    const key = (
+      opts.group ? `${kind}:${opts.group}` : kind === "unknown_hero" && d ? `${kind}:${d.toLowerCase()}` : kind
+    ).slice(0, 40);
     const since = new Date(now.getTime() - ALERT_EVERY_MS[kind]);
     const [{ recent }] = await db
       .select({ recent: sql<number>`count(*)::int` })
@@ -87,7 +101,7 @@ export async function reportProblem(
       .where(and(eq(events.name, "problem"), gte(events.createdAt, hour), sql`${events.props}->>'kind' = ${kind}`));
 
     await recordEvent(db, { name: "alert_sent", visitorId: SERVER_VISITOR, props: { kind, key }, at: now });
-    const text = `⚠️ Proficiency Board: ${PROBLEM_LABEL[kind]}${d ? ` (${d})` : ""}. ${n} in the last hour. ${SITE_URL}/stats`;
+    const text = `⚠️ Proficiency Board: ${PROBLEM_LABEL[kind]}${full ? ` (${full})` : ""}. ${n} in the last hour. ${SITE_URL}/stats`;
     await (opts.send ?? sendWebhook)(text);
     return { alerted: true };
   } catch (e) {

@@ -1,10 +1,12 @@
 import NextAuth, { type NextAuthConfig } from "next-auth";
+import { after } from "next/server";
 import Discord from "next-auth/providers/discord";
 import Google from "next-auth/providers/google";
 import { DrizzleAdapter } from "@auth/drizzle-adapter";
 import { getDb } from "@/db";
 import { accounts, sessions, users, verificationTokens } from "@/db/schema";
 import { SERVER_VISITOR, recordEvent } from "@/server/events";
+import { reportAuthError } from "@/server/report-error";
 
 // Only offer providers that are configured, so one is enough to run.
 const providers: NextAuthConfig["providers"] = [];
@@ -39,6 +41,17 @@ export const { handlers, auth, signIn, signOut } = NextAuth(() => ({
   session: { strategy: "database" },
   // Show sign-in problems on the board instead of the bare Auth.js page.
   pages: { error: "/" },
+  // Sign-in failures happen inside Auth.js, out of reach of the app's own error reporting.
+  logger: {
+    error: (error) => {
+      // after() keeps the function alive until the alert is sent; outside a request it throws, so send directly.
+      try {
+        after(() => reportAuthError(error));
+      } catch {
+        void reportAuthError(error);
+      }
+    },
+  },
   events: {
     async signIn({ user, account, isNewUser }) {
       if (!user.id) return;

@@ -3,7 +3,7 @@ import { events } from "@/db/schema";
 import type { AnyDb } from "./board";
 
 /** Events the site records. Anything else is dropped. */
-export const EVENT_NAMES = ["visit", "level_set", "import_open", "import_read", "import_save", "sign_in", "identify", "ab", "example_start", "problem", "alert_sent", "digest_sent"] as const;
+export const EVENT_NAMES = ["visit", "level_set", "import_open", "import_read", "import_save", "sign_in", "identify", "ab", "example_start", "calc", "problem", "alert_sent", "digest_sent"] as const;
 export type EventName = (typeof EVENT_NAMES)[number];
 
 export type EventProps = Record<string, string | number | boolean | null>;
@@ -206,7 +206,7 @@ export async function getReferrers(db: AnyDb, since: Date, until = new Date(), l
   const rows = await db.execute(sql`
     select ${events.props}->>'ref' as ref, count(distinct ${events.visitorId}) as visitors
     from ${events}
-    where ${events.name} = 'visit' and ${events.props}->>'ref' is not null
+    where ${events.name} in ('visit', 'calc') and ${events.props}->>'ref' is not null
       and ${events.createdAt} >= ${since.toISOString()}::timestamptz and ${events.createdAt} <= ${until.toISOString()}::timestamptz
     group by 1 order by 2 desc, 1 limit ${limit}
   `);

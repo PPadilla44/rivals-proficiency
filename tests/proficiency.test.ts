@@ -119,7 +119,14 @@ describe("buildRows", () => {
     const guest = buildRows(levels, playtime, { linked: false, pointsPerHour: null }).find((r) => r.id === "thor")!;
     expect(guest.effective).toBe(18);
     expect(guest.estimate).toBeNull();
-    expect(guest.hoursToNext).toBeNull();
+    // Not linked: hours to the next milestone at the default rate, 960 points from 18 to 20.
+    expect(guest.hoursToNext).toBeCloseTo(3, 5);
+  });
+
+  it("only gives hours for heroes the player has set", () => {
+    const rows = buildRows({ thor: { level: 70, baselinePlaytimeSec: null } }, {}, { linked: false, pointsPerHour: null });
+    expect(rows.find((r) => r.id === "thor")!.hoursToNext).toBeNull();
+    expect(rows.find((r) => r.id === "hela")!.hoursToNext).toBeNull();
   });
 });
 

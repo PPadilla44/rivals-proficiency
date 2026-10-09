@@ -100,7 +100,7 @@ const FAQ: { q: string; a: string }[] = [
   },
   {
     q: "What is the fastest way to level up proficiency?",
-    a: "Play the hero in Quick Match or Competitive, where its missions repeat without limit, and play to the damage, healing and KO missions rather than just time on the hero. Missions in other modes, such as Conquest and Doom Match, stop counting after a daily limit.",
+    a: "Play the hero in Quick Match or Competitive, where its missions repeat without limit, and play to the damage, healing and KO missions rather than just time on the hero. Missions in arcade modes, such as Conquest, Doom Match and the 18v18 Annihilation mode, stop counting after a daily limit.",
   },
   {
     q: "Why do some charts say Agent is levels 1 to 5?",
@@ -250,15 +250,16 @@ export default function RanksPage() {
           </li>
         </ul>
         <p className="muted">
-          The mode limits come from the 
+          The unlimited Quick Match and Competitive missions come from the{" "}
           <a href="https://www.marvelrivals.com/gameupdate/20250422/41548_1229365.html" target="_blank" rel="noreferrer">
             official patch notes
           </a>
-          ; the daily number and the time value come from the 
+          ; the rest comes from the{" "}
           <a href="https://marvelrivals.wiki.gg/wiki/Proficiency" target="_blank" rel="noreferrer">
             community wiki
-          </a> 
-          and guides. For your own hero and level, the <Link href="/calculator">calculator</Link> shows how long it will take.
+          </a>{" "}
+          and player guides. For your own hero and level, the <Link href="/calculator">calculator</Link> shows how long it
+          will take.
         </p>
       </section>
 

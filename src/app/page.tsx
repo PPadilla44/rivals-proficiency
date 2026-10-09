@@ -31,7 +31,7 @@ const FAQ: { q: string; a: string; link?: { href: string; label: string } }[] = 
   },
   {
     q: "How do you level up a hero in Marvel Rivals?",
-    a: "Play matches as that hero, ideally in Quick Match or Competitive, where its missions repeat without limit; missions in other modes, such as Conquest and Doom Match, stop counting after a daily limit. Each hero has missions for time played, its role's job (damage, healing or blocking) and KOs, in the Missions tab next to Rewards, and they ask for more as the hero ranks up. Hero proficiency is separate from your account level.",
+    a: "Play matches as that hero, ideally in Quick Match or Competitive, where its missions repeat without limit; missions in arcade modes, such as Conquest, Doom Match and 18v18 Annihilation, stop counting after a daily limit. Each hero has missions for time played, its role's job (damage, healing or blocking) and KOs, in the Missions tab next to Rewards, and they ask for more as the hero ranks up. Hero proficiency is separate from your account level.",
     link: { href: "/ranks#level-up", label: "How to level up faster" },
   },
   {

@@ -96,7 +96,11 @@ const FAQ: { q: string; a: string }[] = [
   },
   {
     q: "How do you earn proficiency points?",
-    a: "By playing matches as that hero and completing that hero's proficiency missions, listed in the Missions tab next to Rewards on its Proficiency page. The missions are different for each hero and change as the hero levels up. Each hero tracks its own points, so time on one hero never counts toward another.",
+    a: "By playing matches as that hero and completing its proficiency missions, listed in the Missions tab next to Rewards on its Proficiency page: one for time played, one for its role's job (damage, healing or damage blocked) and one for KOs or assists. The missions ask for more as the hero ranks up. Each hero tracks its own points, so time on one hero never counts toward another.",
+  },
+  {
+    q: "What is the fastest way to level up proficiency?",
+    a: "Play the hero in Quick Match or Competitive, where its missions repeat without limit, and play to the damage, healing and KO missions rather than just time on the hero. Missions in arcade modes, such as Conquest, Doom Match and the 18v18 Annihilation mode, stop counting after a daily limit.",
   },
   {
     q: "Why do some charts say Agent is levels 1 to 5?",
@@ -218,6 +222,44 @@ export default function RanksPage() {
           hero has the same track with its own art,
           and each title ends with that hero&apos;s name, for example Legendary Adam Warlock. Across all 70 levels a hero
           gives {UM_TOTAL} Unstable Molecules and {UNITS_TOTAL} Units.
+        </p>
+      </section>
+
+      <section className="panel prose" id="level-up">
+        <h2>How to level up proficiency faster</h2>
+        <p>
+          Each hero earns points from its own missions, in the Missions tab of its Proficiency page: one for time played, one
+          for its role&apos;s job (damage, healing or damage blocked) and one for KOs or assists. They ask for more as the hero
+          ranks up, which is part of why later levels take longer.
+        </p>
+        <ul>
+          <li>
+            <strong>Play Quick Match or Competitive.</strong> Missions there repeat without limit. Missions in arcade modes, such
+            as Conquest, Doom Match and the 18v18 Annihilation mode, stop counting after a few completions a day.
+          </li>
+          <li>
+            <strong>Play to the missions, not the clock.</strong> Time on the hero alone is worth about 60 points an hour,
+            according to community guides, so most points come from finishing the damage, healing and KO missions.
+          </li>
+          <li>
+            <strong>Skip custom games and Practice vs AI.</strong> Players report they don&apos;t count.
+          </li>
+          <li>
+            <strong>Pick one hero at a time.</strong> Points stay with the hero that earned them, so spreading your time
+            spreads your progress.
+          </li>
+        </ul>
+        <p className="muted">
+          The unlimited Quick Match and Competitive missions come from the{" "}
+          <a href="https://www.marvelrivals.com/gameupdate/20250422/41548_1229365.html" target="_blank" rel="noreferrer">
+            official patch notes
+          </a>
+          ; the rest comes from the{" "}
+          <a href="https://marvelrivals.wiki.gg/wiki/Proficiency" target="_blank" rel="noreferrer">
+            community wiki
+          </a>{" "}
+          and player guides. For your own hero and level, the <Link href="/calculator">calculator</Link> shows how long it
+          will take.
         </p>
       </section>
 

@@ -5,7 +5,7 @@ import { migrate } from "drizzle-orm/pglite/migrator";
 import * as schema from "@/db/schema";
 import type { AnyDb } from "@/server/board";
 import { SERVER_VISITOR, getReferrers, getStats, recordEvent } from "@/server/events";
-import { buildDigest, sendDailyDigest } from "@/server/digest";
+import { buildDigest, getEngagement, sendDailyDigest } from "@/server/digest";
 
 let db: AnyDb;
 beforeEach(async () => {
@@ -38,6 +38,18 @@ describe("daily digest", () => {
     const before = await getStats(db, 1, hoursAgo(24));
     expect(before.visitors).toBe(1);
     expect(before.levelSets).toBe(2);
+  });
+
+  it("splits visitors who changed nothing into readers and quick leavers", async () => {
+    await seed();
+    // digest-a-1 read the page; digest-b-1 left fast; digest-c-1 changed levels (and read).
+    await recordEvent(db, { name: "engaged", visitorId: "digest-a-1", props: { page: "/", why: "time" }, at: hoursAgo(2) });
+    await recordEvent(db, { name: "engaged", visitorId: "digest-c-1", props: { page: "/", why: "scroll" }, at: hoursAgo(4) });
+    const eng = await getEngagement(db, hoursAgo(24), now);
+    expect([eng.readOnly, eng.bounced]).toEqual([1, 1]);
+    expect(await buildDigest(db, { now, search: async () => [] })).toContain(
+      "Changed nothing: read the page 1 · left within 20 seconds 1",
+    );
   });
 
   it("lists where visitors came from", async () => {

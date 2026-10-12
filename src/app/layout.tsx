@@ -6,6 +6,7 @@ import { SpeedInsights } from "@vercel/speed-insights/next";
 import { DATA_SEASON, FEEDBACK_URL, KOFI_URL } from "@/lib/site";
 import { SITE_URL } from "@/lib/site-url";
 import { SiteNav } from "@/components/SiteNav";
+import { EngagementTracker } from "@/components/EngagementTracker";
 import { HEROES } from "@/lib/heroes";
 import "./globals.css";
 
@@ -84,6 +85,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
             <Link href="/terms">Terms</Link>
           </span>
         </footer>
+        <EngagementTracker />
         <Analytics />
         <SpeedInsights />
       </body>

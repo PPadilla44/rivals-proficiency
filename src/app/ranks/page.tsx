@@ -23,8 +23,9 @@ const TO_CHAMPION = pointsBetween(1, CHAMPION);
 const TO_MAX = pointsBetween(1, MAX_LEVEL);
 
 // The search result is the pitch: lead with the numbers people are looking for.
-const title = "Marvel Rivals Proficiency Levels and Ranks: Points to Lord";
-const description = `Lord takes ${fmt(TO_LORD)} proficiency points, about ${hours(TO_LORD)} hours on one hero. Champion takes ${fmt(TO_CHAMPION)}. All 11 ranks, points per level, and the reward at every level to ${MAX_LEVEL}.`;
+// Search Console shows people reaching this page for "proficiency levels" and "champion level", so both lead.
+const title = "Marvel Rivals Proficiency Levels: Lord, Champion and All Ranks";
+const description = `Lord is level ${LORD}: ${fmt(TO_LORD)} points, about ${hours(TO_LORD)} hours. Champion is level ${CHAMPION}: ${fmt(TO_CHAMPION)} points. All 11 ranks, points per level, rewards, and how to level up faster.`;
 
 export const metadata: Metadata = {
   // Absolute, so the site name does not push the useful words out of the result.

@@ -136,6 +136,8 @@ export type TestArm = {
   signedIn: number;
   /** Seen on two or more days since joining the test. */
   returned: number;
+  /** The test's main result, decided Oct 13 before calling it: came back or signed in (each person once). */
+  kept: number;
   /** Example group only: pressed Get started or touched a level on the example. */
   leftExample: number;
 };
@@ -173,6 +175,7 @@ export async function getExampleTest(db: AnyDb, now = new Date()): Promise<Examp
         count(*) filter (where heroes >= 10) as built,
         count(*) filter (where signed) as signed_in,
         count(*) filter (where days > 1) as returned,
+        count(*) filter (where signed or days > 1) as kept,
         count(*) filter (where left_example > 0) as left_example,
         min(joined) as first_joined
       from per group by arm order by arm
@@ -189,6 +192,7 @@ export async function getExampleTest(db: AnyDb, now = new Date()): Promise<Examp
       built: num(r?.built),
       signedIn: num(r?.signed_in),
       returned: num(r?.returned),
+      kept: num(r?.kept),
       leftExample: num(r?.left_example),
     };
   };
@@ -207,6 +211,7 @@ export function exampleTestLines(t: ExampleTest, now = new Date()): string[] {
   return [
     `**Example board test** · day ${day} · empty board vs example board`,
     `New visitors ${a.visitors} vs ${b.visitors}`,
+    `Main result, came back or signed in: ${cell(a.kept, a.visitors)} vs ${cell(b.kept, b.visitors)}`,
     `Started their board ${cell(a.started, a.visitors)} vs ${cell(b.started, b.visitors)}`,
     `Updated 10+ heroes ${cell(a.built, a.visitors)} vs ${cell(b.built, b.visitors)}`,
     `Signed in ${a.signedIn} vs ${b.signedIn} · came back ${a.returned} vs ${b.returned}`,

@@ -80,21 +80,24 @@ describe("example board test results", () => {
     await recordEvent(db, { name: "example_start", visitorId: "test-visitor-b3", props: { via: "tap" }, at: at(0.1) });
     await join("test-visitor-b4", "b");
     await recordEvent(db, { name: "visit", visitorId: "test-visitor-b4", at: at(30) });
+    // b4 also signs in on that return visit: counted once in the main result.
+    await recordEvent(db, { name: "identify", visitorId: "test-visitor-b4", userId: "u1", at: at(30.1) });
     // Activity from before joining the test does not count.
     await recordEvent(db, { name: "level_set", visitorId: "test-visitor-a1", props: { heroes: 30, taps: 30 }, at: at(-5) });
 
     const now = at(40);
     const t = await getExampleTest(db, now);
     expect(t?.arms).toEqual([
-      { arm: "a", visitors: 2, started: 1, built: 0, signedIn: 0, returned: 0, leftExample: 0 },
-      { arm: "b", visitors: 4, started: 1, built: 1, signedIn: 1, returned: 1, leftExample: 2 },
+      { arm: "a", visitors: 2, started: 1, built: 0, signedIn: 0, returned: 0, kept: 0, leftExample: 0 },
+      { arm: "b", visitors: 4, started: 1, built: 1, signedIn: 2, returned: 1, kept: 2, leftExample: 2 },
     ]);
     expect(exampleTestLines(t!, now)).toEqual([
       "**Example board test** · day 2 · empty board vs example board",
       "New visitors 2 vs 4",
+      "Main result, came back or signed in: 0 (0%) vs 2 (50%)",
       "Started their board 1 (50%) vs 1 (25%)",
       "Updated 10+ heroes 0 (0%) vs 1 (25%)",
-      "Signed in 0 vs 1 · came back 0 vs 1",
+      "Signed in 0 vs 2 · came back 0 vs 1",
       "Left the example to start: 2 (50%) of the example group",
       "Too early to judge: wait for 100 visitors in each group.",
     ]);

@@ -37,13 +37,23 @@ const AUTH_NOISE = new Set(["AccessDenied", "MissingCSRF", "UnknownAction", "Ver
 
 export function authErrorInfo(error: Error): { type: string; provider: string | null; message: string } | null {
   const type = (error as Error & { type?: string }).type ?? error.name;
-  const cause = (error as Error & { cause?: unknown }).cause as { err?: unknown; provider?: unknown } | undefined;
-  const inner = cause?.err instanceof Error ? cause.err.message : "";
-  const message = inner || error.message || type;
+  // Auth.js shapes `cause` two ways: { err, provider } for thrown errors, and
+  // { providerId, error, error_description } when the provider answered with an error.
+  const cause = ((error as Error & { cause?: unknown }).cause ?? {}) as {
+    err?: unknown;
+    provider?: unknown;
+    providerId?: unknown;
+    error?: unknown;
+    error_description?: unknown;
+  };
+  const providerError = [cause.error, cause.error_description].filter((v) => typeof v === "string").join(": ");
+  const inner = cause.err instanceof Error ? cause.err.message : "";
+  const message = inner || providerError || error.message || type;
   if (AUTH_NOISE.has(type)) return null;
   // The player pressed Cancel on the Discord or Google consent screen.
-  if (/access_denied/i.test(message) || /access_denied/i.test(error.message)) return null;
-  const provider = typeof cause?.provider === "string" ? cause.provider : null;
+  if (/access_denied/i.test(`${message} ${error.message} ${providerError}`)) return null;
+  const provider =
+    typeof cause.providerId === "string" ? cause.providerId : typeof cause.provider === "string" ? cause.provider : null;
   return { type, provider, message };
 }
 

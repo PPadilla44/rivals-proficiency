@@ -76,6 +76,23 @@ describe("sign-in errors", () => {
     expect(authErrorInfo(authError("UnknownAction", "nope"))).toBeNull();
     expect(authErrorInfo(authError("OAuthCallbackError", "access_denied: The user cancelled"))).toBeNull();
   });
+
+  it("ignores a cancel reported the way Auth.js really does it (Oct 12 false alarm)", () => {
+    const e = authError("OAuthCallbackError", "OAuth Provider returned an error", {
+      providerId: "discord",
+      error: "access_denied",
+      error_description: "The resource owner or authorization server denied the request",
+    });
+    expect(authErrorInfo(e)).toBeNull();
+  });
+
+  it("names the provider and its error when a provider really fails", () => {
+    const e = authError("OAuthCallbackError", "OAuth Provider returned an error", {
+      providerId: "google",
+      error: "server_error",
+    });
+    expect(authErrorInfo(e)).toEqual({ type: "OAuthCallbackError", provider: "google", message: "server_error" });
+  });
 });
 
 describe("browser crashes", () => {

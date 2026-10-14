@@ -5,7 +5,7 @@ import { migrate } from "drizzle-orm/pglite/migrator";
 import * as schema from "@/db/schema";
 import type { AnyDb } from "@/server/board";
 import { SERVER_VISITOR, getReferrers, getStats, recordEvent } from "@/server/events";
-import { buildDigest, getEngagement, sendDailyDigest } from "@/server/digest";
+import { buildDigest, getEngagement, getNewVisitorRetention, retentionLine, sendDailyDigest } from "@/server/digest";
 
 let db: AnyDb;
 beforeEach(async () => {
@@ -49,6 +49,25 @@ describe("daily digest", () => {
     expect([eng.readOnly, eng.bounced]).toEqual([1, 1]);
     expect(await buildDigest(db, { now, search: async () => [] })).toContain(
       "Changed nothing: read the page 1 · left within 20 seconds 1",
+    );
+  });
+
+  it("tracks whether new visitors come back or sign in", async () => {
+    // Cohort: first seen 1 to 8 days ago.
+    await recordEvent(db, { name: "visit", visitorId: "keep-new-1", at: hoursAgo(5 * 24) }); // leaves
+    await recordEvent(db, { name: "visit", visitorId: "keep-new-2", at: hoursAgo(4 * 24) }); // comes back
+    await recordEvent(db, { name: "visit", visitorId: "keep-new-2", at: hoursAgo(2 * 24) });
+    await recordEvent(db, { name: "visit", visitorId: "keep-new-3", at: hoursAgo(3 * 24) }); // signs in same day
+    await recordEvent(db, { name: "identify", visitorId: "keep-new-3", userId: "u1", at: hoursAgo(3 * 24 - 1) });
+    // Not in the cohort: too new to judge, and an old visitor who first came 20 days ago.
+    await recordEvent(db, { name: "visit", visitorId: "keep-new-4", at: hoursAgo(3) });
+    await recordEvent(db, { name: "visit", visitorId: "keep-old-1", at: hoursAgo(20 * 24) });
+    await recordEvent(db, { name: "visit", visitorId: "keep-old-1", at: hoursAgo(5 * 24) });
+
+    const r = await getNewVisitorRetention(db, now);
+    expect([r.visitors, r.kept]).toEqual([3, 2]);
+    expect(retentionLine(r)).toBe(
+      "New visitors first seen Sep 28 to Oct 5: came back or signed in 2 of 3 (67%) · target about 10%, the example board's test result",
     );
   });
 

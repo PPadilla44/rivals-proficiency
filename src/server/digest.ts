@@ -199,6 +199,49 @@ export async function getExampleTest(db: AnyDb, now = new Date()): Promise<Examp
   return { startedAt, arms: [arm("a"), arm("b")] };
 }
 
+export type NewVisitorRetention = { from: Date; to: Date; visitors: number; kept: number };
+
+/**
+ * New visitors first seen between 8 and 1 days ago (so each has had at least a
+ * day to come back), and how many came back on another day or signed in. The
+ * same measure that decided the example board test: 10% with the example, 3%
+ * without.
+ */
+export async function getNewVisitorRetention(db: AnyDb, now = new Date()): Promise<NewVisitorRetention> {
+  const from = new Date(now.getTime() - 8 * DAY);
+  const to = new Date(now.getTime() - DAY);
+  const [r] = rowsOf(
+    await db.execute(sql`
+      with firsts as (
+        select visitor_id, min(created_at) as first_seen
+        from ${events}
+        where visitor_id <> ${SERVER_VISITOR} and created_at <= ${now.toISOString()}::timestamptz
+        group by visitor_id
+      ),
+      cohort as (
+        select visitor_id from firsts
+        where first_seen >= ${from.toISOString()}::timestamptz and first_seen < ${to.toISOString()}::timestamptz
+      ),
+      per as (
+        select c.visitor_id,
+          bool_or(e.user_id is not null) as signed,
+          count(distinct date_trunc('day', e.created_at)) as days
+        from cohort c
+        join ${events} e on e.visitor_id = c.visitor_id and e.created_at <= ${now.toISOString()}::timestamptz
+        group by c.visitor_id
+      )
+      select count(*) as visitors, count(*) filter (where signed or days > 1) as kept from per
+    `),
+  );
+  return { from, to, visitors: num(r?.visitors), kept: num(r?.kept) };
+}
+
+export function retentionLine(r: NewVisitorRetention): string {
+  const day = (d: Date) =>
+    d.toLocaleDateString("en-US", { timeZone: "America/Los_Angeles", month: "short", day: "numeric" });
+  return `New visitors first seen ${day(r.from)} to ${day(new Date(r.to.getTime() - 1))}: came back or signed in ${r.kept} of ${r.visitors} (${pct(r.kept, r.visitors)}) · target about 10%, the example board's test result`;
+}
+
 /** Fewer visitors than this per group and the difference is noise. */
 export const TEST_MIN_PER_ARM = 100;
 
@@ -234,8 +277,8 @@ export async function buildDigest(
 ): Promise<string> {
   const now = opts.now ?? new Date();
   const dayAgo = new Date(now.getTime() - DAY);
-  const [test, search, today, before, week, refs, eng, fresh, problems, reads, [{ accounts }]] = await Promise.all([
-    getExampleTest(db, now),
+  const [kept, search, today, before, week, refs, eng, fresh, problems, reads, [{ accounts }]] = await Promise.all([
+    getNewVisitorRetention(db, now),
     (opts.search ?? (() => searchSection({ now })))(),
     getStats(db, 1, now),
     getStats(db, 1, dayAgo),
@@ -283,7 +326,9 @@ export async function buildDigest(
     ``,
     `**Calculator**`,
     `Opened by ${eng.calcViews} · used by ${eng.calcUses}`,
-    ...(test ? [``, ...exampleTestLines(test, now)] : []),
+    ``,
+    `**Keeping new visitors**`,
+    retentionLine(kept),
     ...(search.length ? [``, ...search] : []),
     ``,
     `**Health**`,

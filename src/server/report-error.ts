@@ -35,6 +35,18 @@ export async function reportRequestError(
 /** Auth.js error types that are normal (a player cancelled, a bot poked the endpoint), not outages. */
 const AUTH_NOISE = new Set(["AccessDenied", "MissingCSRF", "UnknownAction", "Verification"]);
 
+/**
+ * When the issuer check fails, the issuer the provider actually sent, like " (got https://discord.com/)".
+ * It is a public URL, so it is safe to put in the alert; the code and state never are.
+ */
+function receivedIssuer(err: Error): string {
+  const params = (err as Error & { cause?: { parameters?: unknown } }).cause?.parameters;
+  if (!(params instanceof URLSearchParams)) return "";
+  const iss = params.get("iss");
+  if (iss == null) return "";
+  return ` (got ${JSON.stringify(iss.slice(0, 80))})`;
+}
+
 export function authErrorInfo(error: Error): { type: string; provider: string | null; message: string } | null {
   const type = (error as Error & { type?: string }).type ?? error.name;
   // Auth.js shapes `cause` two ways: { err, provider } for thrown errors, and
@@ -47,7 +59,7 @@ export function authErrorInfo(error: Error): { type: string; provider: string | 
     error_description?: unknown;
   };
   const providerError = [cause.error, cause.error_description].filter((v) => typeof v === "string").join(": ");
-  const inner = cause.err instanceof Error ? cause.err.message : "";
+  const inner = cause.err instanceof Error ? cause.err.message + receivedIssuer(cause.err) : "";
   const message = inner || providerError || error.message || type;
   if (AUTH_NOISE.has(type)) return null;
   // The player pressed Cancel on the Discord or Google consent screen.

@@ -70,6 +70,18 @@ describe("sign-in errors", () => {
     });
   });
 
+  it("says which issuer the provider sent, and nothing else from the callback", () => {
+    const err = Object.assign(new Error('unexpected "iss" (issuer) response parameter value'), {
+      cause: {
+        expected: "https://discord.com",
+        parameters: new URLSearchParams({ code: "secret-code", state: "secret-state", iss: "https://discord.com/" }),
+      },
+    });
+    const info = authErrorInfo(authError("CallbackRouteError", "callback", { err, provider: "discord" }));
+    expect(info?.message).toBe('unexpected "iss" (issuer) response parameter value (got "https://discord.com/")');
+    expect(info?.message).not.toContain("secret");
+  });
+
   it("ignores a player cancelling and bots poking the endpoint", () => {
     expect(authErrorInfo(authError("AccessDenied", "denied"))).toBeNull();
     expect(authErrorInfo(authError("MissingCSRF", "csrf"))).toBeNull();

@@ -82,6 +82,22 @@ describe("sign-in errors", () => {
     expect(info?.message).not.toContain("secret");
   });
 
+  it("ignores scanners replaying the callback with a made-up issuer", () => {
+    const callback = (iss: string) =>
+      authError("CallbackRouteError", "callback", {
+        provider: "discord",
+        err: Object.assign(new Error('unexpected "iss" (issuer) response parameter value'), {
+          cause: { expected: "https://discord.com", parameters: new URLSearchParams({ iss }) },
+        }),
+      });
+    expect(authErrorInfo(callback("kPmVQ://TITjAnY.Scm"))).toBeNull();
+    expect(authErrorInfo(callback("https://evil.example"))).toBeNull();
+    expect(authErrorInfo(callback("not a url"))).toBeNull();
+    // A real Discord variant still alerts, so we hear about it.
+    expect(authErrorInfo(callback("https://ptb.discord.com"))).not.toBeNull();
+    expect(authErrorInfo(callback("https://discord.com/"))).not.toBeNull();
+  });
+
   it("ignores a player cancelling and bots poking the endpoint", () => {
     expect(authErrorInfo(authError("AccessDenied", "denied"))).toBeNull();
     expect(authErrorInfo(authError("MissingCSRF", "csrf"))).toBeNull();

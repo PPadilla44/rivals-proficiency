@@ -39,12 +39,29 @@ const AUTH_NOISE = new Set(["AccessDenied", "MissingCSRF", "UnknownAction", "Ver
  * When the issuer check fails, the issuer the provider actually sent, like " (got https://discord.com/)".
  * It is a public URL, so it is safe to put in the alert; the code and state never are.
  */
-function receivedIssuer(err: Error): string {
+function issuerParam(err: unknown): string | null {
+  if (!(err instanceof Error)) return null;
   const params = (err as Error & { cause?: { parameters?: unknown } }).cause?.parameters;
-  if (!(params instanceof URLSearchParams)) return "";
-  const iss = params.get("iss");
-  if (iss == null) return "";
-  return ` (got ${JSON.stringify(iss.slice(0, 80))})`;
+  return params instanceof URLSearchParams ? params.get("iss") : null;
+}
+
+function receivedIssuer(err: Error): string {
+  const iss = issuerParam(err);
+  return iss == null ? "" : ` (got ${JSON.stringify(iss.slice(0, 80))})`;
+}
+
+/**
+ * Discord and Google only ever send their own https issuer. Anything else in `iss`
+ * (Oct 15 we got "kPmVQ://TITjAnY.Scm", "https://discord.com" with the letters
+ * scrambled) is a scanner replaying the callback, not a player signing in.
+ */
+export function isForgedIssuer(iss: string): boolean {
+  try {
+    const url = new URL(iss);
+    return url.protocol !== "https:" || !/(^|\.)(discord|discordapp|google)\.com$/.test(url.hostname);
+  } catch {
+    return true;
+  }
 }
 
 export function authErrorInfo(error: Error): { type: string; provider: string | null; message: string } | null {
@@ -62,6 +79,8 @@ export function authErrorInfo(error: Error): { type: string; provider: string | 
   const inner = cause.err instanceof Error ? cause.err.message + receivedIssuer(cause.err) : "";
   const message = inner || providerError || error.message || type;
   if (AUTH_NOISE.has(type)) return null;
+  const iss = issuerParam(cause.err);
+  if (iss != null && isForgedIssuer(iss)) return null;
   // The player pressed Cancel on the Discord or Google consent screen.
   if (/access_denied/i.test(`${message} ${error.message} ${providerError}`)) return null;
   const provider =

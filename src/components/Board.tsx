@@ -26,7 +26,7 @@ const LS_UI = "proficiency-board-ui";
 const LS_TIP = "pb-tip-type-level";
 const LS_EXAMPLE_DONE = "pb-example-done";
 const LS_AB_SENT = "pb-ab-example";
-const TIP_AFTER_STEPS = 5;
+const TIP_AFTER_STEPS = 3;
 
 type Props = {
   mode: "guest" | "user";
@@ -65,7 +65,9 @@ export function Board({ mode, initial, signInSlot, portraits, screenshotImport, 
   const [role, setRole] = useState<Role | "all">("all");
   const [goal, setGoal] = useState<Goal>("all");
   const [rank, setRank] = useState<number | null>(null);
-  const [toast, setToast] = useState<{ text: string; error?: boolean } | null>(null);
+  const [toast, setToast] = useState<{ text: string; error?: boolean; long?: boolean } | null>(null);
+  // Phones show search and one Filter button; sort, layout and the chips open from it.
+  const [filtersOpen, setFiltersOpen] = useState(false);
   const [busy, setBusy] = useState(false);
   const [guestLevels, setGuestLevels] = useState<Record<string, number>>({});
   const [loadVersion, setLoadVersion] = useState(0);
@@ -191,12 +193,12 @@ export function Board({ mode, initial, signInSlot, portraits, screenshotImport, 
       if (localStorage.getItem(LS_TIP)) return;
       localStorage.setItem(LS_TIP, "1");
     } catch {}
-    setToast({ text: "Tip: tap the number to type a level, or hold + to count up fast." });
+    setToast({ text: "Tip: tap the number to type a level, or hold + to count up fast.", long: true });
   }, []);
 
   useEffect(() => {
     if (!toast) return;
-    const t = setTimeout(() => setToast(null), toast.error ? 6000 : 3500);
+    const t = setTimeout(() => setToast(null), toast.error || toast.long ? 6000 : 3500);
     return () => clearTimeout(t);
   }, [toast]);
 
@@ -287,6 +289,7 @@ export function Board({ mode, initial, signInSlot, portraits, screenshotImport, 
   };
 
   const shownBoard = example ? EXAMPLE_BOARD : board;
+  const activeFilters = (role !== "all" ? 1 : 0) + (goal !== "all" ? 1 : 0) + (rank !== null ? 1 : 0);
   const rows = useMemo(
     () =>
       buildRows(shownBoard.levels, shownBoard.playtime, {
@@ -477,7 +480,7 @@ export function Board({ mode, initial, signInSlot, portraits, screenshotImport, 
         linked={syncEnabled && !!board.link}
       />
 
-      <div className="board-main">
+      <div className={`board-main${filtersOpen ? " filters-open" : ""}`}>
       <section className="controls" aria-label="Search and sort">
         <div className="row1">
           <div className="search">
@@ -487,6 +490,18 @@ export function Board({ mode, initial, signInSlot, portraits, screenshotImport, 
             </svg>
             <input id="q" type="search" placeholder="Search heroes" autoComplete="off" aria-label="Search heroes" value={q} onChange={(e) => setQ(e.target.value)} />
           </div>
+          <button
+            type="button"
+            className="btn filter-toggle"
+            aria-expanded={filtersOpen}
+            aria-controls="board-filters"
+            onClick={() => setFiltersOpen((o) => !o)}
+          >
+            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" aria-hidden="true">
+              <path d="M4 6h16M7 12h10M10 18h4" />
+            </svg>
+            Filter{activeFilters ? ` · ${activeFilters}` : ""}
+          </button>
           <label className="lbl" htmlFor="sort">
             <span className="lbl-text">Sort</span>
             <select id="sort" value={sort} onChange={(e) => changeSort(e.target.value as Sort)}>
@@ -521,7 +536,7 @@ export function Board({ mode, initial, signInSlot, portraits, screenshotImport, 
           </div>
         </div>
       </section>
-      <section className="filters" aria-label="Filters">
+      <section className="filters" id="board-filters" aria-label="Filters">
         <div className="row1">
           <div className="chips">
             {(

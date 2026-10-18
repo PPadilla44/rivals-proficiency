@@ -8,7 +8,7 @@ import { KOFI_URL } from "@/lib/site";
 const LINKS = [
   { href: "/", label: "Board", more: "" },
   { href: "/calculator", label: "Calculator", more: "" },
-  { href: "/ranks", label: "Ranks", more: " guide" },
+  { href: "/ranks", label: "Ranks", more: "guide" },
 ];
 
 /** Site-wide top bar: wordmark, page links, Ko-fi. */

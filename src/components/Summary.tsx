@@ -82,8 +82,9 @@ export function Summary({ rows, activeRank, onRank, linked }: Props) {
 
   return (
     <section className={`summary${open ? " open" : ""}`} aria-label="Overview">
-      {/* Phones get a one-line overview; the panels open on demand. */}
-      <div className="summary-strip">
+      {/* Phones get a one-line overview; the panels open on demand. On an empty board it would
+          only say "0 Lord or higher · 0 Champion", so it waits until a level is set. */}
+      <div className={`summary-strip${rows.some((r) => r.effective > 1) ? "" : " empty"}`}>
         <span>
           <b>{lordPlus}</b> Lord or higher · <b>{champions}</b> Champion
           {nearest ? (

@@ -150,8 +150,10 @@ export default async function Home({ searchParams }: PageProps<"/">) {
         <div>
           <h1 className="page-title">Marvel Rivals proficiency tracker</h1>
           <p className="sub">
-            Every hero&apos;s rank and level on one board. Set a level once, bump it after a session.{" "}
-            <Link href="/ranks">How ranks and points work</Link>.
+            Every hero&apos;s rank and level on one board.{" "}
+            <span className="sub-more">
+              Set a level once, bump it after a session. <Link href="/ranks">How ranks and points work</Link>.
+            </span>
           </p>
         </div>
         {session?.user ? (

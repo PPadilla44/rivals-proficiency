@@ -47,8 +47,10 @@ describe("daily digest", () => {
     await recordEvent(db, { name: "engaged", visitorId: "digest-c-1", props: { page: "/", why: "scroll" }, at: hoursAgo(4) });
     const eng = await getEngagement(db, hoursAgo(24), now);
     expect([eng.readOnly, eng.bounced]).toEqual([1, 1]);
+    // Both are on phones; a computer visitor who leaves fast only counts in the totals.
+    await recordEvent(db, { name: "visit", visitorId: "digest-e-1", props: { device: "desktop" }, at: hoursAgo(1) });
     expect(await buildDigest(db, { now, search: async () => [] })).toContain(
-      "Changed nothing: read the page 1 · left within 20 seconds 1",
+      "Changed nothing: read the page 1 · left within 20 seconds 2 · on phones: read 1 · left 1",
     );
   });
 

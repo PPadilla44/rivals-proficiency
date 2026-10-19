@@ -32,6 +32,9 @@ export type Engagement = {
   /** Changed nothing but read a page (20s open or scrolled), versus left before that. */
   readOnly: number;
   bounced: number;
+  /** The same two counts for phones only, where the first screen was reworked on Oct 18. */
+  readOnlyPhone: number;
+  bouncedPhone: number;
   importOpens: number;
   importOpensFromCard: number;
   importReads: number;
@@ -59,7 +62,8 @@ export async function getEngagement(db: AnyDb, since: Date, until: Date): Promis
           coalesce(sum(coalesce((props->>'taps')::int, (props->>'heroes')::int, 1)) filter (where name = 'level_set'), 0) as taps,
           coalesce(sum(coalesce((props->>'heroes')::int, 1)) filter (where name = 'level_set'), 0) as heroes,
           count(*) filter (where name in ('import_open', 'import_read', 'import_save')) as imports,
-          bool_or(name = 'engaged') as engaged
+          bool_or(name = 'engaged') as engaged,
+          max(props->>'device') filter (where props->>'device' in ('mobile', 'desktop')) as device
         from w group by visitor_id
       )
       select
@@ -71,7 +75,9 @@ export async function getEngagement(db: AnyDb, since: Date, until: Date): Promis
         count(*) filter (where taps = 1 and imports = 0) as one_tap,
         count(*) filter (where heroes >= 10) as deep,
         count(*) filter (where taps = 0 and imports = 0 and engaged) as read_only,
-        count(*) filter (where taps = 0 and imports = 0 and not engaged) as bounced
+        count(*) filter (where taps = 0 and imports = 0 and not engaged) as bounced,
+        count(*) filter (where taps = 0 and imports = 0 and engaged and device = 'mobile') as read_only_phone,
+        count(*) filter (where taps = 0 and imports = 0 and not engaged and device = 'mobile') as bounced_phone
       from per
     `),
   );
@@ -97,6 +103,8 @@ export async function getEngagement(db: AnyDb, since: Date, until: Date): Promis
     deep: num(v?.deep),
     readOnly: num(v?.read_only),
     bounced: num(v?.bounced),
+    readOnlyPhone: num(v?.read_only_phone),
+    bouncedPhone: num(v?.bounced_phone),
     importOpens: num(i?.opens),
     importOpensFromCard: num(i?.from_card),
     importReads: num(i?.reads),
@@ -311,7 +319,7 @@ export async function buildDigest(
     `**What they did**`,
     `Interacted ${today.interacted}, ${pct(today.interacted, today.visitors)} (${before.interacted}, ${pct(before.interacted, before.visitors)}) · guests ${eng.activeGuests}, signed in ${eng.activeSignedIn}`,
     `One change and left ${eng.oneTap} · updated 10+ heroes ${eng.deep}`,
-    `Changed nothing: read the page ${eng.readOnly} · left within 20 seconds ${eng.bounced}`,
+    `Changed nothing: read the page ${eng.readOnly} · left within 20 seconds ${eng.bounced} · on phones: read ${eng.readOnlyPhone} · left ${eng.bouncedPhone}`,
     `Heroes updated ${today.levelSets} (${before.levelSets}) · ${tapsPerHero} changes per hero (1.0 means typed or held, higher means repeated taps)`,
     ``,
     `**Accounts**`,

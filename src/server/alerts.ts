@@ -74,19 +74,25 @@ export async function reportProblem(
   db: AnyDb,
   kind: ProblemKind,
   detail?: string,
-  opts: { now?: Date; send?: Send; /** Alert separately per value, e.g. per route, instead of once per kind. */ group?: string } = {},
+  opts: {
+    now?: Date;
+    send?: Send;
+    /** Alert separately per value, e.g. per route, instead of once per kind. */
+    group?: string;
+    /** Only alert once this many of the same problem happen within an hour (default 1). */
+    minInHour?: number;
+  } = {},
 ): Promise<{ alerted: boolean }> {
   const now = opts.now ?? new Date();
   // The alert shows a readable message; the stored event keeps a short version.
   const full = detail?.replace(/\s+/g, " ").trim().slice(0, 180) || null;
   const d = full?.slice(0, 40) ?? null;
   try {
-    await recordEvent(db, { name: "problem", visitorId: SERVER_VISITOR, props: { kind, detail: d }, at: now });
-
     // Event props keep at most 40 characters, so the key must fit or the lookup never matches.
     const key = (
       opts.group ? `${kind}:${opts.group}` : kind === "unknown_hero" && d ? `${kind}:${d.toLowerCase()}` : kind
     ).slice(0, 40);
+    await recordEvent(db, { name: "problem", visitorId: SERVER_VISITOR, props: { kind, detail: d, key }, at: now });
     const since = new Date(now.getTime() - ALERT_EVERY_MS[kind]);
     const [{ recent }] = await db
       .select({ recent: sql<number>`count(*)::int` })
@@ -95,6 +101,13 @@ export async function reportProblem(
     if (recent > 0) return { alerted: false };
 
     const hour = new Date(now.getTime() - 60 * 60_000);
+    if ((opts.minInHour ?? 1) > 1) {
+      const [{ same }] = await db
+        .select({ same: sql<number>`count(*)::int` })
+        .from(events)
+        .where(and(eq(events.name, "problem"), gte(events.createdAt, hour), sql`${events.props}->>'key' = ${key}`));
+      if (same < (opts.minInHour ?? 1)) return { alerted: false };
+    }
     const [{ n }] = await db
       .select({ n: sql<number>`count(*)::int` })
       .from(events)

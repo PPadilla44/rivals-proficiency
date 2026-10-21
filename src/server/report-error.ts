@@ -88,6 +88,15 @@ export function authErrorInfo(error: Error): { type: string; provider: string | 
   return { type, provider, message };
 }
 
+/**
+ * InvalidCheck means the sign-in cookie didn't match on the way back: one player switched
+ * provider mid-sign-in or took over 15 minutes. Alone it is noise; several in an hour means
+ * sign-in itself is broken. Every other sign-in error alerts on the first one.
+ */
+export function alertAfter(type: string): number {
+  return type === "InvalidCheck" ? 3 : 1;
+}
+
 /** Auth.js logger.error: keep the console output for Vercel logs, and alert on real failures. */
 export async function reportAuthError(error: Error): Promise<void> {
   const info = authErrorInfo(error);
@@ -96,6 +105,7 @@ export async function reportAuthError(error: Error): Promise<void> {
   const who = info.provider ?? "sign-in";
   await reportProblem(getDb(), "sign_in_error", `${who}, ${info.type}: ${info.message}`, {
     group: `${who}:${info.type}`,
+    minInHour: alertAfter(info.type),
   });
 }
 

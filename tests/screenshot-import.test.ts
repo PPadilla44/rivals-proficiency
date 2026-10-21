@@ -115,6 +115,32 @@ describe("vision tool output", () => {
   it("rejects a malformed payload", () => {
     expect(() => parseToolInput({ heroes: "nope" })).toThrow();
   });
+
+  it("keeps the heroes it read when one card has no name (Oct 21)", () => {
+    const heroes = JSON.stringify([
+      { name: "Cloak & Dagger", badge: "Large red and gold badge", rank: "Champion", level: 59 },
+      { name: null, badge: "covered by the search bar", rank: "Lord", level: null },
+      { name: "Jubilee", rank: "Lord", level: "22" },
+      { name: "Luna Snow", rank: "Colonel" },
+    ]);
+    const r = parseToolInput({ is_proficiency_screen: true, heroes });
+    expect(r.heroes.map((h) => [h.name, h.level])).toEqual([
+      ["Cloak & Dagger", 59],
+      ["Jubilee", 22],
+      ["Luna Snow", null],
+    ]);
+  });
+
+  it("repairs a list sent as text with a trailing comma or cut off mid-item", () => {
+    const trailing = '[{"name":"Thor","rank":"Lord","level":21},]';
+    expect(parseToolInput({ is_proficiency_screen: true, heroes: trailing }).heroes).toHaveLength(1);
+    const cut = '[{"name":"Thor","rank":"Lord","level":21},{"name":"Hela","rank":"Champ';
+    expect(parseToolInput({ is_proficiency_screen: true, heroes: cut }).heroes.map((h) => h.name)).toEqual(["Thor"]);
+  });
+
+  it("still refuses a reply with no usable hero at all", () => {
+    expect(() => parseToolInput({ is_proficiency_screen: true, heroes: [{ badge: "x" }] })).toThrow();
+  });
 });
 
 describe("tiling", () => {

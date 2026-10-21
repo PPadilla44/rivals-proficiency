@@ -80,40 +80,55 @@ Rules:
 - Only give a level when a level number is actually printed. Never guess numbers.
 - Answer only by calling report_heroes once with every hero.`;
 
-const resultSchema = z.object({
-  is_proficiency_screen: z.boolean(),
-  heroes: z.array(
-    z.object({
-      name: z.string(),
-      badge: z.string().optional(),
-      level: z.number().int().nullable().catch(null),
-      rank: z.string().nullable().catch(null),
-    }),
-  ),
+const heroSchema = z.object({
+  name: z.string().min(1),
+  badge: z.string().optional().catch(undefined),
+  // "59" counts as 59; anything else that isn't a whole number means the level wasn't read.
+  level: z
+    .preprocess((v) => (typeof v === "string" && /^\d+$/.test(v.trim()) ? Number(v) : v), z.number().int().nullable())
+    .catch(null),
+  rank: z.string().nullable().catch(null),
 });
 
 export type VisionResult = { isProficiencyScreen: boolean; heroes: Detection[] };
 
-/** Some models send nested fields as JSON strings; unwrap them. */
+/**
+ * Some models send nested fields as JSON strings; unwrap them. A list sent as a string may
+ * also carry trailing commas or be cut off mid-item, so repair those before giving up.
+ */
 function unwrap(v: unknown): unknown {
   if (typeof v !== "string") return v;
-  try {
-    return JSON.parse(v);
-  } catch {
-    return v;
+  const attempts = [v, v.replace(/,\s*([\]}])/g, "$1")];
+  const lastItem = v.lastIndexOf("}");
+  if (v.trimStart().startsWith("[") && lastItem > 0) attempts.push(v.slice(0, lastItem + 1).replace(/,\s*([\]}])/g, "$1") + "]");
+  for (const a of attempts) {
+    try {
+      return JSON.parse(a);
+    } catch {}
   }
+  return v;
 }
+
+/** Why the reply could not be used, for the log. */
+export class UnusableReply extends Error {}
 
 export function parseToolInput(input: unknown): VisionResult {
   const obj = unwrap(input) as Record<string, unknown> | null;
-  const r = resultSchema.parse({
-    ...obj,
-    heroes: unwrap(obj?.heroes),
-    is_proficiency_screen: obj?.is_proficiency_screen === true || obj?.is_proficiency_screen === "true",
-  });
+  if (!obj || typeof obj !== "object") throw new UnusableReply("reply is not an object");
+  const list = unwrap(obj.heroes);
+  if (!Array.isArray(list)) {
+    throw new UnusableReply(`heroes is ${typeof list}: ${typeof list === "string" ? list.slice(-200) : ""}`);
+  }
+  // One card the model couldn't name must not throw away every hero it did read.
+  const heroes: Detection[] = [];
+  for (const item of list) {
+    const h = heroSchema.safeParse(item);
+    if (h.success) heroes.push({ name: h.data.name, level: h.data.level, rank: h.data.rank, badge: h.data.badge });
+  }
+  if (list.length && !heroes.length) throw new UnusableReply(`none of ${list.length} heroes was usable: ${JSON.stringify(list[0]).slice(0, 200)}`);
   return {
-    isProficiencyScreen: r.is_proficiency_screen,
-    heroes: r.heroes.map((h) => ({ name: h.name, level: h.level, rank: h.rank, badge: h.badge })),
+    isProficiencyScreen: obj.is_proficiency_screen === true || obj.is_proficiency_screen === "true",
+    heroes,
   };
 }
 
@@ -184,9 +199,11 @@ export async function readScreenshot(tiles: ImagePart[], model = MODEL): Promise
     const text = body.content?.find((c) => c.type === "text")?.text ?? "";
     const json = text.slice(text.indexOf("{"), text.lastIndexOf("}") + 1);
     return parseToolInput(JSON.parse(json));
-  } catch {
+  } catch (e) {
     const parts = (body.content ?? []).filter((c) => c.type !== "thinking");
-    console.error("vision unreadable", model, body.stop_reason, JSON.stringify(parts).slice(0, 800));
+    const raw = JSON.stringify(parts);
+    // The reason first, then both ends of the reply: the middle is rarely where it breaks.
+    console.error("vision unreadable", model, body.stop_reason, e instanceof Error ? e.message : e, raw.slice(0, 400), "...", raw.slice(-600));
     throw new VisionError("Could not read that screenshot. Try a full-screen capture.", "unreadable");
   }
 }

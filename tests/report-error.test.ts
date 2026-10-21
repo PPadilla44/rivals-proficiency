@@ -5,7 +5,7 @@ import { migrate } from "drizzle-orm/pglite/migrator";
 import * as schema from "@/db/schema";
 import type { AnyDb } from "@/server/board";
 import { getProblems, reportProblem } from "@/server/alerts";
-import { BROWSER_ERRORS_PER_HOUR, authErrorInfo, isControlFlow, reportBrowserError } from "@/server/report-error";
+import { BROWSER_ERRORS_PER_HOUR, alertAfter, authErrorInfo, isControlFlow, reportBrowserError } from "@/server/report-error";
 
 let db: AnyDb;
 beforeEach(async () => {
@@ -50,6 +50,27 @@ describe("server errors", () => {
     expect(send.mock.calls[0][0]).toContain(msg);
     const [row] = await getProblems(db, 1, at(1));
     expect(row.lastDetail).toBe(msg.slice(0, 40));
+  });
+});
+
+describe("alerting only after several in an hour", () => {
+  it("waits for the third, then alerts once", async () => {
+    const send = sender();
+    const go = (m: number) => reportProblem(db, "sign_in_error", "sign-in, InvalidCheck: x", { now: at(m), send, group: "sign-in:InvalidCheck", minInHour: alertAfter("InvalidCheck") });
+    expect((await go(0)).alerted).toBe(false);
+    expect((await go(10)).alerted).toBe(false);
+    expect((await go(20)).alerted).toBe(true);
+    expect(send).toHaveBeenCalledTimes(1);
+    // Other sign-in errors still alert on the first.
+    expect(alertAfter("CallbackRouteError")).toBe(1);
+  });
+
+  it("does not count other problems toward the threshold", async () => {
+    const send = sender();
+    await reportProblem(db, "sign_in_error", "discord, CallbackRouteError: y", { now: at(0), send, group: "discord:CallbackRouteError" });
+    await reportProblem(db, "sign_in_error", "sign-in, InvalidCheck: x", { now: at(1), send, group: "sign-in:InvalidCheck", minInHour: 3 });
+    await reportProblem(db, "sign_in_error", "sign-in, InvalidCheck: x", { now: at(2), send, group: "sign-in:InvalidCheck", minInHour: 3 });
+    expect(send).toHaveBeenCalledTimes(1);
   });
 });
 

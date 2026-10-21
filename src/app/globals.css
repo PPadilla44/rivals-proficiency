@@ -485,6 +485,7 @@ footer.foot a { color: var(--ink-2); font-weight: 600; }
 .shot-start h2 { margin: 0; font-size: 18px; }
 .shot-start p { margin: 0; color: var(--ink-2); font-size: 14.5px; }
 .shot-start p strong { color: var(--ink); }
+.shot-start .levels-note { color: var(--ink); font-weight: 500; font-size: 13.5px; }
 .shot-start-actions { display: grid; justify-items: start; gap: 6px; }
 .shot-start-actions .btn { display: inline-flex; align-items: center; gap: 8px; }
 .shot-start-actions span { font-size: 13px; color: var(--ink-3); }
@@ -582,7 +583,8 @@ footer.foot a { color: var(--ink-2); font-weight: 600; }
   /* Sign-in cards: buttons side by side, less text. */
   .shot-start { padding: 12px 14px; gap: 10px; }
   .shot-start h2 { font-size: 16px; padding-right: 28px; }
-  .shot-start p { display: none; }
+  /* Only the guest card trims its text; the signed-in card's steps are the instructions. */
+  .shot-start.guest p:not(.levels-note) { display: none; }
   .shot-start-actions, .banner .actions { width: 100%; }
   .shot-start-actions .actions, .banner .actions { display: flex; flex-wrap: wrap; gap: 8px; width: 100%; }
   .shot-start-actions .actions .btn, .banner .actions .btn { flex: 1 1 140px; padding: 0 8px; font-size: 13.5px; }

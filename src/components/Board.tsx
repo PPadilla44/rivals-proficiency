@@ -376,7 +376,7 @@ export function Board({ mode, initial, signInSlot, portraits, screenshotImport, 
           </div>
         </>
       ) : guestCard ? (
-        <section className="panel shot-start" aria-label="Fill in your board">
+        <section className="panel shot-start guest" aria-label="Fill in your board">
           <button
             type="button"
             className="shot-start-x"
@@ -395,6 +395,8 @@ export function Board({ mode, initial, signInSlot, portraits, screenshotImport, 
           </button>
           <div>
             <h2>Fill in your whole board from screenshots</h2>
+            {/* 17 of the new accounts from Oct 7 to 20 signed in, saw an empty board and left: say it up front. */}
+            <p className="levels-note">Levels don&apos;t load on their own: the game doesn&apos;t share them. You add them once.</p>
             <p>
               Sign in, then add screenshots or photos of the in-game <strong>Heroes</strong> tab. Every hero&apos;s rank fills in
               at once, no typing.

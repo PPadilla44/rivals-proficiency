@@ -17,7 +17,12 @@ import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import type { Metadata } from "next";
 
-export const metadata: Metadata = { alternates: { canonical: "/" } };
+// "Lord tracker" searches (~400 impressions a month at position ~6) match the page better with Lord in the title.
+// The main phrase stays first: it brings most of the clicks.
+export const metadata: Metadata = {
+  title: { absolute: "Marvel Rivals Proficiency Tracker: Lord & Champion Progress" },
+  alternates: { canonical: "/" },
+};
 
 const fmt = (n: number) => n.toLocaleString("en-US");
 const TO_LORD = pointsBetween(1, LORD);
@@ -37,7 +42,7 @@ const FAQ: { q: string; a: string; link?: { href: string; label: string } }[] = 
   {
     q: "How long does it take to get Lord?",
     a: `Lord is level ${LORD} and takes ${fmt(TO_LORD)} proficiency points, about ${Math.round(TO_LORD / DEFAULT_POINTS_PER_HOUR)} hours of play on one hero. Champion is level ${CHAMPION} and takes about ${Math.round(pointsBetween(1, CHAMPION) / DEFAULT_POINTS_PER_HOUR)} hours. The calculator works it out from any level.`,
-    link: { href: "/calculator", label: "Open the proficiency calculator" },
+    link: { href: "/calculator", label: "Marvel Rivals proficiency calculator: hours to Lord and Champion" },
   },
   {
     q: "What are the proficiency ranks?",

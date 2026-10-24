@@ -56,6 +56,19 @@ const sumOf = (name: string) =>
 const UM_TOTAL = sumOf("Unstable Molecules");
 const UNITS_TOTAL = sumOf("Units");
 
+const rankStart = (name: string) => rankLevels(RANKS.indexOf(name as (typeof RANKS)[number]))[0];
+const QUICK: { q: string; a: string }[] = [
+  { q: "What level is Lord?", a: `Level ${LORD}: ${fmt(TO_LORD)} proficiency points, about ${hours(TO_LORD)} hours on one hero.` },
+  { q: "What level is Champion?", a: `Level ${CHAMPION}: ${fmt(TO_CHAMPION)} points, about ${hours(TO_CHAMPION)} hours. It runs to the max, level ${MAX_LEVEL}.` },
+  { q: "How many hours from Lord to Champion?", a: `About ${hours(TO_CHAMPION - TO_LORD)} hours: ${fmt(TO_CHAMPION - TO_LORD)} points at 1,600 per level.` },
+  {
+    q: "What level is each rank?",
+    a: RANKS.map((name) => `${name} ${rankStart(name)}`).join(", ") + ".",
+  },
+  { q: "What level are Count and Centurion?", a: `Centurion is level ${rankStart("Centurion")}, Count is level ${rankStart("Count")}.` },
+  { q: "What level is Uncanny?", a: `Uncanny is a title, not a rank: it unlocks at level 29. The titles are Fantastic 8, Uncanny 29, Amazing 39, Immortal 60 and Legendary ${MAX_LEVEL}.` },
+];
+
 const FAQ: { q: string; a: string }[] = [
   {
     q: "How long does it take to get Lord in Marvel Rivals?",
@@ -130,7 +143,8 @@ export default function RanksPage() {
           <p className="sub">
             Lord is level 20 and takes {fmt(TO_LORD)} points, about {hours(TO_LORD)} hours on one hero. Champion is level 50 at{" "}
             {fmt(TO_CHAMPION)} points. Every rank, the level it starts at and the points it costs are below, checked against
-            the in-game badges. Last checked {DATA_CHECKED_TEXT} ({DATA_SEASON}).
+            the in-game badges. Last checked {DATA_CHECKED_TEXT} ({DATA_SEASON}). For your own hero, the{" "}
+            <Link href="/calculator">Marvel Rivals proficiency calculator</Link> works out the hours from any level.
           </p>
         </div>
       </header>
@@ -151,6 +165,19 @@ export default function RanksPage() {
           <b>{fmt(TO_MAX)}</b>
           <small>level {MAX_LEVEL}, about {hours(TO_MAX)}h</small>
         </div>
+      </section>
+
+      {/* One line per question people search for, so search engines can quote the answer directly. */}
+      <section className="panel prose quick-answers" aria-labelledby="quick-title">
+        <h2 id="quick-title">Quick answers</h2>
+        <dl>
+          {QUICK.map((x) => (
+            <div key={x.q}>
+              <dt>{x.q}</dt>
+              <dd>{x.a}</dd>
+            </div>
+          ))}
+        </dl>
       </section>
 
       <section className="panel rank-table-wrap">

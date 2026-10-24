@@ -593,3 +593,11 @@ footer.foot a { color: var(--ink-2); font-weight: 600; }
 
 /* The nav links are flex boxes, which drop a leading space inside the span. */
 .nav-more { margin-left: 0.3em; }
+
+/* Quick answers on /ranks */
+.quick-answers dl { margin: 0; display: grid; gap: 8px; }
+.quick-answers dl > div { display: grid; grid-template-columns: minmax(180px, 260px) 1fr; gap: 4px 16px; padding: 6px 0; border-bottom: 1px solid var(--line); }
+.quick-answers dl > div:last-child { border-bottom: 0; }
+.quick-answers dt { font-weight: 600; color: var(--ink); }
+.quick-answers dd { margin: 0; color: var(--ink-2); }
+@media (max-width: 640px) { .quick-answers dl > div { grid-template-columns: 1fr; } }

@@ -7,7 +7,7 @@ import { Calculator } from "@/components/Calculator";
 import { hoursText } from "@/lib/calculator";
 import { SITE_URL } from "@/lib/site-url";
 import { DATA_CHECKED, DATA_CHECKED_TEXT, DATA_SEASON } from "@/lib/site";
-import { CHAMPION, DEFAULT_POINTS_PER_HOUR, LORD, MAX_LEVEL, pointsBetween } from "@/lib/proficiency";
+import { CHAMPION, DEFAULT_POINTS_PER_HOUR, LORD, pointsBetween } from "@/lib/proficiency";
 
 const fmt = (n: number) => n.toLocaleString("en-US");
 const hours = (points: number) => Math.round(points / DEFAULT_POINTS_PER_HOUR);
@@ -16,7 +16,7 @@ const TO_CHAMPION = pointsBetween(1, CHAMPION);
 const LORD_TO_CHAMPION = pointsBetween(LORD, CHAMPION);
 
 const title = "Marvel Rivals Proficiency Calculator: Hours to Lord and Champion";
-const description = `Enter a hero's level and see the points and hours of play left to Lord, Champion or level ${MAX_LEVEL}, the date you will get there, and every reward on the way.`;
+const description = `How many hours to Lord or Champion? Enter a hero's level to see the points and hours left, the date you'll get there, and every reward on the way.`;
 
 export const metadata: Metadata = {
   title: { absolute: title },

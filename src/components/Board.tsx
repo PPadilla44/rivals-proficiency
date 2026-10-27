@@ -75,7 +75,7 @@ export function Board({ mode, initial, signInSlot, portraits, screenshotImport, 
   const [emptyAtLoad, setEmptyAtLoad] = useState(() => Object.keys(initial?.levels ?? {}).length === 0);
 
   // First-time visitors may be shown an example board in place of their empty one. It is display
-  // only: nothing in it is saved, and the first press of Get started (or any level control) swaps
+  // only: nothing in it is saved, and the first press of Enter my levels (or any level control) swaps
   // in their own empty board for good.
   const [example, setExample] = useState(false);
   const exampleRef = useRef(false);
@@ -143,7 +143,7 @@ export function Board({ mode, initial, signInSlot, portraits, screenshotImport, 
       localStorage.setItem(LS_EXAMPLE_DONE, "1");
     } catch {}
     track("example_start", { via });
-    if (via === "tap") setToast({ text: "That was an example. This is your board: set your first level." });
+    if (via === "tap") setToast({ text: "That was a sample. This is your board: set your first level." });
     window.scrollTo({ top: 0, behavior: "smooth" });
   }, []);
 
@@ -355,23 +355,25 @@ export function Board({ mode, initial, signInSlot, portraits, screenshotImport, 
     <>
       {example ? (
         <>
-          <section className="example-bar" aria-label="Example board">
+          <section className="example-bar" aria-label="Sample board">
             <p>
-              <span className="example-tag">Example</span>
+              <span className="example-tag">Sample</span>
               <span>
-                <strong>This is an example board.</strong> Yours starts empty.
+                <strong>This is a sample board.</strong> Add your levels to see your hours to Lord.
               </span>
             </p>
             <button type="button" className="btn primary" onClick={() => startOwnBoard("button")}>
-              Get started
+              Enter my levels
             </button>
           </section>
-          <div className="example-sticky" role="region" aria-label="Example board">
-            <span>
-              <strong>Example board.</strong> Yours starts empty.
-            </span>
+          {/* Phones: the bar above is hidden, so say what this is at the top, where the eye lands first. */}
+          <p className="example-note">
+            <strong>Sample board.</strong> Tap Enter my levels to start yours.
+          </p>
+          <div className="example-sticky" role="region" aria-label="Sample board">
+            <span>Add your levels to see your hours to Lord.</span>
             <button type="button" className="btn primary" onClick={() => startOwnBoard("button")}>
-              Get started
+              Enter my levels
             </button>
           </div>
         </>

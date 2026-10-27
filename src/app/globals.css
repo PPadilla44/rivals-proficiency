@@ -521,9 +521,13 @@ footer.foot a { color: var(--ink-2); font-weight: 600; }
 .example-tag { flex: none; font-size: 11px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; padding: 4px 8px; border-radius: 6px; background: var(--pop); color: var(--pop-ink); }
 .example-bar .btn, .example-sticky .btn { font-size: 15px; padding: 10px 20px; flex: none; }
 .example-sticky { display: none; }
+.example-note { display: none; }
 @media (max-width: 640px) {
-  /* On phones the bar lives at the bottom, always in reach, so heroes show without scrolling. */
+  /* On phones the bar lives at the bottom, always in reach, so heroes show without scrolling.
+     One short line at the top says what the board is. */
   .example-bar { display: none; }
+  .example-note { display: block; margin: 0 0 12px; font-size: 14px; color: var(--ink-2); }
+  .example-note strong { color: var(--ink); }
   .example-sticky { display: flex; align-items: center; gap: 12px; position: fixed; left: 0; right: 0; bottom: 0; z-index: 40; padding: 10px 14px calc(10px + env(safe-area-inset-bottom)); background: var(--panel); border-top: 1px solid var(--line-2); box-shadow: 0 -6px 20px rgb(0 0 0 / 0.12); }
   .example-sticky span { flex: 1; font-size: 13.5px; color: var(--ink-2); }
   .wrap:has(.example-sticky) { padding-bottom: 84px; }

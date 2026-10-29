@@ -1,23 +1,15 @@
-import NextAuth, { type NextAuthConfig } from "next-auth";
+import NextAuth from "next-auth";
 import { after } from "next/server";
-import Discord from "next-auth/providers/discord";
-import Google from "next-auth/providers/google";
 import { DrizzleAdapter } from "@auth/drizzle-adapter";
 import { getDb } from "@/db";
 import { accounts, sessions, users, verificationTokens } from "@/db/schema";
 import { SERVER_VISITOR, recordEvent } from "@/server/events";
 import { reportAuthError } from "@/server/report-error";
+import { DISCORD_ISSUER, buildProviders } from "@/lib/auth-providers";
 
 // Only offer providers that are configured, so one is enough to run.
-const providers: NextAuthConfig["providers"] = [];
-// Discord started sending an "iss" value on its sign-in callback (Oct 2026).
-// Auth.js checks it against the provider's issuer, and its built-in Discord
-// provider has none, so every Discord sign-in failed. "https://discord.com"
-// is the issuer Discord publishes. The endpoints are all set explicitly, so
-// this adds no extra request.
-export const DISCORD_ISSUER = "https://discord.com";
-if (process.env.AUTH_DISCORD_ID) providers.push(Discord({ issuer: DISCORD_ISSUER }));
-if (process.env.AUTH_GOOGLE_ID) providers.push(Google);
+export { DISCORD_ISSUER };
+const providers = buildProviders({ discord: Boolean(process.env.AUTH_DISCORD_ID), google: Boolean(process.env.AUTH_GOOGLE_ID) });
 
 export const providerList = providers.map((p) => {
   const id = typeof p === "function" ? p().id : p.id;

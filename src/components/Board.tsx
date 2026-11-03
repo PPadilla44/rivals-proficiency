@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
+import { Suspense, lazy, useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import {
   importLevelsAction,
   linkPlayerAction,
@@ -20,6 +20,10 @@ import { LS_CARD, ScreenshotImport } from "./ScreenshotImport";
 import { referrerSite, track, visitorId } from "@/lib/track";
 import { armFor, showsExample, type ExampleMode } from "@/lib/ab";
 import { EXAMPLE_BOARD } from "@/lib/example-board";
+import { SHARE_MIN_LORD, lordCount, shareEligible } from "@/lib/share-card";
+
+// The share sheet and its drawing code load only when someone opens it.
+const ShareSheet = lazy(() => import("./ShareSheet"));
 
 const LS_LEVELS = "proficiency-board-v1";
 const LS_UI = "proficiency-board-ui";
@@ -27,6 +31,7 @@ const LS_TIP = "pb-tip-type-level";
 const LS_EXAMPLE_DONE = "pb-example-done";
 const LS_AB_SENT = "pb-ab-example";
 const TIP_AFTER_STEPS = 3;
+const LS_SHARE_NUDGE = "pb-share-nudged";
 
 type Props = {
   mode: "guest" | "user";
@@ -65,7 +70,11 @@ export function Board({ mode, initial, signInSlot, portraits, screenshotImport, 
   const [role, setRole] = useState<Role | "all">("all");
   const [goal, setGoal] = useState<Goal>("all");
   const [rank, setRank] = useState<number | null>(null);
-  const [toast, setToast] = useState<{ text: string; error?: boolean; long?: boolean } | null>(null);
+  const [toast, setToast] = useState<{ text: string; error?: boolean; long?: boolean; action?: { label: string; run: () => void } } | null>(null);
+  const [shareOpen, setShareOpen] = useState<"button" | "nudge" | null>(null);
+  // Set once the player changes something this visit, so levels loading in don't count as progress.
+  const userChanged = useRef(false);
+  const lastChange = useRef<{ id: string; level: number } | null>(null);
   // Phones show search and one Filter button; sort, layout and the chips open from it.
   const [filtersOpen, setFiltersOpen] = useState(false);
   const [busy, setBusy] = useState(false);
@@ -198,7 +207,7 @@ export function Board({ mode, initial, signInSlot, portraits, screenshotImport, 
 
   useEffect(() => {
     if (!toast) return;
-    const t = setTimeout(() => setToast(null), toast.error || toast.long ? 6000 : 3500);
+    const t = setTimeout(() => setToast(null), toast.action ? 9000 : toast.error || toast.long ? 6000 : 3500);
     return () => clearTimeout(t);
   }, [toast]);
 
@@ -236,6 +245,8 @@ export function Board({ mode, initial, signInSlot, portraits, screenshotImport, 
       if (exampleRef.current) return startOwnBoard("tap");
       if (Date.now() - exampleEndedAt.current < 900) return;
       const v = clampLevel(level);
+      userChanged.current = true;
+      lastChange.current = { id: heroId, level: v };
       // One press-and-hold is one change, however many levels it passes through.
       const t = Date.now();
       const sameHold = held && holdRun.current.id === heroId && t - holdRun.current.at < 600;
@@ -298,6 +309,58 @@ export function Board({ mode, initial, signInSlot, portraits, screenshotImport, 
       }),
     [shownBoard, syncEnabled],
   );
+
+  // Share my board: offered once the board has a few heroes worth showing (never on the sample).
+  const lordNow = lordCount(rows);
+  const champNow = rows.filter((r) => r.effective >= CHAMPION).length;
+  const canShare = !example && shareEligible(rows);
+  const openShare = useCallback((from: "button" | "nudge") => {
+    setToast(null);
+    setShareOpen(from);
+  }, []);
+
+  // Count who could share, not only who did: a low share count then says whether the bar is too high.
+  const readySent = useRef(false);
+  useEffect(() => {
+    if (!canShare || readySent.current) return;
+    readySent.current = true;
+    track("share", { action: "ready", lord: lordNow });
+  }, [canShare, lordNow]);
+
+  // The moment to ask is right after a hero reaches Lord or Champion (or an import fills the board).
+  // Asked once per browser, and only after a change the player made this visit, not levels loading in.
+  const seenCounts = useRef<{ lord: number; champ: number } | null>(null);
+  useEffect(() => {
+    if (example) return;
+    const prev = seenCounts.current;
+    const now = { lord: lordNow, champ: champNow };
+    if (!prev || !userChanged.current) {
+      seenCounts.current = now;
+      return;
+    }
+    const rose = now.lord > prev.lord || now.champ > prev.champ;
+    if (!rose || now.lord < SHARE_MIN_LORD) {
+      seenCounts.current = now;
+      return;
+    }
+    // Let a message already on screen (an import result, a tip) finish first.
+    if (toast) return;
+    seenCounts.current = now;
+    try {
+      if (localStorage.getItem(LS_SHARE_NUDGE)) return;
+      localStorage.setItem(LS_SHARE_NUDGE, "1");
+    } catch {
+      return;
+    }
+    const hero = lastChange.current ? rows.find((r) => r.id === lastChange.current?.id) : undefined;
+    const lead =
+      hero && hero.effective >= CHAMPION && now.champ > prev.champ
+        ? `${hero.name} just reached Champion.`
+        : hero && hero.effective >= LORD && now.lord > prev.lord
+          ? `${hero.name} just reached Lord.`
+          : `${now.lord} heroes at Lord or higher.`;
+    setToast({ text: `${lead} Share your board?`, action: { label: "Share", run: () => openShare("nudge") } });
+  }, [lordNow, champNow, toast, example, rows, openShare]);
 
   const visible = useMemo(() => {
     const needle = q.trim().toLowerCase();
@@ -435,7 +498,11 @@ export function Board({ mode, initial, signInSlot, portraits, screenshotImport, 
           empty={untouched}
           onSave={async (updates) => {
             const ok = await withBusy(() => saveLevelsAction(updates));
-            if (ok) setEmptyAtLoad(false);
+            if (ok) {
+              userChanged.current = true;
+              lastChange.current = null;
+              setEmptyAtLoad(false);
+            }
             if (ok)
               setToast({
                 text: `Saved ${updates.length} rank${updates.length === 1 ? "" : "s"}. Each starts at its rank's first level; tap a level to set it exactly.`,
@@ -474,6 +541,18 @@ export function Board({ mode, initial, signInSlot, portraits, screenshotImport, 
         </div>
       ) : null}
 
+      {canShare ? (
+        <div className="share-cta">
+          <span>
+            <b>{lordNow}</b> heroes at Lord or higher. Worth showing off.
+          </span>
+          <button type="button" className="btn" onClick={() => openShare("button")}>
+            <ShareIcon />
+            Share my board
+          </button>
+        </div>
+      ) : null}
+
       <StatTiles rows={rows} />
 
       <div className="board-layout">
@@ -482,6 +561,14 @@ export function Board({ mode, initial, signInSlot, portraits, screenshotImport, 
         activeRank={rank}
         onRank={(t) => setRank((r) => (r === t ? null : t))}
         linked={syncEnabled && !!board.link}
+        share={
+          canShare ? (
+            <button type="button" className="btn small" onClick={() => openShare("button")} aria-label="Share my board">
+              <ShareIcon />
+              <span className="share-word">Share</span>
+            </button>
+          ) : null
+        }
       />
 
       <div className={`board-main${filtersOpen ? " filters-open" : ""}`}>
@@ -626,11 +713,30 @@ export function Board({ mode, initial, signInSlot, portraits, screenshotImport, 
       </div>
 
       {toast ? (
-        <div className={`toast${toast.error ? " error" : ""}`} role="status">
-          {toast.text}
+        <div className={`toast${toast.error ? " error" : ""}${toast.action ? " with-action" : ""}`} role="status">
+          <span>{toast.text}</span>
+          {toast.action ? (
+            <button type="button" className="btn small primary" onClick={toast.action.run}>
+              {toast.action.label}
+            </button>
+          ) : null}
         </div>
       ) : null}
+
+      {shareOpen ? (
+        <Suspense fallback={null}>
+          <ShareSheet rows={rows} from={shareOpen} onClose={() => setShareOpen(null)} />
+        </Suspense>
+      ) : null}
     </>
+  );
+}
+
+function ShareIcon() {
+  return (
+    <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <path d="M12 15V3M7 8l5-5 5 5M5 13v6a2 2 0 002 2h10a2 2 0 002-2v-6" />
+    </svg>
   );
 }
 

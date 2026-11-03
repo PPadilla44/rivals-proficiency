@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, type ReactNode } from "react";
 import { CHAMPION, LORD, RANKS, formatHours, tierOf } from "@/lib/proficiency";
 import type { HeroRow } from "@/lib/board-model";
 
@@ -11,6 +11,8 @@ type Props = {
   activeRank: number | null;
   onRank: (tier: number) => void;
   linked: boolean;
+  /** Phones: the Share button, next to Overview in the one-line strip. */
+  share?: ReactNode;
 };
 
 /** Four headline numbers above the board (hidden on phones, which get the one-line strip). */
@@ -59,7 +61,7 @@ export function StatTiles({ rows }: { rows: HeroRow[] }) {
   );
 }
 
-export function Summary({ rows, activeRank, onRank, linked }: Props) {
+export function Summary({ rows, activeRank, onRank, linked, share }: Props) {
   const [open, setOpen] = useState(false);
   const counts = Array(RANKS.length).fill(0) as number[];
   let sum = 0;
@@ -94,9 +96,12 @@ export function Summary({ rows, activeRank, onRank, linked }: Props) {
             </>
           ) : null}
         </span>
-        <button type="button" className="btn small" aria-expanded={open} onClick={() => setOpen((o) => !o)}>
-          {open ? "Hide" : "Overview"}
-        </button>
+        <span className="strip-actions">
+          {share}
+          <button type="button" className="btn small" aria-expanded={open} onClick={() => setOpen((o) => !o)}>
+            {open ? "Hide" : "Overview"}
+          </button>
+        </span>
       </div>
       <div className="panel dist">
         <h2>

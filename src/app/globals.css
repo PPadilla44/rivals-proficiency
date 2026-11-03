@@ -605,3 +605,59 @@ footer.foot a { color: var(--ink-2); font-weight: 600; }
 .quick-answers dt { font-weight: 600; color: var(--ink); }
 .quick-answers dd { margin: 0; color: var(--ink-2); }
 @media (max-width: 640px) { .quick-answers dl > div { grid-template-columns: 1fr; } }
+
+/* ---------- Share my board ---------- */
+.btn svg { flex: none; }
+.share-cta { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 10px 12px 10px 16px; background: var(--panel); border: 1px solid color-mix(in srgb, var(--pop) 45%, var(--line)); border-radius: var(--radius); font-size: 14px; color: var(--ink-2); }
+.share-cta b { color: var(--ink); }
+.share-cta .btn { gap: 8px; }
+.strip-actions { display: flex; gap: 6px; flex: none; }
+.strip-actions .btn { gap: 6px; }
+.toast.with-action { display: flex; align-items: center; gap: 12px; padding: 8px 8px 8px 16px; width: min(92vw, 460px); }
+.toast.with-action .btn { flex: none; }
+
+.share-overlay { position: fixed; inset: 0; z-index: 60; background: rgb(0 0 0 / 0.55); display: flex; align-items: center; justify-content: center; padding: 20px; }
+.share-sheet { width: min(860px, 100%); max-height: calc(100dvh - 40px); display: flex; flex-direction: column; background: var(--panel); color: var(--ink); border: 1px solid var(--line); border-radius: 16px; box-shadow: 0 24px 60px rgb(0 0 0 / 0.35); overflow: hidden; }
+.share-head { display: flex; align-items: center; justify-content: space-between; padding: 14px 16px 10px 20px; border-bottom: 1px solid var(--line); }
+.share-head h2 { margin: 0; font-family: var(--font-display); font-size: 20px; }
+.share-x { width: 36px; height: 36px; border-radius: 10px; border: 1px solid var(--line); background: var(--panel-2); color: var(--ink); font-size: 22px; line-height: 1; cursor: pointer; }
+.share-body { display: grid; grid-template-columns: 380px minmax(0, 1fr); gap: 20px; padding: 16px 20px; min-height: 0; overflow: hidden; }
+.share-preview { aspect-ratio: 1; border-radius: 12px; overflow: hidden; background: #0b0d12; display: flex; align-items: center; justify-content: center; }
+.share-preview img { width: 100%; height: 100%; display: block; -webkit-touch-callout: default; user-select: auto; }
+.share-preview img.stale { opacity: 0.6; }
+.share-wait { color: #b4bac8; font-size: 14px; padding: 20px; text-align: center; }
+.share-pick { display: flex; flex-direction: column; min-height: 0; }
+.share-hint { margin: 0 0 8px; font-size: 13.5px; color: var(--ink-2); }
+.share-hint b { color: var(--ink); }
+.share-list { list-style: none; margin: 0; padding: 0; overflow-y: auto; max-height: 340px; border: 1px solid var(--line); border-radius: 10px; }
+.share-list li + li { border-top: 1px solid var(--line); }
+.share-list label { display: flex; align-items: center; gap: 10px; padding: 8px 12px; cursor: pointer; font-size: 14.5px; min-height: 44px; }
+.share-list label.on { background: color-mix(in srgb, var(--pop) 10%, var(--panel)); }
+.share-list label.locked:not(.on) { opacity: 0.5; cursor: default; }
+.share-list input { width: 18px; height: 18px; accent-color: var(--pop); flex: none; }
+.share-list .nm { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: 600; }
+.share-list .lv { color: var(--ink-3); font-size: 13px; flex: none; }
+.share-more { align-self: flex-start; margin-top: 8px; }
+.share-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; padding: 12px 20px 16px; border-top: 1px solid var(--line); }
+.share-actions .btn { min-width: 130px; justify-content: center; }
+.share-note { margin: 0; flex: 1 1 200px; font-size: 13px; color: var(--ink-3); }
+
+@media (max-width: 640px) {
+  .share-cta { display: none; }
+  .share-overlay { padding: 0; align-items: flex-end; }
+  .share-sheet { width: 100%; max-height: 100dvh; height: 100dvh; border-radius: 0; border: 0; }
+  .share-head { padding: 10px 12px 8px 16px; }
+  /* Preview pinned at the top, the list scrolls under it, the buttons stay in reach. */
+  .share-body { display: flex; flex-direction: column; gap: 12px; padding: 12px 16px 0; flex: 1; }
+  .share-preview { width: min(62vw, 260px); align-self: center; flex: none; }
+  .share-pick { flex: 1; min-height: 0; }
+  .share-list { max-height: none; flex: 1; }
+  .share-actions { padding: 10px 16px calc(12px + env(safe-area-inset-bottom)); }
+  .share-actions .btn { flex: 1; }
+  .share-note { flex-basis: 100%; }
+}
+/* Narrow phones: the strip's Share button is just its icon, so the counts keep two lines. */
+@media (max-width: 420px) {
+  .strip-actions .share-word { display: none; }
+  .strip-actions .btn:has(.share-word) { padding: 0 10px; }
+}

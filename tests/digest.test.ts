@@ -5,7 +5,7 @@ import { migrate } from "drizzle-orm/pglite/migrator";
 import * as schema from "@/db/schema";
 import type { AnyDb } from "@/server/board";
 import { SERVER_VISITOR, getReferrers, getStats, recordEvent } from "@/server/events";
-import { buildDigest, getEngagement, getNewVisitorRetention, retentionLine, sendDailyDigest } from "@/server/digest";
+import { buildDigest, getEngagement, getNewVisitorRetention, retentionLine, sendDailyDigest, shareLine } from "@/server/digest";
 
 let db: AnyDb;
 beforeEach(async () => {
@@ -51,6 +51,29 @@ describe("daily digest", () => {
     await recordEvent(db, { name: "visit", visitorId: "digest-e-1", props: { device: "desktop" }, at: hoursAgo(1) });
     expect(await buildDigest(db, { now, search: async () => [] })).toContain(
       "Changed nothing: read the page 1 · left within 20 seconds 2 · on phones: read 1 · left 1",
+    );
+  });
+
+  it("counts who could share, opened the sheet, and shared", async () => {
+    await seed();
+    const share = (visitorId: string, props: Record<string, string | number>) =>
+      recordEvent(db, { name: "share", visitorId, props, at: hoursAgo(2) });
+    await share("digest-a-1", { action: "ready", lord: 4 });
+    await share("digest-a-1", { action: "ready", lord: 4 }); // a second page load: still one visitor
+    await share("digest-a-1", { action: "open", from: "nudge" });
+    await share("digest-a-1", { action: "done", how: "share", heroes: 5 });
+    await share("digest-a-1", { action: "done", how: "save", heroes: 5 });
+    await share("digest-c-1", { action: "ready", lord: 3 });
+    const eng = await getEngagement(db, hoursAgo(24), now);
+    expect(shareLine(eng)).toBe("Could share 2 · opened 1 · shared 1 (share sheet 1, saved 1, copied 0)");
+    expect(await buildDigest(db, { now, search: async () => [] })).toContain("**Share image**\nCould share 2");
+    // Opening the sheet is not changing a level: it doesn't move anyone into "interacted".
+    expect(eng.activeGuests + eng.activeSignedIn).toBe(1);
+  });
+
+  it("writes a quiet share line when nobody qualified", () => {
+    expect(shareLine({ shareReady: 0, shareOpens: 0, shareDone: 0, shareBy: { share: 0, save: 0, copy: 0 } })).toBe(
+      "Could share 0 · opened 0 · shared 0",
     );
   });
 

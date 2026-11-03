@@ -155,7 +155,7 @@ export default async function Home({ searchParams }: PageProps<"/">) {
         <div>
           <h1 className="page-title">Marvel Rivals proficiency tracker</h1>
           <p className="sub">
-            Every hero&apos;s rank and level on one board.{" "}
+            See which heroes are closest to Lord and Champion, and the hours left.{" "}
             <span className="sub-more">
               Set a level once, bump it after a session. <Link href="/ranks">How ranks and points work</Link>.
             </span>

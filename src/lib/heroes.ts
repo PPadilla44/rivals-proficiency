@@ -22,7 +22,7 @@ export const ROLE_SORT: Record<Role, number> = { V: 0, D: 1, S: 2, M: 3 };
 type Row = [name: string, role: Role, aliases?: string[]];
 
 // Launch roster (6 Dec 2024), then every post-launch hero in unlock order.
-// 54 heroes as of Season 10 (11 Sep 2026).
+// 55 heroes with Nightcrawler (14 Nov 2026).
 const ROSTER: Row[] = [
   ["Captain America", "V"],
   ["Doctor Strange", "V"],
@@ -78,6 +78,7 @@ const ROSTER: Row[] = [
   ["Jubilee", "S", ["Jubilation Lee"]],
   ["The Hood", "V", ["Hood"]],
   ["Gorr the God Butcher", "D", ["Gorr"]],
+  ["Nightcrawler", "S"],
 ];
 
 export function slugify(name: string): string {

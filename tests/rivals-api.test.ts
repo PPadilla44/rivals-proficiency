@@ -11,7 +11,7 @@ const sample = {
   heroes_ranked: [
     { hero_id: 1011, hero_name: "Bruce Banner", play_time: 3600, matches: 6 },
     { hero_id: 1039, hero_name: "Thor", play_time: 7200.4, matches: 12 },
-    { hero_id: 9999, hero_name: "Nightcrawler", play_time: 60 },
+    { hero_id: 9999, hero_name: "Unreleased Hero", play_time: 60 },
   ],
   heroes_unranked: [
     { hero_id: 1039, hero_name: "thor", play_time: 1800 },
@@ -27,7 +27,7 @@ describe("parsePlayerStats", () => {
     const byId = Object.fromEntries(s.heroes.map((h) => [h.heroId, h.playtimeSec]));
     expect(byId.hulk).toBe(3600);
     expect(byId.thor).toBe(9000);
-    expect(s.unmatched).toEqual(["Nightcrawler"]);
+    expect(s.unmatched).toEqual(["Unreleased Hero"]);
   });
 
   it("explains private profiles", () => {
@@ -48,7 +48,7 @@ describe("parsePortraits", () => {
         { name: "Iron Man", imageUrl: "/heroes/cards/ironman.png" },
         { name: "Bruce Banner", imageUrl: "heroes/cards/hulk.png" },
         { name: "Thor", image: "https://cdn.example.com/thor.png" },
-        { name: "Nightcrawler", imageUrl: "/heroes/cards/nc.png" },
+        { name: "Unreleased Hero", imageUrl: "/heroes/cards/nc.png" },
         { name: "Loki" },
       ],
     });

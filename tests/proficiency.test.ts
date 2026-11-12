@@ -103,7 +103,7 @@ describe("heroes", () => {
     expect(heroIdFromName("Jubilation Lee")).toBe("jubilee");
     expect(heroIdFromName("SPIDER-MAN")).toBe("spider-man");
     expect(heroIdFromName("Gorr")).toBe("gorr-the-god-butcher");
-    expect(heroIdFromName("Nightcrawler")).toBeUndefined();
+    expect(heroIdFromName("Unreleased Hero")).toBeUndefined();
   });
 });
 

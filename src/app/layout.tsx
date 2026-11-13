@@ -5,6 +5,7 @@ import { Analytics } from "@vercel/analytics/next";
 import { SpeedInsights } from "@vercel/speed-insights/next";
 import { DATA_SEASON, FEEDBACK_URL, KOFI_URL } from "@/lib/site";
 import FeedbackLauncher from "@/components/FeedbackLauncher";
+import FeedbackHost from "@/components/FeedbackHost";
 import { SITE_URL } from "@/lib/site-url";
 import { SiteNav } from "@/components/SiteNav";
 import { EngagementTracker } from "@/components/EngagementTracker";
@@ -92,6 +93,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
             <Link href="/terms">Terms</Link>
           </span>
         </footer>
+        <FeedbackHost />
         <EngagementTracker />
         <Analytics />
         <SpeedInsights />

@@ -131,6 +131,14 @@ button, input, select { font: inherit; color: inherit; }
 .btn.small { height: 32px; padding: 0 12px; font-size: 13px; }
 .kofi { height: 36px; padding: 0 12px; font-size: 13.5px; font-weight: 500; color: var(--ink-2); background: transparent; }
 .kofi span[aria-hidden] { color: var(--duel); }
+.nav-actions { display: flex; align-items: center; gap: 8px; }
+.fb-btn {
+  height: 36px; padding: 0 12px; border-radius: 8px; border: 1px solid var(--line-2); background: var(--panel-2); color: var(--ink);
+  cursor: pointer; font: inherit; font-size: 13.5px; font-weight: 600; display: inline-flex; align-items: center; justify-content: center; gap: 7px; white-space: nowrap;
+  transition: border-color 0.12s;
+}
+.fb-btn:hover { border-color: var(--ink-3); }
+.fb-btn svg { color: var(--gold-ink); }
 
 /* ---------- page head ---------- */
 .top { display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between; gap: 14px; }
@@ -456,6 +464,9 @@ footer.foot a { color: var(--ink-2); font-weight: 600; }
   .nav-more { display: none; }
   .kofi { width: 38px; padding: 0; }
   .kofi-label { display: none; }
+  .nav-actions { gap: 6px; }
+  .fb-btn { width: 38px; height: 36px; padding: 0; }
+  .fb-btn-label { display: none; }
   .page-title { font-size: 26px; }
   .sub { font-size: 14px; }
   .tiles { display: none; }
@@ -639,3 +650,18 @@ footer.foot a { color: var(--ink-2); font-weight: 600; }
 .stats-feedback header { display: flex; gap: 8px; flex-wrap: wrap; font-size: 12.5px; color: var(--ink-3); margin-bottom: 4px; }
 .stats-feedback header b { color: var(--ink); }
 .stats-feedback p { margin: 0; white-space: pre-wrap; overflow-wrap: anywhere; }
+
+/* With both buttons the header needs about 420px; narrower phones keep Feedback and the Ko-fi link stays in the footer. */
+@media (max-width: 460px) {
+  .nav-actions .kofi { display: none; }
+}
+
+/* Small phones: tighten the header so the wordmark, two links and the Feedback button fit. */
+@media (max-width: 380px) {
+  .nav-inner { gap: 8px; padding: 0 10px; }
+  .brand { font-size: 15px; gap: 4px; }
+  .nav-links a { padding: 0 6px; font-size: 13px; }
+}
+@media (max-width: 340px) {
+  .brand-b { display: none; }
+}

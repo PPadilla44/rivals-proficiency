@@ -16,9 +16,9 @@ const HINT: Record<FeedbackKind, string> = {
  * Works for guests and signed-in players. A hidden field and the time the form was open
  * tell the server a script filled it in.
  */
-export default function FeedbackSheet({ onClose }: { onClose: () => void }) {
+export default function FeedbackSheet({ onClose, initialKind }: { onClose: () => void; initialKind?: FeedbackKind }) {
   const titleId = useId();
-  const [kind, setKind] = useState<FeedbackKind>("idea");
+  const [kind, setKind] = useState<FeedbackKind>(initialKind ?? "idea");
   const [message, setMessage] = useState("");
   const [email, setEmail] = useState("");
   const [trap, setTrap] = useState("");

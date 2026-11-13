@@ -8,6 +8,7 @@ import type { AnyDb } from "@/server/board";
 import {
   FEEDBACK_LIMITS,
   countFeedback,
+  countFeedbackOpens,
   feedbackPing,
   listFeedback,
   looksAutomated,
@@ -16,6 +17,7 @@ import {
   saveFeedback,
 } from "@/server/feedback";
 import { buildDigest, feedbackLine } from "@/server/digest";
+import { recordEvent } from "@/server/events";
 
 let db: AnyDb;
 beforeEach(async () => {
@@ -117,6 +119,18 @@ describe("listFeedback and countFeedback", () => {
   });
 });
 
+describe("countFeedbackOpens", () => {
+  it("counts each visitor once, only inside the window", async () => {
+    const at = (h: number) => new Date(now.getTime() - h * 3_600_000);
+    await recordEvent(db, { name: "feedback_open", visitorId: "visitor-aaaa1", props: { from: "header" }, at: at(2) });
+    await recordEvent(db, { name: "feedback_open", visitorId: "visitor-aaaa1", props: { from: "footer" }, at: at(1) });
+    await recordEvent(db, { name: "feedback_open", visitorId: "visitor-bbbb2", props: { from: "link" }, at: at(3) });
+    await recordEvent(db, { name: "feedback_open", visitorId: "visitor-cccc3", at: at(48) });
+    await recordEvent(db, { name: "level_set", visitorId: "visitor-dddd4", at: at(1) });
+    expect(await countFeedbackOpens(db, new Date(now.getTime() - 86_400_000), now)).toBe(2);
+  });
+});
+
 describe("the Discord ping", () => {
   it("can't mention everyone, break out of the quote or run long", () => {
     const text = feedbackPing({ kind: "bug", message: "@everyone `click` https://x.example\n" + "line\n".repeat(30), hasEmail: true, signedIn: false, device: "mobile" });
@@ -146,6 +160,8 @@ describe("the Discord ping", () => {
 describe("the digest", () => {
   it("shows a Feedback section", async () => {
     expect(feedbackLine({ total: 0, bug: 0, idea: 0, other: 0 })).toBe("none");
+    expect(feedbackLine({ total: 0, bug: 0, idea: 0, other: 0 }, 4)).toBe("none · 4 opened the form");
+    expect(feedbackLine({ total: 1, bug: 1, idea: 0, other: 0 }, 4)).toContain("· 4 opened the form ·");
     expect(feedbackLine({ total: 3, bug: 1, idea: 2, other: 0 })).toContain("3 new (bugs 1, ideas 2, other 0)");
     await saveFeedback(db, ok({ kind: "bug", message: "Something broke" }), { visitorId: "visitor-aaaa1" }, new Date(now.getTime() - 3_600_000));
     const text = await buildDigest(db, { now, search: async () => [] });

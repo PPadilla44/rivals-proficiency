@@ -1,6 +1,6 @@
-import { and, desc, gte, sql } from "drizzle-orm";
+import { and, desc, eq, gte, sql } from "drizzle-orm";
 import { z } from "zod";
-import { feedback } from "@/db/schema";
+import { events, feedback } from "@/db/schema";
 import { SITE_URL } from "@/lib/site-url";
 import { FEEDBACK_KINDS, FEEDBACK_KIND_LABEL, FEEDBACK_LIMITS, type FeedbackKind } from "@/lib/feedback-shared";
 import type { AnyDb } from "./board";
@@ -131,6 +131,15 @@ export async function countFeedback(db: AnyDb, since: Date, until: Date): Promis
     .from(feedback)
     .where(and(gte(feedback.createdAt, since), sql`${feedback.createdAt} <= ${until.toISOString()}::timestamptz`));
   return { total: r?.total ?? 0, bug: r?.bug ?? 0, idea: r?.idea ?? 0, other: r?.other ?? 0 };
+}
+
+/** People who opened the form in a window (each counted once), for the digest's "opened by N". */
+export async function countFeedbackOpens(db: AnyDb, since: Date, until: Date): Promise<number> {
+  const [r] = await db
+    .select({ n: sql<number>`count(distinct ${events.visitorId})::int` })
+    .from(events)
+    .where(and(eq(events.name, "feedback_open"), gte(events.createdAt, since), sql`${events.createdAt} <= ${until.toISOString()}::timestamptz`));
+  return r?.n ?? 0;
 }
 
 /** The Discord message: the kind, who, and a short quote. Nobody's text can ping @everyone or roles. */

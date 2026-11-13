@@ -141,3 +141,24 @@ export const events = pgTable(
   },
   (t) => [index("event_time").on(t.createdAt), index("event_visitor").on(t.visitorId)],
 );
+
+/**
+ * Messages sent from the Feedback form. `userId` is set only when the sender was
+ * signed in, and deleting the account deletes its messages. `email` is optional
+ * and only for a reply. `visitorId` is the browser's random id, used for rate limits.
+ */
+export const feedback = pgTable(
+  "feedback",
+  {
+    id: serial("id").primaryKey(),
+    kind: text("kind").notNull(),
+    message: text("message").notNull(),
+    email: text("email"),
+    userId: text("user_id").references(() => users.id, { onDelete: "cascade" }),
+    visitorId: text("visitor_id").notNull(),
+    device: text("device"),
+    page: text("page"),
+    createdAt: timestamp("created_at", { mode: "date", withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [index("feedback_time").on(t.createdAt), index("feedback_visitor").on(t.visitorId, t.createdAt)],
+);

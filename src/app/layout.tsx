@@ -4,6 +4,8 @@ import Link from "next/link";
 import { Analytics } from "@vercel/analytics/next";
 import { SpeedInsights } from "@vercel/speed-insights/next";
 import { DATA_SEASON, FEEDBACK_URL, KOFI_URL } from "@/lib/site";
+import FeedbackLauncher from "@/components/FeedbackLauncher";
+import FeedbackHost from "@/components/FeedbackHost";
 import { SITE_URL } from "@/lib/site-url";
 import { SiteNav } from "@/components/SiteNav";
 import { EngagementTracker } from "@/components/EngagementTracker";
@@ -83,13 +85,15 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
               buy me a coffee on Ko-fi
             </a>
             .{" "}
+            <FeedbackLauncher /> (or{" "}
             <a href={FEEDBACK_URL} target="_blank" rel="noreferrer">
-              Report a bug or suggest an idea
+              on GitHub
             </a>
-            . <Link href="/calculator">Proficiency calculator</Link> · <Link href="/ranks">Proficiency ranks and points</Link> · <Link href="/privacy">Privacy</Link> ·{" "}
+            ). <Link href="/calculator">Proficiency calculator</Link> · <Link href="/ranks">Proficiency ranks and points</Link> · <Link href="/privacy">Privacy</Link> ·{" "}
             <Link href="/terms">Terms</Link>
           </span>
         </footer>
+        <FeedbackHost />
         <EngagementTracker />
         <Analytics />
         <SpeedInsights />

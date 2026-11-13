@@ -5,6 +5,7 @@ import { getProblems, sendWebhook, type Send } from "./alerts";
 import { countScans, type AnyDb } from "./board";
 import { SERVER_VISITOR, getReferrers, getStats, recordEvent } from "./events";
 import { searchSection } from "./search-console";
+import { countFeedback, countFeedbackOpens, type FeedbackCounts } from "./feedback";
 
 const DAY = 86_400_000;
 /**
@@ -44,6 +45,12 @@ export type Engagement = {
   calcViews: number;
   calcUses: number;
 };
+
+/** "3 new (bugs 1, ideas 2, other 0) · 12 opened the form", or "none". */
+export function feedbackLine(c: FeedbackCounts, opened = 0): string {
+  const opens = opened ? ` · ${opened} opened the form` : "";
+  return c.total ? `${c.total} new (bugs ${c.bug}, ideas ${c.idea}, other ${c.other})${opens} · read them on /stats` : `none${opens}`;
+}
 
 /** How visitors used the board in a window: who stuck, who bounced, and the import funnel. */
 export async function getEngagement(db: AnyDb, since: Date, until: Date): Promise<Engagement> {
@@ -285,7 +292,7 @@ export async function buildDigest(
 ): Promise<string> {
   const now = opts.now ?? new Date();
   const dayAgo = new Date(now.getTime() - DAY);
-  const [kept, search, today, before, week, refs, eng, fresh, problems, reads, [{ accounts }]] = await Promise.all([
+  const [kept, search, today, before, week, refs, eng, fresh, problems, reads, [{ accounts }], notes, notesOpened] = await Promise.all([
     getNewVisitorRetention(db, now),
     (opts.search ?? (() => searchSection({ now })))(),
     getStats(db, 1, now),
@@ -297,6 +304,8 @@ export async function buildDigest(
     getProblems(db, 1, now),
     countScans(db, dayAgo),
     db.select({ accounts: sql<number>`count(*)::int` }).from(users),
+    countFeedback(db, dayAgo, now),
+    countFeedbackOpens(db, dayAgo, now),
   ]);
 
   const device = (d: string) => today.devices.find((x) => x.device === d)?.visitors ?? 0;
@@ -334,6 +343,9 @@ export async function buildDigest(
     ``,
     `**Calculator**`,
     `Opened by ${eng.calcViews} · used by ${eng.calcUses}`,
+    ``,
+    `**Feedback**`,
+    feedbackLine(notes, notesOpened),
     ``,
     `**Keeping new visitors**`,
     retentionLine(kept),

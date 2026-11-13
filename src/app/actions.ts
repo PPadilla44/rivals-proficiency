@@ -7,6 +7,7 @@ import { playtimeSyncEnabled } from "@/lib/flags";
 import { playtimeSyncFlag, screenshotDailyCap } from "@/flags";
 import { reportProblem } from "@/server/alerts";
 import { reportBrowserError } from "@/server/report-error";
+import { looksAutomated, notifyFeedback, parseFeedback, saveFeedback } from "@/server/feedback";
 import { heroIdFromName } from "@/lib/heroes";
 import { getDb } from "@/db";
 import {
@@ -256,5 +257,43 @@ export async function reportBrowserErrorAction(visitorId: unknown, message: unkn
     await reportBrowserError(getDb(), String(message).slice(0, 160), String(path).slice(0, 100));
   } catch (e) {
     console.error("browser error report failed", e);
+  }
+}
+
+export type FeedbackResult = { ok: true } | { ok: false; error: string };
+
+/**
+ * Save a message from the Feedback form. Anyone can call it, guests included, so it
+ * checks a hidden field and the time the form was open, limits each browser and the
+ * whole site per hour, and never trusts the page it claims to come from.
+ */
+export async function sendFeedbackAction(input: unknown, visitorId: unknown, trap?: { website?: unknown; openedMs?: unknown }): Promise<FeedbackResult> {
+  if (!process.env.DATABASE_URL) return { ok: false, error: "Feedback isn't available right now. Try the GitHub link instead." };
+  // Bots fill the hidden field or submit instantly. Say thanks and keep nothing.
+  if (looksAutomated(trap)) return { ok: true };
+  if (!isVisitorId(visitorId)) return { ok: false, error: "That didn't send. Reload the page and try again." };
+  const parsed = parseFeedback(input);
+  if (!parsed.ok) return parsed;
+  try {
+    const db = getDb();
+    const session = authConfigured ? await auth() : null;
+    const userId = session?.user?.id ?? null;
+    const result = await saveFeedback(db, parsed.value, { visitorId, userId });
+    if (result === "visitor_limit") return { ok: false, error: "You've sent a few already. Try again in an hour." };
+    if (result === "site_limit") return { ok: false, error: "Feedback is busy right now. Try again in a little while." };
+    if (result === "saved") {
+      await notifyFeedback(db, {
+        kind: parsed.value.kind,
+        message: parsed.value.message,
+        hasEmail: !!parsed.value.email,
+        signedIn: !!userId,
+        device: parsed.value.device,
+      });
+    }
+    return { ok: true };
+  } catch (e) {
+    console.error("feedback failed", e);
+    await reportServerError(e);
+    return { ok: false, error: "That didn't send. Try again in a moment." };
   }
 }

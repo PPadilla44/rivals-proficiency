@@ -54,7 +54,7 @@ export const sendWebhook: Send = async (content) => {
     method: "POST",
     headers: { "content-type": "application/json" },
     // Discord reads `content`, Slack reads `text`.
-    body: JSON.stringify({ content, text: content }),
+    body: JSON.stringify({ content, text: content, allowed_mentions: { parse: [] } }),
     signal: AbortSignal.timeout(5_000),
   });
   if (!res.ok) throw new Error(`alert webhook ${res.status}`);

@@ -11,6 +11,7 @@ import { playtimeSyncFlag, screenshotDailyCap } from "@/flags";
 import { getProblems, sendTestAlert } from "@/server/alerts";
 import { redirect } from "next/navigation";
 import { countScans } from "@/server/board";
+import { FEEDBACK_KIND_LABEL, listFeedback } from "@/server/feedback";
 
 export const metadata: Metadata = { title: "Stats", robots: { index: false, follow: false } };
 
@@ -73,7 +74,7 @@ export default async function StatsPage({ searchParams }: PageProps<"/stats">) {
   const alertResult = (await searchParams).alert;
 
   const db = getDb();
-  const [week, month, syncForYou, problems, readsToday, cap, referrers] = await Promise.all([
+  const [week, month, syncForYou, problems, readsToday, cap, referrers, notes] = await Promise.all([
     getStats(db, 7),
     getStats(db, 30),
     playtimeSyncEnabled(session?.user, () => playtimeSyncFlag()),
@@ -81,6 +82,7 @@ export default async function StatsPage({ searchParams }: PageProps<"/stats">) {
     countScans(db),
     screenshotDailyCap(),
     getRecentReferrers(db, 7, 12),
+    listFeedback(db, 30),
   ]);
   const syncNote = !process.env.MARVEL_RIVALS_API_KEY
     ? "off for everyone (no MARVEL_RIVALS_API_KEY yet)"
@@ -148,6 +150,30 @@ export default async function StatsPage({ searchParams }: PageProps<"/stats">) {
           </div>
         ) : (
           <p className="muted-note">None. Failed imports, a spent API budget, the daily cap, unknown hero names and server errors show up here.</p>
+        )}
+      </section>
+      <section className="panel">
+        <h2>
+          Feedback, last 30 days <b>{notes.length}</b>
+        </h2>
+        {notes.length ? (
+          <div className="stats-feedback">
+            {notes.map((f) => (
+              <article key={f.id}>
+                <header>
+                  <b>{FEEDBACK_KIND_LABEL[f.kind]}</b>
+                  <span>{f.createdAt.slice(0, 16).replace("T", " ")} UTC</span>
+                  <span>{f.signedIn ? "signed in" : "guest"}</span>
+                  {f.device ? <span>{f.device === "mobile" ? "phone" : "computer"}</span> : null}
+                  {f.page ? <span>{f.page}</span> : null}
+                  {f.email ? <a href={`mailto:${f.email}`}>{f.email}</a> : null}
+                </header>
+                <p>{f.message}</p>
+              </article>
+            ))}
+          </div>
+        ) : (
+          <p className="muted-note">None yet. Messages from the Feedback form in the footer show up here, newest first.</p>
         )}
       </section>
       <Totals s={week} title="Last 7 days" />

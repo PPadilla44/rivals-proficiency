@@ -246,7 +246,7 @@ export default function RanksPage() {
           </table>
         </div>
         <p className="muted-note">
-          Read from the in-game reward track for Adam Warlock in Season 10 and checked against Angela in {DATA_SEASON}. Every
+          Read from the in-game reward track for Adam Warlock in Season 10 and checked against Angela in Season 10.5. The Season 11 patch notes list no proficiency changes. Every
           hero has the same track with its own art,
           and each title ends with that hero&apos;s name, for example Legendary Adam Warlock. Across all 70 levels a hero
           gives {UM_TOTAL} Unstable Molecules and {UNITS_TOTAL} Units.

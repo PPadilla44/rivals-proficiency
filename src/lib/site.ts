@@ -6,10 +6,10 @@ export const FEEDBACK_URL = "https://github.com/PPadilla44/rivals-proficiency/is
  * checked against the game. Bump both when you re-check after a patch: the
  * date shows on the guides, in structured data and in the sitemap.
  */
-export const DATA_CHECKED = "2026-10-09";
-export const DATA_SEASON = "Season 10.5";
+export const DATA_CHECKED = "2026-11-13";
+export const DATA_SEASON = "Season 11";
 
-/** "Oct 9, 2026" */
+/** "Nov 13, 2026" */
 export const DATA_CHECKED_TEXT = new Date(`${DATA_CHECKED}T12:00:00Z`).toLocaleDateString("en-US", {
   month: "short",
   day: "numeric",

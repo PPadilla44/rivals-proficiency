@@ -131,6 +131,13 @@ describe("countFeedbackOpens", () => {
   });
 });
 
+describe("events the feedback buttons send", () => {
+  it("are accepted and keep their source", async () => {
+    expect(await recordEvent(db, { name: "feedback_open", visitorId: "visitor-aaaa1", props: { from: "import" } })).toBe(true);
+    expect(await recordEvent(db, { name: "import_check", visitorId: "visitor-aaaa1", props: { result: "off" } })).toBe(true);
+  });
+});
+
 describe("the Discord ping", () => {
   it("can't mention everyone, break out of the quote or run long", () => {
     const text = feedbackPing({ kind: "bug", message: "@everyone `click` https://x.example\n" + "line\n".repeat(30), hasEmail: true, signedIn: false, device: "mobile" });

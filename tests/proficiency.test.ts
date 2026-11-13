@@ -89,9 +89,9 @@ describe("rate learning", () => {
 });
 
 describe("heroes", () => {
-  it("has 54 unique heroes", () => {
-    expect(HEROES).toHaveLength(54);
-    expect(new Set(HEROES.map((h) => h.id)).size).toBe(54);
+  it("has 55 unique heroes", () => {
+    expect(HEROES).toHaveLength(55);
+    expect(new Set(HEROES.map((h) => h.id)).size).toBe(55);
   });
 
   it("maps API spellings to roster ids", () => {
@@ -103,7 +103,7 @@ describe("heroes", () => {
     expect(heroIdFromName("Jubilation Lee")).toBe("jubilee");
     expect(heroIdFromName("SPIDER-MAN")).toBe("spider-man");
     expect(heroIdFromName("Gorr")).toBe("gorr-the-god-butcher");
-    expect(heroIdFromName("Nightcrawler")).toBeUndefined();
+    expect(heroIdFromName("Unreleased Hero")).toBeUndefined();
   });
 });
 

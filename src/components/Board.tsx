@@ -451,14 +451,10 @@ export function Board({ mode, initial, signInSlot, portraits, screenshotImport, 
       ) : null}
 
       {importCheck ? (
-        <div className="banner import-check" role="region" aria-label="Did the import read your heroes right?">
+        <div className="banner accent import-check" role="region" aria-label="Did the import read your heroes right?">
           {importCheck.answer === "right" ? (
             <p>
-              Great, glad it worked. The board is free and fan-made; if it saves you some clicking, you can{" "}
-              <a href={KOFI_URL} target="_blank" rel="noreferrer">
-                buy me a coffee on Ko-fi
-              </a>
-              .
+              <strong>Glad it worked!</strong> The board is free and fan-made. If it saves you some clicking, a coffee helps keep it going.
             </p>
           ) : (
             <p>
@@ -466,7 +462,11 @@ export function Board({ mode, initial, signInSlot, portraits, screenshotImport, 
             </p>
           )}
           <div className="actions">
-            {importCheck.answer === "right" ? null : (
+            {importCheck.answer === "right" ? (
+              <a className="btn primary" href={KOFI_URL} target="_blank" rel="noreferrer">
+                <span aria-hidden="true">&#9829;</span> Support on Ko-fi
+              </a>
+            ) : (
               <>
                 <button
                   className="btn primary"

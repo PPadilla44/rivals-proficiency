@@ -153,6 +153,8 @@ button, input, select { font: inherit; color: inherit; }
 .banner p { margin: 0; color: var(--ink-2); max-width: 66ch; }
 .banner strong { color: var(--ink); }
 .banner .actions { display: flex; gap: 10px; flex-wrap: wrap; }
+.banner.import-check { border-left: 4px solid var(--pop); font-size: 15px; }
+.banner.import-check p { color: var(--ink); }
 .banner.accent { border-color: color-mix(in srgb, var(--pop) 55%, var(--line)); background: color-mix(in srgb, var(--pop) 9%, var(--panel)); }
 .account form { display: flex; gap: 10px; flex: 1 1 320px; max-width: 480px; }
 .account input { flex: 1; min-width: 0; height: 38px; border: 1px solid var(--line-2); background: var(--paper); border-radius: 8px; padding: 0 12px; }

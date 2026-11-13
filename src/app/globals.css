@@ -131,6 +131,14 @@ button, input, select { font: inherit; color: inherit; }
 .btn.small { height: 32px; padding: 0 12px; font-size: 13px; }
 .kofi { height: 36px; padding: 0 12px; font-size: 13.5px; font-weight: 500; color: var(--ink-2); background: transparent; }
 .kofi span[aria-hidden] { color: var(--duel); }
+.nav-actions { display: flex; align-items: center; gap: 8px; }
+.fb-btn {
+  height: 36px; padding: 0 12px; border-radius: 8px; border: 1px solid var(--line-2); background: var(--panel-2); color: var(--ink);
+  cursor: pointer; font: inherit; font-size: 13.5px; font-weight: 600; display: inline-flex; align-items: center; justify-content: center; gap: 7px; white-space: nowrap;
+  transition: border-color 0.12s;
+}
+.fb-btn:hover { border-color: var(--ink-3); }
+.fb-btn svg { color: var(--gold-ink); }
 
 /* ---------- page head ---------- */
 .top { display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between; gap: 14px; }
@@ -145,6 +153,8 @@ button, input, select { font: inherit; color: inherit; }
 .banner p { margin: 0; color: var(--ink-2); max-width: 66ch; }
 .banner strong { color: var(--ink); }
 .banner .actions { display: flex; gap: 10px; flex-wrap: wrap; }
+.banner.import-check { border-left: 4px solid var(--pop); font-size: 15px; }
+.banner.import-check p { color: var(--ink); }
 .banner.accent { border-color: color-mix(in srgb, var(--pop) 55%, var(--line)); background: color-mix(in srgb, var(--pop) 9%, var(--panel)); }
 .account form { display: flex; gap: 10px; flex: 1 1 320px; max-width: 480px; }
 .account input { flex: 1; min-width: 0; height: 38px; border: 1px solid var(--line-2); background: var(--paper); border-radius: 8px; padding: 0 12px; }
@@ -456,6 +466,9 @@ footer.foot a { color: var(--ink-2); font-weight: 600; }
   .nav-more { display: none; }
   .kofi { width: 38px; padding: 0; }
   .kofi-label { display: none; }
+  .nav-actions { gap: 6px; }
+  .fb-btn { width: 38px; height: 36px; padding: 0; }
+  .fb-btn-label { display: none; }
   .page-title { font-size: 26px; }
   .sub { font-size: 14px; }
   .tiles { display: none; }
@@ -605,3 +618,52 @@ footer.foot a { color: var(--ink-2); font-weight: 600; }
 .quick-answers dt { font-weight: 600; color: var(--ink); }
 .quick-answers dd { margin: 0; color: var(--ink-2); }
 @media (max-width: 640px) { .quick-answers dl > div { grid-template-columns: 1fr; } }
+
+/* ---------- feedback ---------- */
+.link-btn { background: none; border: none; padding: 0; cursor: pointer; color: var(--ink-2); font-weight: 600; font-size: inherit; text-decoration: underline; text-underline-offset: 2px; }
+.link-btn:hover { color: var(--ink); }
+.fb-overlay { position: fixed; inset: 0; z-index: 60; background: rgba(10, 12, 18, 0.55); display: flex; align-items: center; justify-content: center; padding: 16px; }
+.fb-sheet { width: min(480px, 100%); max-height: calc(100dvh - 32px); overflow: auto; background: var(--panel); border: 1px solid var(--line-2); border-radius: var(--radius); padding: 16px 18px 18px; box-shadow: 0 20px 60px rgba(0, 0, 0, 0.35); }
+.fb-head { display: flex; justify-content: space-between; align-items: center; gap: 8px; margin-bottom: 12px; }
+.fb-head h2 { margin: 0; font-size: 18px; font-weight: 700; color: var(--ink); }
+.fb-x { width: 36px; height: 36px; border: none; background: transparent; font-size: 26px; line-height: 1; cursor: pointer; color: var(--ink-2); border-radius: 8px; }
+.fb-x:hover { background: var(--panel-2); }
+.fb-form { display: flex; flex-direction: column; gap: 14px; }
+.fb-kinds { display: flex; gap: 8px; }
+.fb-kinds label { flex: 1; text-align: center; padding: 9px 0; border: 1px solid var(--line-2); border-radius: 8px; background: var(--panel-2); font-weight: 600; font-size: 14px; cursor: pointer; }
+.fb-kinds label.on { background: var(--pop); border-color: var(--pop); color: var(--pop-ink); }
+.fb-kinds input { position: absolute; opacity: 0; pointer-events: none; }
+.fb-kinds label:focus-within { outline: 2px solid var(--focus); outline-offset: 2px; }
+.fb-field { display: flex; flex-direction: column; gap: 6px; font-size: 13.5px; font-weight: 600; }
+.fb-field em { font-style: normal; font-weight: 400; color: var(--ink-3); }
+.fb-field textarea, .fb-field input { color: var(--ink); font-family: var(--body); width: 100%; border: 1px solid var(--line-2); background: var(--paper); border-radius: 8px; padding: 10px 12px; font-weight: 400; font-size: 16px; }
+.fb-field textarea { resize: vertical; min-height: 110px; }
+.fb-field input { height: 42px; padding-top: 0; padding-bottom: 0; }
+.fb-field small { color: var(--ink-3); font-weight: 400; min-height: 1em; }
+.fb-field small.bad { color: var(--bad); }
+.fb-trap { position: absolute; left: -9999px; width: 1px; height: 1px; overflow: hidden; }
+.fb-error { margin: 0; color: var(--bad); font-size: 14px; }
+.fb-actions { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+.fb-note { margin: 0; font-size: 12.5px; color: var(--ink-3); flex: 1 1 200px; }
+.fb-done { display: flex; flex-direction: column; gap: 14px; align-items: flex-start; }
+.fb-done p { margin: 0; }
+.stats-feedback { display: flex; flex-direction: column; gap: 10px; }
+.stats-feedback article { border: 1px solid var(--line); border-radius: 8px; padding: 10px 12px; background: var(--paper); }
+.stats-feedback header { display: flex; gap: 8px; flex-wrap: wrap; font-size: 12.5px; color: var(--ink-3); margin-bottom: 4px; }
+.stats-feedback header b { color: var(--ink); }
+.stats-feedback p { margin: 0; white-space: pre-wrap; overflow-wrap: anywhere; }
+
+/* With both buttons the header needs about 420px; narrower phones keep Feedback and the Ko-fi link stays in the footer. */
+@media (max-width: 460px) {
+  .nav-actions .kofi { display: none; }
+}
+
+/* Small phones: tighten the header so the wordmark, two links and the Feedback button fit. */
+@media (max-width: 380px) {
+  .nav-inner { gap: 8px; padding: 0 10px; }
+  .brand { font-size: 15px; gap: 4px; }
+  .nav-links a { padding: 0 6px; font-size: 13px; }
+}
+@media (max-width: 340px) {
+  .brand-b { display: none; }
+}

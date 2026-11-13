@@ -18,6 +18,8 @@ import { HeroCard, HeroLine } from "./HeroViews";
 import { Account } from "./Account";
 import { LS_CARD, ScreenshotImport } from "./ScreenshotImport";
 import { referrerSite, track, visitorId } from "@/lib/track";
+import { openFeedback } from "@/lib/feedback-open";
+import { KOFI_URL } from "@/lib/site";
 import { armFor, showsExample, type ExampleMode } from "@/lib/ab";
 import { EXAMPLE_BOARD } from "@/lib/example-board";
 
@@ -72,6 +74,8 @@ export function Board({ mode, initial, signInSlot, portraits, screenshotImport, 
   const [guestLevels, setGuestLevels] = useState<Record<string, number>>({});
   const [loadVersion, setLoadVersion] = useState(0);
   const [guestCardHidden, setGuestCardHidden] = useState(false);
+  // After an import is saved: ask if it read the heroes right. "right" shows a thank-you with the Ko-fi link.
+  const [importCheck, setImportCheck] = useState<null | { count: number; answer: "right" | null }>(null);
   const [emptyAtLoad, setEmptyAtLoad] = useState(() => Object.keys(initial?.levels ?? {}).length === 0);
 
   // First-time visitors may be shown an example board in place of their empty one. It is display
@@ -436,6 +440,7 @@ export function Board({ mode, initial, signInSlot, portraits, screenshotImport, 
           onSave={async (updates) => {
             const ok = await withBusy(() => saveLevelsAction(updates));
             if (ok) setEmptyAtLoad(false);
+            if (ok) setImportCheck({ count: updates.length, answer: null });
             if (ok)
               setToast({
                 text: `Saved ${updates.length} rank${updates.length === 1 ? "" : "s"}. Each starts at its rank's first level; tap a level to set it exactly.`,
@@ -443,6 +448,52 @@ export function Board({ mode, initial, signInSlot, portraits, screenshotImport, 
             return ok;
           }}
         />
+      ) : null}
+
+      {importCheck ? (
+        <div className="banner accent import-check" role="region" aria-label="Did the import read your heroes right?">
+          {importCheck.answer === "right" ? (
+            <p>
+              <strong>Glad it worked!</strong> The board is free and fan-made. If it saves you some clicking, a coffee helps keep it going.
+            </p>
+          ) : (
+            <p>
+              <strong>Did it read your heroes right?</strong> If a rank is wrong or a hero is missing, tell me and I&apos;ll fix it.
+            </p>
+          )}
+          <div className="actions">
+            {importCheck.answer === "right" ? (
+              <a className="btn primary" href={KOFI_URL} target="_blank" rel="noreferrer">
+                <span aria-hidden="true">&#9829;</span> Support on Ko-fi
+              </a>
+            ) : (
+              <>
+                <button
+                  className="btn primary"
+                  onClick={() => {
+                    track("import_check", { result: "right" });
+                    setImportCheck({ ...importCheck, answer: "right" });
+                  }}
+                >
+                  Looks right
+                </button>
+                <button
+                  className="btn"
+                  onClick={() => {
+                    track("import_check", { result: "off" });
+                    openFeedback("import", "bug");
+                    setImportCheck(null);
+                  }}
+                >
+                  Something&apos;s off
+                </button>
+              </>
+            )}
+            <button className="btn" onClick={() => setImportCheck(null)}>
+              {importCheck.answer === "right" ? "Close" : "Dismiss"}
+            </button>
+          </div>
+        </div>
       ) : null}
 
       {showImport ? (

@@ -200,79 +200,6 @@ export async function getNewAccounts(db: AnyDb, since: Date, until: Date, limit 
   return list.map((r) => ({ device: (r.device as string | null) ?? null, heroes: num(r.heroes), imports: num(r.imports) }));
 }
 
-export type TestArm = {
-  arm: "a" | "b";
-  visitors: number;
-  /** Changed a level on their own board, or saved an import. */
-  started: number;
-  /** Updated ten or more heroes. */
-  built: number;
-  signedIn: number;
-  /** Seen on two or more days since joining the test. */
-  returned: number;
-  /** The test's main result, decided Oct 13 before calling it: came back or signed in (each person once). */
-  kept: number;
-  /** Example group only: pressed Get started or touched a level on the example. */
-  leftExample: number;
-};
-export type ExampleTest = { startedAt: Date; arms: TestArm[] };
-
-/**
- * The example board test, from its first assignment to now: each half's
- * visitors and what they went on to do. Null before anyone has been assigned.
- */
-export async function getExampleTest(db: AnyDb, now = new Date()): Promise<ExampleTest | null> {
-  const list = rowsOf(
-    await db.execute(sql`
-      with arms as (
-        select visitor_id, min(props->>'arm') as arm, min(created_at) as joined
-        from ${events}
-        where name = 'ab' and props->>'exp' = 'example' and props->>'arm' in ('a', 'b')
-          and created_at <= ${now.toISOString()}::timestamptz
-        group by visitor_id
-      ),
-      per as (
-        select a.arm, a.visitor_id, a.joined,
-          coalesce(sum(coalesce((e.props->>'heroes')::int, 1)) filter (where e.name = 'level_set'), 0) as heroes,
-          count(*) filter (where e.name in ('level_set', 'import_save')) as acts,
-          bool_or(e.user_id is not null) as signed,
-          count(distinct date_trunc('day', e.created_at)) as days,
-          count(*) filter (where e.name = 'example_start') as left_example
-        from arms a
-        left join ${events} e
-          on e.visitor_id = a.visitor_id and e.created_at >= a.joined and e.created_at <= ${now.toISOString()}::timestamptz
-        group by a.arm, a.visitor_id, a.joined
-      )
-      select arm,
-        count(*) as visitors,
-        count(*) filter (where acts > 0) as started,
-        count(*) filter (where heroes >= 10) as built,
-        count(*) filter (where signed) as signed_in,
-        count(*) filter (where days > 1) as returned,
-        count(*) filter (where signed or days > 1) as kept,
-        count(*) filter (where left_example > 0) as left_example,
-        min(joined) as first_joined
-      from per group by arm order by arm
-    `),
-  );
-  if (!list.length) return null;
-  const startedAt = new Date(Math.min(...list.map((r) => new Date(String(r.first_joined)).getTime())));
-  const arm = (name: "a" | "b"): TestArm => {
-    const r = list.find((x) => x.arm === name);
-    return {
-      arm: name,
-      visitors: num(r?.visitors),
-      started: num(r?.started),
-      built: num(r?.built),
-      signedIn: num(r?.signed_in),
-      returned: num(r?.returned),
-      kept: num(r?.kept),
-      leftExample: num(r?.left_example),
-    };
-  };
-  return { startedAt, arms: [arm("a"), arm("b")] };
-}
-
 export type NewVisitorRetention = { from: Date; to: Date; visitors: number; kept: number };
 
 /**
@@ -313,30 +240,7 @@ export async function getNewVisitorRetention(db: AnyDb, now = new Date()): Promi
 export function retentionLine(r: NewVisitorRetention): string {
   const day = (d: Date) =>
     d.toLocaleDateString("en-US", { timeZone: "America/Los_Angeles", month: "short", day: "numeric" });
-  return `New visitors first seen ${day(r.from)} to ${day(new Date(r.to.getTime() - 1))}: came back or signed in ${r.kept} of ${r.visitors} (${pct(r.kept, r.visitors)}) · target about 10%, the example board's test result`;
-}
-
-/** Fewer visitors than this per group and the difference is noise. */
-export const TEST_MIN_PER_ARM = 100;
-
-/** The digest's example test section: empty board next to example board. */
-export function exampleTestLines(t: ExampleTest, now = new Date()): string[] {
-  const [a, b] = t.arms;
-  const day = Math.floor((now.getTime() - t.startedAt.getTime()) / DAY) + 1;
-  const cell = (n: number, of: number) => `${n} (${pct(n, of)})`;
-  const enough = Math.min(a.visitors, b.visitors) >= TEST_MIN_PER_ARM;
-  return [
-    `**Example board test** · day ${day} · empty board vs example board`,
-    `New visitors ${a.visitors} vs ${b.visitors}`,
-    `Main result, came back or signed in: ${cell(a.kept, a.visitors)} vs ${cell(b.kept, b.visitors)}`,
-    `Started their board ${cell(a.started, a.visitors)} vs ${cell(b.started, b.visitors)}`,
-    `Updated 10+ heroes ${cell(a.built, a.visitors)} vs ${cell(b.built, b.visitors)}`,
-    `Signed in ${a.signedIn} vs ${b.signedIn} · came back ${a.returned} vs ${b.returned}`,
-    `Left the example to start: ${cell(b.leftExample, b.visitors)} of the example group`,
-    enough
-      ? `Both groups have ${TEST_MIN_PER_ARM}+ visitors: the comparison is worth reading.`
-      : `Too early to judge: wait for ${TEST_MIN_PER_ARM} visitors in each group.`,
-  ];
+  return `New visitors first seen ${day(r.from)} to ${day(new Date(r.to.getTime() - 1))}: came back or signed in ${r.kept} of ${r.visitors} (${pct(r.kept, r.visitors)}) · target about 10%`;
 }
 
 const DEVICE_LABEL: Record<string, string> = { mobile: "phone", desktop: "computer" };

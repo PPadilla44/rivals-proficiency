@@ -92,7 +92,7 @@ describe("daily digest", () => {
     const r = await getNewVisitorRetention(db, now);
     expect([r.visitors, r.kept]).toEqual([3, 2]);
     expect(retentionLine(r)).toBe(
-      "New visitors first seen Sep 28 to Oct 5: came back or signed in 2 of 3 (67%) · target about 10%, the example board's test result",
+      "New visitors first seen Sep 28 to Oct 5: came back or signed in 2 of 3 (67%) · target about 10%",
     );
   });
 

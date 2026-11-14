@@ -23,8 +23,9 @@ const TO_CHAMPION = pointsBetween(1, CHAMPION);
 const TO_MAX = pointsBetween(1, MAX_LEVEL);
 
 // The search result is the pitch: lead with the numbers people are looking for.
-// Search Console shows people reaching this page for "proficiency levels" and "champion level", so both lead.
-const title = "Marvel Rivals Proficiency Levels: Lord, Champion and All Ranks";
+// Search Console shows people reaching this page with questions ("what level is champion", "what level is lord"), so the title asks it.
+// Kept under 60 characters so the result is not cut off.
+const title = "What Level Is Lord or Champion in Marvel Rivals? All Ranks";
 const description = `Lord is level ${LORD}: ${fmt(TO_LORD)} points, about ${hours(TO_LORD)} hours. Champion is level ${CHAMPION}: ${fmt(TO_CHAMPION)} points. All 11 ranks, points per level, rewards, and how to level up faster.`;
 
 export const metadata: Metadata = {

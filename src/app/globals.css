@@ -691,3 +691,8 @@ footer.foot a { color: var(--ink-2); font-weight: 600; }
   .imp-sheet .fb-head, .imp-body, .imp-foot { padding-left: 14px; padding-right: 14px; }
   .imp-foot .btn { flex: 1 1 auto; }
 }
+.drop.clickable { cursor: pointer; }
+.drop.clickable:hover { border-color: var(--pop); background: color-mix(in srgb, var(--pop) 7%, var(--panel-2)); }
+.drop-icon { justify-self: center; color: var(--pop); }
+.drop .btn { display: inline-flex; align-items: center; gap: 8px; }
+.drop-title { font-weight: 700; font-size: 17px; color: var(--ink) !important; }

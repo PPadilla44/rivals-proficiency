@@ -124,6 +124,15 @@ function ExampleScreen() {
   );
 }
 
+function UploadIcon() {
+  return (
+    <svg className="drop-icon" viewBox="0 0 48 48" width="44" height="44" fill="none" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <path d="M24 31V9M15 17l9-9 9 9" />
+      <path d="M8 29v8a3 3 0 003 3h26a3 3 0 003-3v-8" />
+    </svg>
+  );
+}
+
 function ImportGuide({ mobile }: { mobile: boolean }) {
   return (
     <div className="guide">
@@ -370,7 +379,11 @@ export function ScreenshotImport({ current, empty, onSave }: Props) {
           </p>
           <ImportGuide mobile={mobile} />
           <div
-            className={`drop${dragging ? " over" : ""}`}
+            className={`drop${dragging ? " over" : ""}${reading ? "" : " clickable"}`}
+            onClick={(e) => {
+              // The whole box opens the file picker (the hidden input's own click bubbles here too, so skip it).
+              if (!reading && e.target !== input.current) input.current?.click();
+            }}
             onDragOver={(e) => {
               e.preventDefault();
               setDragging(true);
@@ -389,21 +402,19 @@ export function ScreenshotImport({ current, empty, onSave }: Props) {
               </p>
             ) : (
               <>
-                {mobile ? (
-                  <p>
-                    <button type="button" className="btn primary" onClick={() => input.current?.click()}>
-                      <CameraIcon />
-                      Take or choose photos
-                    </button>
-                  </p>
+                <UploadIcon />
+                {dragging ? (
+                  <p className="drop-title">Drop to read</p>
                 ) : (
-                  <p>
-                    Drop screenshots here, paste one, or{" "}
-                    <button type="button" className="linkish" onClick={() => input.current?.click()}>
-                      choose files
-                    </button>
-                    .
-                  </p>
+                  <>
+                    <p>
+                      <button type="button" className="btn primary">
+                        <CameraIcon />
+                        {mobile ? "Take or choose photos" : "Choose screenshots"}
+                      </button>
+                    </p>
+                    {mobile ? null : <p>or drop them here, or paste one</p>}
+                  </>
                 )}
                 <p className="muted">
                   {mobile ? "Straight on, the whole screen in the picture. " : ""}Pictures are read once and not stored.

@@ -399,7 +399,7 @@ footer.foot a { color: var(--ink-2); font-weight: 600; }
 .linkish:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
 .dots::after { content: "..."; display: inline-block; width: 1.2em; text-align: left; animation: shot-dots 1.2s steps(4, end) infinite; overflow: hidden; vertical-align: bottom; }
 @keyframes shot-dots { from { width: 0; } to { width: 1.2em; } }
-.shot-list { display: grid; border: 1px solid var(--line); border-radius: 10px; max-height: min(60vh, 560px); overflow: auto; }
+.shot-list { display: grid; border: 1px solid var(--line); border-radius: 10px; }
 .shot-row { display: grid; grid-template-columns: 22px minmax(0, 1.3fr) minmax(0, 1.4fr) minmax(0, 0.8fr) auto; align-items: center; gap: 10px; padding: 8px 12px; font-size: 14px; border-bottom: 1px solid var(--line); cursor: pointer; }
 .shot-row:last-child { border-bottom: 0; }
 .shot-row.same { opacity: 0.6; }
@@ -411,7 +411,6 @@ footer.foot a { color: var(--ink-2); font-weight: 600; }
 .shot-row .to { display: flex; align-items: center; gap: 6px; }
 .shot-row .to input { width: 58px; height: 32px; border: 1px solid var(--line-2); border-radius: 6px; background: var(--paper); padding: 0 6px; font-family: var(--mono); font-weight: 600; text-align: center; }
 .shot-row .now em { font-style: normal; font-weight: 700; color: var(--bad); }
-.shot .actions { display: flex; gap: 10px; flex-wrap: wrap; }
 @media (max-width: 560px) {
   .shot-row { grid-template-columns: 22px minmax(0, 1fr) auto; row-gap: 2px; }
   .shot-row .seen, .shot-row .now { grid-column: 2; }
@@ -509,16 +508,6 @@ footer.foot a { color: var(--ink-2); font-weight: 600; }
 .shot-start-actions .actions { display: flex; flex-wrap: wrap; gap: 10px; }
 
 /* Example of the right screen, in the import panel */
-.shot-example { margin: 4px auto 0; display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 10px 16px; max-width: 560px; text-align: left; }
-.shot-example svg { width: 200px; max-width: 100%; height: auto; flex: none; }
-.shot-example figcaption { flex: 1 1 220px; font-size: 13.5px; color: var(--ink-2); }
-.shot-example .ex-bg { fill: var(--panel); stroke: var(--line-2); }
-.shot-example .ex-nav { fill: color-mix(in srgb, var(--ink) 12%, var(--panel)); }
-.shot-example .ex-dim { fill: color-mix(in srgb, var(--ink) 28%, var(--panel)); }
-.shot-example .ex-pop { fill: var(--pop); }
-.shot-example .ex-card { fill: color-mix(in srgb, var(--ink) 10%, var(--panel)); }
-.shot-example .ex-strip { fill: color-mix(in srgb, var(--ink) 30%, var(--panel)); }
-.shot-example .ex-name { fill: var(--panel); }
 .drop .btn { display: inline-flex; align-items: center; gap: 8px; }
 
 /* Level field reads as something you can type into; buttons can be held */
@@ -666,4 +655,39 @@ footer.foot a { color: var(--ink-2); font-weight: 600; }
 }
 @media (max-width: 340px) {
   .brand-b { display: none; }
+}
+
+/* ---------- import modal ---------- */
+.imp-overlay { align-items: center; }
+.imp-sheet { width: min(900px, 100%); max-height: calc(100dvh - 32px); display: flex; flex-direction: column; background: var(--panel); border: 1px solid var(--line-2); border-radius: var(--radius); box-shadow: 0 20px 60px rgba(0, 0, 0, 0.35); outline: none; }
+.imp-sheet .fb-head { margin: 0; padding: 14px 18px 12px; border-bottom: 1px solid var(--line); }
+.imp-sheet .fb-head h2 { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 12px; }
+.imp-sheet .fb-head h2 b { font-size: 13px; font-weight: 600; color: var(--ink-3); font-family: var(--mono); }
+.imp-body { padding: 16px 18px; display: flex; flex-direction: column; gap: 14px; overflow-y: auto; min-height: 0; flex: 1; overscroll-behavior: contain; }
+.imp-body .muted { margin: 0; color: var(--ink-3); font-size: 13.5px; }
+.imp-foot { display: flex; flex-wrap: wrap; gap: 10px; padding: 12px 18px calc(12px + env(safe-area-inset-bottom)); border-top: 1px solid var(--line); background: var(--panel); border-radius: 0 0 var(--radius) var(--radius); }
+.guide { display: grid; grid-template-columns: minmax(0, 1.5fr) minmax(0, 1fr); gap: 16px 22px; align-items: center; }
+.guide-art { width: 100%; height: auto; display: block; }
+.guide-steps { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 14px; font-size: 15px; color: var(--ink-2); }
+.guide-steps li { display: grid; grid-template-columns: 26px minmax(0, 1fr); gap: 10px; align-items: start; }
+.guide-steps strong { color: var(--ink); }
+.step-n { width: 24px; height: 24px; border-radius: 50%; background: var(--pop); color: var(--pop-ink); font-weight: 800; font-size: 13px; display: grid; place-items: center; }
+.guide-art .ex-bg { fill: var(--panel); stroke: var(--line-2); }
+.guide-art .ex-nav { fill: color-mix(in srgb, var(--ink) 12%, var(--panel)); }
+.guide-art .ex-label { fill: var(--ink-3); font: 700 9px var(--body); letter-spacing: 0.04em; }
+.guide-art .ex-label.on { fill: var(--ink); }
+.guide-art .ex-pop { fill: var(--pop); }
+.guide-art .ex-card { fill: color-mix(in srgb, var(--ink) 10%, var(--panel)); }
+.guide-art .ex-strip { fill: color-mix(in srgb, var(--ink) 30%, var(--panel)); }
+.guide-art .ex-name { fill: var(--panel); }
+.guide-art .ex-ring { fill: none; stroke: var(--pop); stroke-width: 1.5; stroke-dasharray: 4 3; }
+.guide-art .ex-pin { fill: var(--pop); stroke: var(--panel); stroke-width: 1.5; }
+.guide-art .ex-pin-n { fill: var(--pop-ink); font: 800 10px system-ui, sans-serif; }
+@media (max-width: 640px) {
+  .imp-overlay { padding: 0; }
+  .imp-sheet { width: 100%; height: 100dvh; max-height: none; border-radius: 0; border: 0; }
+  .imp-foot { border-radius: 0; }
+  .guide { grid-template-columns: 1fr; }
+  .imp-sheet .fb-head, .imp-body, .imp-foot { padding-left: 14px; padding-right: 14px; }
+  .imp-foot .btn { flex: 1 1 auto; }
 }

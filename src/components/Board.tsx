@@ -81,7 +81,11 @@ export function Board({ mode, initial, signInSlot, portraits, screenshotImport, 
   // First-time visitors may be shown an example board in place of their empty one. It is display
   // only: nothing in it is saved, and the first press of Enter my levels (or any level control) swaps
   // in their own empty board for good.
-  const [example, setExample] = useState(false);
+  // When the example is on for everyone, the server draws it too (no swap from the sign-in card after load).
+  // Returning visitors and people who finished it are switched back in the effect below, behind the hold.
+  const exampleForAll = mode === "guest" && exampleMode === "on";
+  const [example, setExample] = useState(exampleForAll);
+  const [ready, setReady] = useState(false);
   const exampleRef = useRef(false);
   const exampleEndedAt = useRef(0);
   const initialEmpty = useRef(Object.keys(initial?.levels ?? {}).length === 0);
@@ -111,6 +115,7 @@ export function Board({ mode, initial, signInSlot, portraits, screenshotImport, 
     } catch {}
     // Example board: only for a board nobody has touched, and only until they start their own.
     const untouchedNow = mode === "guest" ? Object.keys(local).length === 0 : initialEmpty.current;
+    let showExample = false;
     if (untouchedNow && exampleMode !== "off") {
       let done = false;
       let sent = false;
@@ -127,15 +132,26 @@ export function Board({ mode, initial, signInSlot, portraits, screenshotImport, 
             localStorage.setItem(LS_AB_SENT, "1");
           } catch {}
         }
-        if (showsExample(exampleMode, id)) setExample(true);
+        if (showsExample(exampleMode, id)) {
+          showExample = true;
+          setExample(true);
+        }
       }
     }
+    // The server drew the example for everyone: take it away for a returning visitor, then show the board.
+    if (exampleForAll && !showExample) setExample(false);
+    setReady(true);
     try {
       const ui = JSON.parse(localStorage.getItem(LS_UI) ?? "null");
       if (ui?.sort && ui.sort in SORTS) setSort(ui.sort);
       if (ui?.view === "cards" || ui?.view === "list") setView(ui.view);
     } catch {}
-  }, [mode, exampleMode]);
+  }, [mode, exampleMode, exampleForAll]);
+
+  // Reveal the board once the first render with the visitor's own levels is in the page (see saved-board-flag.ts).
+  useEffect(() => {
+    if (ready) document.documentElement.setAttribute("data-board-ready", "1");
+  }, [ready]);
 
   /** Leave the example for the visitor's own empty board. `via` is how they did it. */
   const startOwnBoard = useCallback((via: "button" | "tap") => {
@@ -355,8 +371,20 @@ export function Board({ mode, initial, signInSlot, portraits, screenshotImport, 
   const untouched = emptyAtLoad;
   const guestCard = mode === "guest" && screenshotImport && !!signInSlot && untouched && !guestCardHidden;
 
+  // The guest banner, as a function because the card branch also draws one (hidden unless a saved board is
+  // found before the first paint), so the slot keeps its height when the card goes away. See saved-board-flag.ts.
+  const guestBanner = (extra: string) => (
+    <div className={`banner accent${extra}`}>
+      <p>
+        <strong>Playing as a guest.</strong> Levels save in this browser only. Sign in to keep them on every device
+        {screenshotImport ? " and import your ranks from Heroes tab screenshots" : ""}.
+      </p>
+      {signInSlot ?? <p>Sign-in is not configured on this server yet.</p>}
+    </div>
+  );
+
   return (
-    <>
+    <div className={exampleForAll ? "board-zone hold" : "board-zone"}>
       {example ? (
         <>
           <section className="example-bar" aria-label="Sample board">
@@ -382,45 +410,42 @@ export function Board({ mode, initial, signInSlot, portraits, screenshotImport, 
           </div>
         </>
       ) : guestCard ? (
-        <section className="panel shot-start guest" aria-label="Fill in your board">
-          <button
-            type="button"
-            className="shot-start-x"
-            aria-label="Hide this"
-            title="Hide this"
-            onClick={() => {
-              setGuestCardHidden(true);
-              try {
-                localStorage.setItem(LS_CARD, "1");
-              } catch {}
-            }}
-          >
-            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden="true">
-              <path d="M6 6l12 12M18 6L6 18" />
-            </svg>
-          </button>
-          <div>
-            <h2>Fill in your whole board from screenshots</h2>
-            {/* 17 of the new accounts from Oct 7 to 20 signed in, saw an empty board and left: say it up front. */}
-            <p className="levels-note">Levels don&apos;t load on their own: the game doesn&apos;t share them. You add them once.</p>
-            <p>
-              Sign in, then add screenshots or photos of the in-game <strong>Heroes</strong> tab. Every hero&apos;s rank fills in
-              at once, no typing.
-            </p>
-          </div>
-          <div className="shot-start-actions">
-            {signInSlot}
-            <span>or tap any level below to type it in. Levels save in this browser.</span>
-          </div>
-        </section>
+        <>
+          <section className="panel shot-start guest" aria-label="Fill in your board">
+            <button
+              type="button"
+              className="shot-start-x"
+              aria-label="Hide this"
+              title="Hide this"
+              onClick={() => {
+                setGuestCardHidden(true);
+                try {
+                  localStorage.setItem(LS_CARD, "1");
+                } catch {}
+              }}
+            >
+              <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden="true">
+                <path d="M6 6l12 12M18 6L6 18" />
+              </svg>
+            </button>
+            <div>
+              <h2>Fill in your whole board from screenshots</h2>
+              {/* 17 of the new accounts from Oct 7 to 20 signed in, saw an empty board and left: say it up front. */}
+              <p className="levels-note">Levels don&apos;t load on their own: the game doesn&apos;t share them. You add them once.</p>
+              <p>
+                Sign in, then add screenshots or photos of the in-game <strong>Heroes</strong> tab. Every hero&apos;s rank fills in
+                at once, no typing.
+              </p>
+            </div>
+            <div className="shot-start-actions">
+              {signInSlot}
+              <span>or tap any level below to type it in. Levels save in this browser.</span>
+            </div>
+          </section>
+          {guestBanner(" banner-alt")}
+        </>
       ) : mode === "guest" ? (
-        <div className="banner accent">
-          <p>
-            <strong>Playing as a guest.</strong> Levels save in this browser only. Sign in to keep them on every device
-            {screenshotImport ? " and import your ranks from Heroes tab screenshots" : ""}.
-          </p>
-          {signInSlot ?? <p>Sign-in is not configured on this server yet.</p>}
-        </div>
+        guestBanner("")
       ) : syncEnabled ? (
         <Account
           link={board.link}
@@ -681,7 +706,7 @@ export function Board({ mode, initial, signInSlot, portraits, screenshotImport, 
           {toast.text}
         </div>
       ) : null}
-    </>
+    </div>
   );
 }
 

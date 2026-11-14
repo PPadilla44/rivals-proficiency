@@ -144,7 +144,7 @@ export function Summary({ rows, activeRank, onRank, linked }: Props) {
 function NextList(props: { title: string; target: number; from: number; rows: HeroRow[]; linked: boolean; empty: string }) {
   const { title, target, from, rows, linked, empty } = props;
   return (
-    <div className="panel">
+    <div className="panel next-panel">
       <h2>
         {title} <b>Lv {target}</b>
       </h2>

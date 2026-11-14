@@ -215,6 +215,11 @@ button, input, select { font: inherit; color: inherit; }
 .row1 { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
 .start-here { margin: 0; padding: 10px 14px; border: 1px dashed color-mix(in srgb, var(--pop) 60%, var(--line-2)); border-radius: 10px; background: color-mix(in srgb, var(--pop) 7%, var(--panel)); font-size: 14.5px; color: var(--ink-2); }
 .start-here strong { color: var(--ink); }
+/* A saved board loads after the first paint; hide what it would remove so the page does not jump (see saved-board-flag.ts). */
+.banner-alt { display: none; }
+html[data-saved-board] .banner-alt, html[data-card-hidden] .banner-alt { display: flex; }
+html[data-saved-board] .next-panel { min-height: 254px; }
+html[data-saved-board] .start-here, html[data-saved-board] .shot-start.guest, html[data-card-hidden] .shot-start.guest { display: none; }
 .search { flex: 1 1 220px; position: relative; }
 .search input { width: 100%; height: 40px; border: 1px solid var(--line-2); background: var(--panel); border-radius: 8px; padding: 0 12px 0 38px; }
 .search input::placeholder { color: var(--ink-3); }
@@ -696,3 +701,9 @@ footer.foot a { color: var(--ink-2); font-weight: 600; }
 .drop-icon { justify-self: center; color: var(--pop); }
 .drop .btn { display: inline-flex; align-items: center; gap: 8px; }
 .drop-title { font-weight: 700; font-size: 17px; color: var(--ink) !important; }
+
+/* The board's own wrapper takes no box of its own, so layout is unchanged. */
+.board-zone { display: contents; }
+/* Example on for everyone: a returning visitor's board is hidden (keeping its place) until their levels are in. */
+html:is([data-saved-board], [data-example-done]):not([data-board-ready]) .board-zone.hold { visibility: hidden; animation: board-reveal 0s 2.5s forwards; }
+@keyframes board-reveal { to { visibility: visible; } }

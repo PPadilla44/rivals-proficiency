@@ -41,6 +41,9 @@ export type Engagement = {
   importReads: number;
   importWrongScreen: number;
   importSaves: number;
+  /** People who answered "Did it read your heroes right?" after a save, by answer. */
+  importRight: number;
+  importOff: number;
   /** Visitors who opened the calculator, and who changed something on it. */
   calcViews: number;
   calcUses: number;
@@ -50,6 +53,15 @@ export type Engagement = {
 export function feedbackLine(c: FeedbackCounts, opened = 0): string {
   const opens = opened ? ` · ${opened} opened the form` : "";
   return c.total ? `${c.total} new (bugs ${c.bug}, ideas ${c.idea}, other ${c.other})${opens} · read them on /stats` : `none${opens}`;
+}
+
+/** "Asked "did it read right?": looks right 3 · something's off 1 · 2 of 5 saves had no answer", or "no answers yet". */
+export function importCheckLine(right: number, off: number, saves: number): string {
+  const lead = `Asked "did it read right?":`;
+  if (!right && !off) return `${lead} no answers yet`;
+  // Saves and answers are counted differently (events versus people), so never show a negative.
+  const quiet = Math.max(0, saves - right - off);
+  return `${lead} looks right ${right} · something's off ${off}${quiet ? ` · ${quiet} of ${saves} saves had no answer` : ""}`;
 }
 
 /** How visitors used the board in a window: who stuck, who bounced, and the import funnel. */
@@ -96,6 +108,8 @@ export async function getEngagement(db: AnyDb, since: Date, until: Date): Promis
         coalesce(sum(coalesce((${events.props}->>'screenshots')::int, 1)) filter (where ${events.name} = 'import_read'), 0) as reads,
         count(*) filter (where ${events.name} = 'import_read' and ${events.props}->>'single' = 'true') as wrong_screen,
         count(*) filter (where ${events.name} = 'import_save') as saves,
+        count(distinct ${events.visitorId}) filter (where ${events.name} = 'import_check' and ${events.props}->>'result' = 'right') as check_right,
+        count(distinct ${events.visitorId}) filter (where ${events.name} = 'import_check' and ${events.props}->>'result' = 'off') as check_off,
         count(distinct ${events.visitorId}) filter (where ${events.name} = 'calc' and ${events.props}->>'action' = 'view') as calc_views,
         count(distinct ${events.visitorId}) filter (where ${events.name} = 'calc' and ${events.props}->>'action' = 'use') as calc_uses
       from ${events}
@@ -117,6 +131,8 @@ export async function getEngagement(db: AnyDb, since: Date, until: Date): Promis
     importReads: num(i?.reads),
     importWrongScreen: num(i?.wrong_screen),
     importSaves: num(i?.saves),
+    importRight: num(i?.check_right),
+    importOff: num(i?.check_off),
     calcViews: num(i?.calc_views),
     calcUses: num(i?.calc_uses),
   };
@@ -340,6 +356,7 @@ export async function buildDigest(
     ``,
     `**Import**`,
     `Opened ${eng.importOpens} (${eng.importOpensFromCard} from the card) · screenshots read ${eng.importReads} · saved ${eng.importSaves} · wrong screen ${eng.importWrongScreen} · cap ${reads}${opts.cap ? ` of ${opts.cap}` : ""}`,
+    importCheckLine(eng.importRight, eng.importOff, eng.importSaves),
     ``,
     `**Calculator**`,
     `Opened by ${eng.calcViews} · used by ${eng.calcUses}`,

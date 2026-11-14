@@ -118,3 +118,22 @@ describe("events", () => {
     expect(await eventCeiling(db, "calm-visitor-1", now)).toBe("site");
   });
 });
+
+describe("stats for the feedback buttons and the import prompt", () => {
+  it("counts people once, by answer and by where they opened the form", async () => {
+    const now = new Date("2026-11-13T12:00:00Z");
+    const at = (h: number) => new Date(now.getTime() - h * 3_600_000);
+    await recordEvent(db, { name: "import_check", visitorId: "visitor-aaaa1", props: { result: "right" }, at: at(2) });
+    await recordEvent(db, { name: "import_check", visitorId: "visitor-aaaa1", props: { result: "right" }, at: at(1) });
+    await recordEvent(db, { name: "import_check", visitorId: "visitor-bbbb2", props: { result: "off" }, at: at(2) });
+    await recordEvent(db, { name: "feedback_open", visitorId: "visitor-aaaa1", props: { from: "header" }, at: at(2) });
+    await recordEvent(db, { name: "feedback_open", visitorId: "visitor-aaaa1", props: { from: "footer" }, at: at(1) });
+    await recordEvent(db, { name: "feedback_open", visitorId: "visitor-bbbb2", props: { from: "import" }, at: at(2) });
+    await recordEvent(db, { name: "feedback_open", visitorId: "visitor-cccc3", props: { from: "link" }, at: at(3) });
+    await recordEvent(db, { name: "feedback_open", visitorId: "visitor-dddd4", props: { from: "header" }, at: new Date(now.getTime() - 10 * 86_400_000) });
+    const s = await getStats(db, 7, now);
+    expect([s.importRight, s.importOff]).toEqual([1, 1]);
+    expect(s.feedbackOpens).toBe(3);
+    expect(s.feedbackOpensBy).toEqual({ header: 1, footer: 1, link: 1, import: 1 });
+  });
+});

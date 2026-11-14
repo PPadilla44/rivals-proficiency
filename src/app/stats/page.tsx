@@ -25,6 +25,12 @@ function Totals({ s, title }: { s: Stats; title: string }) {
     ["Sign-ins", s.signIns, `${s.newAccounts} new account${s.newAccounts === 1 ? "" : "s"}`],
     ["Heroes updated", s.levelSets, `${s.levelTaps} changes counting every button tap. Before October 5 the two were not separated.`],
     ["Imports saved", s.importsSaved, `${s.screenshotsRead} screenshots read`],
+    ["Import answers", s.importRight + s.importOff, `${s.importRight} looks right, ${s.importOff} something's off`],
+    [
+      "Opened the feedback form",
+      s.feedbackOpens,
+      `header ${s.feedbackOpensBy.header}, footer ${s.feedbackOpensBy.footer}, link ${s.feedbackOpensBy.link}, after an import ${s.feedbackOpensBy.import}`,
+    ],
   ];
   return (
     <section className="panel">

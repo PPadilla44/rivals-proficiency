@@ -355,6 +355,18 @@ export function Board({ mode, initial, signInSlot, portraits, screenshotImport, 
   const untouched = emptyAtLoad;
   const guestCard = mode === "guest" && screenshotImport && !!signInSlot && untouched && !guestCardHidden;
 
+  // The guest banner, as a function because the card branch also draws one (hidden unless a saved board is
+  // found before the first paint), so the slot keeps its height when the card goes away. See saved-board-flag.ts.
+  const guestBanner = (extra: string) => (
+    <div className={`banner accent${extra}`}>
+      <p>
+        <strong>Playing as a guest.</strong> Levels save in this browser only. Sign in to keep them on every device
+        {screenshotImport ? " and import your ranks from Heroes tab screenshots" : ""}.
+      </p>
+      {signInSlot ?? <p>Sign-in is not configured on this server yet.</p>}
+    </div>
+  );
+
   return (
     <>
       {example ? (
@@ -382,45 +394,42 @@ export function Board({ mode, initial, signInSlot, portraits, screenshotImport, 
           </div>
         </>
       ) : guestCard ? (
-        <section className="panel shot-start guest" aria-label="Fill in your board">
-          <button
-            type="button"
-            className="shot-start-x"
-            aria-label="Hide this"
-            title="Hide this"
-            onClick={() => {
-              setGuestCardHidden(true);
-              try {
-                localStorage.setItem(LS_CARD, "1");
-              } catch {}
-            }}
-          >
-            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden="true">
-              <path d="M6 6l12 12M18 6L6 18" />
-            </svg>
-          </button>
-          <div>
-            <h2>Fill in your whole board from screenshots</h2>
-            {/* 17 of the new accounts from Oct 7 to 20 signed in, saw an empty board and left: say it up front. */}
-            <p className="levels-note">Levels don&apos;t load on their own: the game doesn&apos;t share them. You add them once.</p>
-            <p>
-              Sign in, then add screenshots or photos of the in-game <strong>Heroes</strong> tab. Every hero&apos;s rank fills in
-              at once, no typing.
-            </p>
-          </div>
-          <div className="shot-start-actions">
-            {signInSlot}
-            <span>or tap any level below to type it in. Levels save in this browser.</span>
-          </div>
-        </section>
+        <>
+          <section className="panel shot-start guest" aria-label="Fill in your board">
+            <button
+              type="button"
+              className="shot-start-x"
+              aria-label="Hide this"
+              title="Hide this"
+              onClick={() => {
+                setGuestCardHidden(true);
+                try {
+                  localStorage.setItem(LS_CARD, "1");
+                } catch {}
+              }}
+            >
+              <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden="true">
+                <path d="M6 6l12 12M18 6L6 18" />
+              </svg>
+            </button>
+            <div>
+              <h2>Fill in your whole board from screenshots</h2>
+              {/* 17 of the new accounts from Oct 7 to 20 signed in, saw an empty board and left: say it up front. */}
+              <p className="levels-note">Levels don&apos;t load on their own: the game doesn&apos;t share them. You add them once.</p>
+              <p>
+                Sign in, then add screenshots or photos of the in-game <strong>Heroes</strong> tab. Every hero&apos;s rank fills in
+                at once, no typing.
+              </p>
+            </div>
+            <div className="shot-start-actions">
+              {signInSlot}
+              <span>or tap any level below to type it in. Levels save in this browser.</span>
+            </div>
+          </section>
+          {guestBanner(" banner-alt")}
+        </>
       ) : mode === "guest" ? (
-        <div className="banner accent">
-          <p>
-            <strong>Playing as a guest.</strong> Levels save in this browser only. Sign in to keep them on every device
-            {screenshotImport ? " and import your ranks from Heroes tab screenshots" : ""}.
-          </p>
-          {signInSlot ?? <p>Sign-in is not configured on this server yet.</p>}
-        </div>
+        guestBanner("")
       ) : syncEnabled ? (
         <Account
           link={board.link}

@@ -12,6 +12,7 @@ import { SiteNav } from "@/components/SiteNav";
 import { EngagementTracker } from "@/components/EngagementTracker";
 import { HEROES } from "@/lib/heroes";
 import { DOM_GUARD_SCRIPT } from "@/lib/dom-guard";
+import { SAVED_BOARD_SCRIPT } from "@/lib/saved-board-flag";
 import "./globals.css";
 
 // Self-hosted (SIL Open Font License) so builds never depend on Google Fonts.
@@ -56,9 +57,10 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
-    <html lang="en" className={`${display.variable} ${body.variable} ${mono.variable}`}>
+    <html lang="en" suppressHydrationWarning className={`${display.variable} ${body.variable} ${mono.variable}`}>
       <head>
         <script dangerouslySetInnerHTML={{ __html: DOM_GUARD_SCRIPT }} />
+        <script dangerouslySetInnerHTML={{ __html: SAVED_BOARD_SCRIPT }} />
       </head>
       <body>
         <SiteNav />

@@ -16,7 +16,7 @@ import {
   parseFeedback,
   saveFeedback,
 } from "@/server/feedback";
-import { buildDigest, feedbackLine } from "@/server/digest";
+import { buildDigest, feedbackLine, importCheckLine } from "@/server/digest";
 import { recordEvent } from "@/server/events";
 
 let db: AnyDb;
@@ -173,5 +173,29 @@ describe("the digest", () => {
     await saveFeedback(db, ok({ kind: "bug", message: "Something broke" }), { visitorId: "visitor-aaaa1" }, new Date(now.getTime() - 3_600_000));
     const text = await buildDigest(db, { now, search: async () => [] });
     expect(text).toContain("**Feedback**\n1 new (bugs 1, ideas 0, other 0)");
+  });
+});
+
+describe("the import check line in the digest", () => {
+  it("words the answers and never goes negative", () => {
+    expect(importCheckLine(0, 0, 0)).toBe('Asked "did it read right?": no answers yet');
+    expect(importCheckLine(0, 0, 4)).toBe('Asked "did it read right?": no answers yet');
+    expect(importCheckLine(3, 1, 5)).toBe('Asked "did it read right?": looks right 3 \u00b7 something\'s off 1 \u00b7 1 of 5 saves had no answer');
+    expect(importCheckLine(2, 0, 2)).toBe('Asked "did it read right?": looks right 2 \u00b7 something\'s off 0');
+    expect(importCheckLine(3, 1, 2)).not.toContain("saves had no answer");
+  });
+
+  it("counts each person once per answer, inside the window, from real events", async () => {
+    const at = (h: number) => new Date(now.getTime() - h * 3_600_000);
+    await recordEvent(db, { name: "import_save", visitorId: "visitor-aaaa1", props: { heroes: 9 }, at: at(5) });
+    await recordEvent(db, { name: "import_save", visitorId: "visitor-bbbb2", props: { heroes: 9 }, at: at(4) });
+    await recordEvent(db, { name: "import_save", visitorId: "visitor-cccc3", props: { heroes: 9 }, at: at(3) });
+    await recordEvent(db, { name: "import_check", visitorId: "visitor-aaaa1", props: { result: "right" }, at: at(5) });
+    await recordEvent(db, { name: "import_check", visitorId: "visitor-aaaa1", props: { result: "right" }, at: at(4) });
+    await recordEvent(db, { name: "import_check", visitorId: "visitor-bbbb2", props: { result: "off" }, at: at(3) });
+    await recordEvent(db, { name: "import_check", visitorId: "visitor-dddd4", props: { result: "right" }, at: at(48) });
+    const text = await buildDigest(db, { now, search: async () => [] });
+    expect(text).toContain('**Import**');
+    expect(text).toContain('Asked "did it read right?": looks right 1 \u00b7 something\'s off 1 \u00b7 1 of 3 saves had no answer');
   });
 });

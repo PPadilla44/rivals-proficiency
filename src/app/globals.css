@@ -380,6 +380,9 @@ footer.foot a { color: var(--ink-2); font-weight: 600; }
 .prose a { color: var(--ink); font-weight: 600; text-decoration-color: var(--pop); text-decoration-thickness: 2px; text-underline-offset: 3px; }
 .prose .muted { color: var(--ink-3); font-style: italic; }
 .prose-page .top { align-items: flex-start; }
+.prose .news-list { list-style: none; padding-left: 0; gap: 18px; }
+.prose .news-list li { display: flex; flex-direction: column; gap: 2px; }
+.news-date { font-family: var(--mono); font-size: 12px; color: var(--ink-3); letter-spacing: 0.04em; }
 
 .btn.danger { background: var(--bad); border-color: var(--bad); color: #fff; align-self: flex-start; }
 .danger-zone { display: flex; flex-direction: column; gap: 10px; padding: 14px 16px; border: 1px dashed var(--bad); border-radius: 10px; background: color-mix(in srgb, var(--bad) 7%, var(--panel)); }

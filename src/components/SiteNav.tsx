@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { KOFI_URL } from "@/lib/site";
+import { KofiLink } from "./KofiLink";
 import { openFeedback } from "@/lib/feedback-open";
 
 // `more` is dropped on phones so all three links fit beside the wordmark.
@@ -37,10 +37,10 @@ export function SiteNav() {
             </svg>
             <span className="fb-btn-label">Feedback</span>
           </button>
-          <a className="kofi" href={KOFI_URL} target="_blank" rel="noreferrer" aria-label="Support on Ko-fi">
-          <span aria-hidden="true">&#9829;</span>
-          <span className="kofi-label">Support</span>
-          </a>
+          <KofiLink from="header" className="kofi" aria-label="Support on Ko-fi">
+            <span aria-hidden="true">&#9829;</span>
+            <span className="kofi-label">Support</span>
+          </KofiLink>
         </div>
       </div>
     </header>

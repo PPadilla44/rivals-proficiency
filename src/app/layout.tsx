@@ -3,7 +3,8 @@ import localFont from "next/font/local";
 import Link from "next/link";
 import { Analytics } from "@vercel/analytics/next";
 import { SpeedInsights } from "@vercel/speed-insights/next";
-import { DATA_SEASON, FEEDBACK_URL, KOFI_URL } from "@/lib/site";
+import { DATA_SEASON, FEEDBACK_URL } from "@/lib/site";
+import { KofiLink } from "@/components/KofiLink";
 import FeedbackLauncher from "@/components/FeedbackLauncher";
 import FeedbackHost from "@/components/FeedbackHost";
 import { SITE_URL } from "@/lib/site-url";
@@ -81,9 +82,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
           </span>
           <span>
             Free and fan-made. If it saves you some clicking,{" "}
-            <a href={KOFI_URL} target="_blank" rel="noreferrer">
-              buy me a coffee on Ko-fi
-            </a>
+            <KofiLink from="footer">buy me a coffee on Ko-fi</KofiLink>
             .{" "}
             <FeedbackLauncher /> (or{" "}
             <a href={FEEDBACK_URL} target="_blank" rel="noreferrer">

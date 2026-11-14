@@ -16,7 +16,7 @@ import {
   parseFeedback,
   saveFeedback,
 } from "@/server/feedback";
-import { buildDigest, feedbackLine, importCheckLine } from "@/server/digest";
+import { buildDigest, feedbackLine, importCheckLine, kofiLine } from "@/server/digest";
 import { recordEvent } from "@/server/events";
 
 let db: AnyDb;
@@ -197,5 +197,22 @@ describe("the import check line in the digest", () => {
     const text = await buildDigest(db, { now, search: async () => [] });
     expect(text).toContain('**Import**');
     expect(text).toContain('Asked "did it read right?": looks right 1 \u00b7 something\'s off 1 \u00b7 1 of 3 saves had no answer');
+  });
+});
+
+describe("Ko-fi clicks", () => {
+  it("words the line", () => {
+    expect(kofiLine(0, 0, 0)).toBe("Ko-fi clicks: none yet");
+    expect(kofiLine(1, 0, 2)).toBe("Ko-fi clicks: header 1 \u00b7 footer 0 \u00b7 after an import 2");
+  });
+
+  it("is an allowed event, and the digest counts each person once per spot, inside the window", async () => {
+    const at = (h: number) => new Date(now.getTime() - h * 3_600_000);
+    await recordEvent(db, { name: "kofi_click", visitorId: "visitor-aaaa1", props: { from: "header" }, at: at(5) });
+    await recordEvent(db, { name: "kofi_click", visitorId: "visitor-aaaa1", props: { from: "header" }, at: at(4) });
+    await recordEvent(db, { name: "kofi_click", visitorId: "visitor-bbbb2", props: { from: "import" }, at: at(3) });
+    await recordEvent(db, { name: "kofi_click", visitorId: "visitor-cccc3", props: { from: "footer" }, at: at(48) });
+    const text = await buildDigest(db, { now, search: async () => [] });
+    expect(text).toContain("Ko-fi clicks: header 1 \u00b7 footer 0 \u00b7 after an import 1");
   });
 });

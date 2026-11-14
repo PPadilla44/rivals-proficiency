@@ -31,6 +31,11 @@ function Totals({ s, title }: { s: Stats; title: string }) {
       s.feedbackOpens,
       `header ${s.feedbackOpensBy.header}, footer ${s.feedbackOpensBy.footer}, link ${s.feedbackOpensBy.link}, after an import ${s.feedbackOpensBy.import}`,
     ],
+    [
+      "Clicked Ko-fi",
+      s.kofiClicks,
+      `header ${s.kofiClicksBy.header}, footer ${s.kofiClicksBy.footer}, after an import ${s.kofiClicksBy.import}`,
+    ],
   ];
   return (
     <section className="panel">

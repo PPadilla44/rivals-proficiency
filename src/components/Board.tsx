@@ -19,7 +19,7 @@ import { Account } from "./Account";
 import { LS_CARD, ScreenshotImport } from "./ScreenshotImport";
 import { referrerSite, track, visitorId } from "@/lib/track";
 import { openFeedback } from "@/lib/feedback-open";
-import { KOFI_URL } from "@/lib/site";
+import { KofiLink } from "./KofiLink";
 import { armFor, showsExample, type ExampleMode } from "@/lib/ab";
 import { EXAMPLE_BOARD } from "@/lib/example-board";
 
@@ -463,9 +463,9 @@ export function Board({ mode, initial, signInSlot, portraits, screenshotImport, 
           )}
           <div className="actions">
             {importCheck.answer === "right" ? (
-              <a className="btn primary" href={KOFI_URL} target="_blank" rel="noreferrer">
+              <KofiLink from="import" className="btn primary">
                 <span aria-hidden="true">&#9829;</span> Support on Ko-fi
-              </a>
+              </KofiLink>
             ) : (
               <>
                 <button

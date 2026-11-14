@@ -31,6 +31,10 @@ describe("saved board flag", () => {
     expect(run({ "pb-import-card-hidden": "1" })).toEqual({ "data-card-hidden": "1" });
   });
 
+  it("marks a visitor who already finished the example board", () => {
+    expect(run({ "pb-example-done": "1" })).toEqual({ "data-example-done": "1" });
+  });
+
   it("never throws when storage is blocked", () => {
     expect(run({}, true)).toEqual({});
   });
@@ -39,5 +43,6 @@ describe("saved board flag", () => {
     const fs = await import("node:fs");
     expect(fs.readFileSync("src/components/Board.tsx", "utf8")).toContain('const LS_LEVELS = "proficiency-board-v1"');
     expect(fs.readFileSync("src/components/ScreenshotImport.tsx", "utf8")).toContain('LS_CARD = "pb-import-card-hidden"');
+    expect(fs.readFileSync("src/components/Board.tsx", "utf8")).toContain('const LS_EXAMPLE_DONE = "pb-example-done"');
   });
 });

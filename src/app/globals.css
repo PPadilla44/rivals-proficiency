@@ -701,3 +701,9 @@ footer.foot a { color: var(--ink-2); font-weight: 600; }
 .drop-icon { justify-self: center; color: var(--pop); }
 .drop .btn { display: inline-flex; align-items: center; gap: 8px; }
 .drop-title { font-weight: 700; font-size: 17px; color: var(--ink) !important; }
+
+/* The board's own wrapper takes no box of its own, so layout is unchanged. */
+.board-zone { display: contents; }
+/* Example on for everyone: a returning visitor's board is hidden (keeping its place) until their levels are in. */
+html:is([data-saved-board], [data-example-done]):not([data-board-ready]) .board-zone.hold { visibility: hidden; animation: board-reveal 0s 2.5s forwards; }
+@keyframes board-reveal { to { visibility: visible; } }

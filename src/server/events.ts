@@ -113,6 +113,12 @@ export type Stats = {
   levelTaps: number;
   importsSaved: number;
   screenshotsRead: number;
+  /** People who answered "Did it read your heroes right?" after an import, by answer. */
+  importRight: number;
+  importOff: number;
+  /** People who opened the feedback form, and from where (a person can open it from more than one place). */
+  feedbackOpens: number;
+  feedbackOpensBy: { header: number; footer: number; link: number; import: number };
   daily: { day: string; visitors: number; interacted: number; levelSets: number; importsSaved: number }[];
   /** Split by phone or computer. Only events recorded with a device are counted. */
   devices: { device: string; visitors: number; interacted: number; signedIn: number; levelSets: number }[];
@@ -138,7 +144,14 @@ export async function getStats(db: AnyDb, days: number, now = new Date()): Promi
       (select coalesce(sum(coalesce((props->>'heroes')::int, 1)), 0) from e where name = 'level_set') as level_sets,
       (select coalesce(sum(coalesce((props->>'taps')::int, (props->>'heroes')::int, 1)), 0) from e where name = 'level_set') as level_taps,
       (select count(*) from e where name = 'import_save') as imports_saved,
-      (select coalesce(sum(coalesce((props->>'screenshots')::int, 1)), 0) from e where name = 'import_read') as screenshots_read
+      (select coalesce(sum(coalesce((props->>'screenshots')::int, 1)), 0) from e where name = 'import_read') as screenshots_read,
+      (select count(distinct visitor_id) from e where name = 'import_check' and props->>'result' = 'right') as import_right,
+      (select count(distinct visitor_id) from e where name = 'import_check' and props->>'result' = 'off') as import_off,
+      (select count(distinct visitor_id) from e where name = 'feedback_open') as feedback_opens,
+      (select count(distinct visitor_id) from e where name = 'feedback_open' and props->>'from' = 'header') as opens_header,
+      (select count(distinct visitor_id) from e where name = 'feedback_open' and props->>'from' = 'footer') as opens_footer,
+      (select count(distinct visitor_id) from e where name = 'feedback_open' and props->>'from' = 'link') as opens_link,
+      (select count(distinct visitor_id) from e where name = 'feedback_open' and props->>'from' = 'import') as opens_import
   `);
   const r = (rows as unknown as { rows?: Record<string, unknown>[] }).rows?.[0] ?? (rows as unknown as Record<string, unknown>[])[0];
 
@@ -186,6 +199,10 @@ export async function getStats(db: AnyDb, days: number, now = new Date()): Promi
     levelTaps: n(r?.level_taps),
     importsSaved: n(r?.imports_saved),
     screenshotsRead: n(r?.screenshots_read),
+    importRight: n(r?.import_right),
+    importOff: n(r?.import_off),
+    feedbackOpens: n(r?.feedback_opens),
+    feedbackOpensBy: { header: n(r?.opens_header), footer: n(r?.opens_footer), link: n(r?.opens_link), import: n(r?.opens_import) },
     daily: list.map((d) => ({
       day: String(d.day),
       visitors: n(d.visitors),

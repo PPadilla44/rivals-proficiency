@@ -149,4 +149,26 @@ describe("stats for the feedback buttons and the import prompt", () => {
     expect(s.kofiClicks).toBe(2);
     expect(s.kofiClicksBy).toEqual({ header: 1, footer: 1, import: 1 });
   });
+
+  it("counts who could share, opened the sheet (by button or nudge) and shared, inside the window", async () => {
+    const now = new Date("2026-11-13T12:00:00Z");
+    const at = (h: number) => new Date(now.getTime() - h * 3_600_000);
+    const share = (visitorId: string, props: Record<string, string | number>, when = at(2)) =>
+      recordEvent(db, { name: "share", visitorId, props, at: when });
+    await share("share-aaaa1", { action: "ready", lord: 4 });
+    await share("share-aaaa1", { action: "ready", lord: 4 }); // a second load is still one person
+    await share("share-aaaa1", { action: "open", from: "nudge" });
+    await share("share-aaaa1", { action: "open", from: "button" });
+    await share("share-aaaa1", { action: "done", how: "share", heroes: 5 });
+    await share("share-aaaa1", { action: "done", how: "save", heroes: 5 });
+    await share("share-bbbb2", { action: "ready", lord: 3 });
+    await share("share-bbbb2", { action: "open", from: "button" });
+    await share("share-cccc3", { action: "ready", lord: 9 }, new Date(now.getTime() - 10 * 86_400_000)); // outside the window
+    const s = await getStats(db, 7, now);
+    expect(s.shareReady).toBe(2);
+    expect(s.shareOpens).toBe(2);
+    expect(s.shareOpensBy).toEqual({ button: 2, nudge: 1 });
+    expect(s.shareDone).toBe(1);
+    expect(s.shareBy).toEqual({ share: 1, save: 1, copy: 0 });
+  });
 });

@@ -399,9 +399,19 @@ export function Board({ mode, initial, signInSlot, portraits, screenshotImport, 
             </button>
           </section>
           {/* Phones: the bar above is hidden, so say what this is at the top, where the eye lands first. */}
-          <p className="example-note">
-            <strong>Sample board.</strong> Tap Enter my levels to start yours.
-          </p>
+          <div className="example-note">
+            <p>
+              <span className="example-tag">Sample</span>
+              <span>
+                <strong>This is a sample board, not yours.</strong> Tap Enter my levels to start yours.
+              </span>
+            </p>
+            {screenshotImport && signInSlot ? (
+              <p className="example-note-import">
+                Want to skip typing? Tap Enter my levels, then sign in to import your ranks from screenshots.
+              </p>
+            ) : null}
+          </div>
           <div className="example-sticky" role="region" aria-label="Sample board">
             <span>Add your levels to see your hours to Lord.</span>
             <button type="button" className="btn primary" onClick={() => startOwnBoard("button")}>

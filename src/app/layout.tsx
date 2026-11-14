@@ -66,10 +66,58 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
         <SiteNav />
         {children}
         <footer className="foot wrap">
-          <span>
-            {HEROES.length} heroes as of {DATA_SEASON}. A new rank every 5 levels: Lord at 20, Champion at 50, max 70.
-          </span>
-          <span>
+          <div className="foot-grid">
+            <div className="foot-about">
+              <Link href="/" className="brand" aria-label="Proficiency Board home">
+                <span>Proficiency</span>
+                <span className="brand-b">Board</span>
+              </Link>
+              <p>
+                Free, fan-made Marvel Rivals tracker. {HEROES.length} heroes as of {DATA_SEASON}. A new rank every 5 levels: Lord at
+                20, Champion at 50, max 70.
+              </p>
+              <KofiLink from="footer" className="btn primary foot-kofi">
+                <span aria-hidden="true">&#9829;</span> Buy me a coffee on Ko-fi
+              </KofiLink>
+            </div>
+            <nav aria-label="Tools" className="foot-col">
+              <p className="foot-h">Tools</p>
+              <ul>
+                <li>
+                  <Link href="/">Board</Link>
+                </li>
+                <li>
+                  <Link href="/calculator">Calculator</Link>
+                </li>
+                <li>
+                  <Link href="/ranks">Ranks</Link>
+                </li>
+                <li>
+                  <Link href="/whats-new">What&apos;s new</Link>
+                </li>
+              </ul>
+            </nav>
+            <nav aria-label="About" className="foot-col">
+              <p className="foot-h">About</p>
+              <ul>
+                <li>
+                  <FeedbackLauncher />
+                </li>
+                <li>
+                  <a href={FEEDBACK_URL} target="_blank" rel="noreferrer">
+                    GitHub
+                  </a>
+                </li>
+                <li>
+                  <Link href="/privacy">Privacy</Link>
+                </li>
+                <li>
+                  <Link href="/terms">Terms</Link>
+                </li>
+              </ul>
+            </nav>
+          </div>
+          <p className="foot-credit">
             {/* Only mention playtime estimates when sync can actually run. */}
             {process.env.MARVEL_RIVALS_API_KEY ? (
               <>
@@ -81,18 +129,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
               </>
             ) : null}
             Hero art © Marvel and NetEase Games, used for this free fan tool. Not affiliated with NetEase or Marvel.
-          </span>
-          <span>
-            Free and fan-made. If it saves you some clicking,{" "}
-            <KofiLink from="footer">buy me a coffee on Ko-fi</KofiLink>
-            .{" "}
-            <FeedbackLauncher /> (or{" "}
-            <a href={FEEDBACK_URL} target="_blank" rel="noreferrer">
-              on GitHub
-            </a>
-            ). <Link href="/calculator">Proficiency calculator</Link> · <Link href="/ranks">Proficiency ranks and points</Link> · <Link href="/whats-new">What&apos;s new</Link> · <Link href="/privacy">Privacy</Link> ·{" "}
-            <Link href="/terms">Terms</Link>
-          </span>
+          </p>
         </footer>
         <FeedbackHost />
         <EngagementTracker />

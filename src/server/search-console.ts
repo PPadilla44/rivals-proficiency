@@ -50,7 +50,7 @@ export type SearchReport = {
   now: SearchTotals;
   before: SearchTotals;
   queries: { query: string; clicks: number; impressions: number; position: number }[];
-  pages: { path: string; clicks: number; impressions: number }[];
+  pages: { path: string; clicks: number; impressions: number; position: number }[];
 };
 
 const day = (d: Date) => d.toISOString().slice(0, 10);
@@ -60,17 +60,34 @@ const totals = (rows: Row[] | undefined): SearchTotals => {
 };
 
 /** The last 7 days of search data ending yesterday, next to the 7 days before. */
-export async function getSearchReport(opts: { now?: Date; fetchFn?: Fetch } = {}): Promise<SearchReport> {
+export async function getSearchReport(opts: { now?: Date; fetchFn?: Fetch; retryDelayMs?: number } = {}): Promise<SearchReport> {
   const now = opts.now ?? new Date();
-  const f = opts.fetchFn ?? fetch;
+  const raw = opts.fetchFn ?? fetch;
   const signal = () => AbortSignal.timeout(8_000);
+  const pause = () => new Promise((r) => setTimeout(r, opts.retryDelayMs ?? 750));
+  // Google's API sometimes stalls or answers 5xx. Try each request once more before giving up;
+  // a 4xx (a wrong key, no access) is final, so it is not repeated.
+  const f: Fetch = async (url, init) => {
+    for (let attempt = 0; ; attempt++) {
+      try {
+        const res = await raw(url, { ...init, signal: signal() });
+        if (attempt === 0 && (res.status >= 500 || res.status === 429)) {
+          await pause();
+          continue;
+        }
+        return res;
+      } catch (e) {
+        if (attempt > 0) throw e;
+        await pause();
+      }
+    }
+  };
 
   const token = await json<{ access_token: string }>(
     await f(TOKEN_URL, {
       method: "POST",
       headers: { "content-type": "application/x-www-form-urlencoded" },
       body: new URLSearchParams({ grant_type: "urn:ietf:params:oauth:grant-type:jwt-bearer", assertion: signJwt(readKey(), now) }),
-      signal: signal(),
     }),
     "Google sign-in",
   );
@@ -79,7 +96,7 @@ export async function getSearchReport(opts: { now?: Date; fetchFn?: Fetch } = {}
   // The property is either a domain property or a URL one; use whichever this account can see.
   let site = process.env.GSC_SITE_URL;
   if (!site) {
-    const list = await json<{ siteEntry?: { siteUrl: string }[] }>(await f(`${API}/sites`, { headers: auth, signal: signal() }), "Search Console sites");
+    const list = await json<{ siteEntry?: { siteUrl: string }[] }>(await f(`${API}/sites`, { headers: auth }), "Search Console sites");
     site = list.siteEntry?.map((s) => s.siteUrl).find((u) => u.includes(DOMAIN));
     if (!site) throw new Error("this service account has no access to the Search Console property yet");
   }
@@ -93,7 +110,6 @@ export async function getSearchReport(opts: { now?: Date; fetchFn?: Fetch } = {}
           headers: { ...auth, "content-type": "application/json" },
           // "all" includes the most recent days, which Google still marks as preliminary.
           body: JSON.stringify({ startDate, endDate, dimensions, rowLimit, dataState: "all" }),
-          signal: signal(),
         }),
         "Search Console query",
       )
@@ -116,6 +132,7 @@ export async function getSearchReport(opts: { now?: Date; fetchFn?: Fetch } = {}
       path: (r.keys?.[0] ?? "").replace(/^https?:\/\/[^/]+/, "") || "/",
       clicks: r.clicks,
       impressions: r.impressions,
+      position: r.position,
     })),
   };
 }
@@ -129,12 +146,12 @@ export function searchLines(r: SearchReport): string[] {
     `**Google Search** · 7 days, ${shortDate(r.from)} to ${shortDate(r.to)} (previous 7 days in brackets)`,
     `Clicks ${r.now.clicks} (${r.before.clicks}) · shown ${r.now.impressions} times (${r.before.impressions}) · average position ${pos}`,
     ...r.queries.map((q) => `• "${q.query}": ${q.clicks} clicks of ${q.impressions}, position ${q.position.toFixed(1)}`),
-    r.pages.length ? `Pages: ${r.pages.map((p) => `${p.path} ${p.clicks} of ${p.impressions}`).join(", ")}` : `Pages: no data`,
+    r.pages.length ? `Pages (average position in brackets): ${r.pages.map((p) => `${p.path} ${p.clicks} of ${p.impressions} (${p.position.toFixed(1)})`).join(", ")}` : `Pages: no data`,
   ];
 }
 
 /** Lines for the digest, or a one-line note if Google could not be read. Empty when not set up. */
-export async function searchSection(opts: { now?: Date; fetchFn?: Fetch } = {}): Promise<string[]> {
+export async function searchSection(opts: { now?: Date; fetchFn?: Fetch; retryDelayMs?: number } = {}): Promise<string[]> {
   if (!searchConsoleConfigured()) return [];
   try {
     return searchLines(await getSearchReport(opts));

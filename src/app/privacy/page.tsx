@@ -95,6 +95,17 @@ export default async function PrivacyPage() {
           signed in. Deleting your account deletes these too.
         </p>
 
+        <h2>Feedback</h2>
+        <p>
+          If you send a message with the Feedback form, I store the message, the
+          kind you chose (bug, idea or other), the page you were on, whether you
+          were on a phone or a computer, and the random id from your browser. If
+          you type an email, I store that too, only so I can reply. If you were
+          signed in, the message is tied to your account. I read the messages
+          myself, and a short copy of each goes to a private chat channel only I
+          can see. Deleting your account deletes your messages.
+        </p>
+
         <h2>Who sees your data</h2>
         <p>
           Nobody else. Your board is private to your account and there are no

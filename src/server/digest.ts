@@ -5,6 +5,7 @@ import { getProblems, sendWebhook, type Send } from "./alerts";
 import { countScans, type AnyDb } from "./board";
 import { SERVER_VISITOR, getReferrers, getStats, recordEvent } from "./events";
 import { searchSection } from "./search-console";
+import { countFeedback, countFeedbackOpens, type FeedbackCounts } from "./feedback";
 
 const DAY = 86_400_000;
 /**
@@ -40,6 +41,13 @@ export type Engagement = {
   importReads: number;
   importWrongScreen: number;
   importSaves: number;
+  /** People who answered "Did it read your heroes right?" after a save, by answer. */
+  importRight: number;
+  importOff: number;
+  /** People who clicked a Ko-fi link, by spot. */
+  kofiHeader: number;
+  kofiFooter: number;
+  kofiImport: number;
   /** Visitors who opened the calculator, and who changed something on it. */
   calcViews: number;
   calcUses: number;
@@ -54,6 +62,27 @@ export type Engagement = {
 export function shareLine(e: Pick<Engagement, "shareReady" | "shareOpens" | "shareDone" | "shareBy">): string {
   const by = e.shareDone ? ` (share sheet ${e.shareBy.share}, saved ${e.shareBy.save}, copied ${e.shareBy.copy})` : "";
   return `Could share ${e.shareReady} · opened ${e.shareOpens} · shared ${e.shareDone}${by}`;
+}
+
+/** "3 new (bugs 1, ideas 2, other 0) · 12 opened the form", or "none". */
+export function feedbackLine(c: FeedbackCounts, opened = 0): string {
+  const opens = opened ? ` · ${opened} opened the form` : "";
+  return c.total ? `${c.total} new (bugs ${c.bug}, ideas ${c.idea}, other ${c.other})${opens} · read them on /stats` : `none${opens}`;
+}
+
+/** "Asked "did it read right?": looks right 3 · something's off 1 · 2 of 5 saves had no answer", or "no answers yet". */
+export function importCheckLine(right: number, off: number, saves: number): string {
+  const lead = `Asked "did it read right?":`;
+  if (!right && !off) return `${lead} no answers yet`;
+  // Saves and answers are counted differently (events versus people), so never show a negative.
+  const quiet = Math.max(0, saves - right - off);
+  return `${lead} looks right ${right} · something's off ${off}${quiet ? ` · ${quiet} of ${saves} saves had no answer` : ""}`;
+}
+
+/** "Ko-fi clicks: header 1 · footer 0 · after an import 2", or "none yet". */
+export function kofiLine(header: number, footer: number, afterImport: number): string {
+  if (!header && !footer && !afterImport) return "Ko-fi clicks: none yet";
+  return `Ko-fi clicks: header ${header} · footer ${footer} · after an import ${afterImport}`;
 }
 
 /** How visitors used the board in a window: who stuck, who bounced, and the import funnel. */
@@ -100,6 +129,11 @@ export async function getEngagement(db: AnyDb, since: Date, until: Date): Promis
         coalesce(sum(coalesce((${events.props}->>'screenshots')::int, 1)) filter (where ${events.name} = 'import_read'), 0) as reads,
         count(*) filter (where ${events.name} = 'import_read' and ${events.props}->>'single' = 'true') as wrong_screen,
         count(*) filter (where ${events.name} = 'import_save') as saves,
+        count(distinct ${events.visitorId}) filter (where ${events.name} = 'import_check' and ${events.props}->>'result' = 'right') as check_right,
+        count(distinct ${events.visitorId}) filter (where ${events.name} = 'import_check' and ${events.props}->>'result' = 'off') as check_off,
+        count(distinct ${events.visitorId}) filter (where ${events.name} = 'kofi_click' and ${events.props}->>'from' = 'header') as kofi_header,
+        count(distinct ${events.visitorId}) filter (where ${events.name} = 'kofi_click' and ${events.props}->>'from' = 'footer') as kofi_footer,
+        count(distinct ${events.visitorId}) filter (where ${events.name} = 'kofi_click' and ${events.props}->>'from' = 'import') as kofi_import,
         count(distinct ${events.visitorId}) filter (where ${events.name} = 'calc' and ${events.props}->>'action' = 'view') as calc_views,
         count(distinct ${events.visitorId}) filter (where ${events.name} = 'calc' and ${events.props}->>'action' = 'use') as calc_uses,
         count(distinct ${events.visitorId}) filter (where ${events.name} = 'share' and ${events.props}->>'action' = 'ready') as share_ready,
@@ -127,6 +161,11 @@ export async function getEngagement(db: AnyDb, since: Date, until: Date): Promis
     importReads: num(i?.reads),
     importWrongScreen: num(i?.wrong_screen),
     importSaves: num(i?.saves),
+    importRight: num(i?.check_right),
+    importOff: num(i?.check_off),
+    kofiHeader: num(i?.kofi_header),
+    kofiFooter: num(i?.kofi_footer),
+    kofiImport: num(i?.kofi_import),
     calcViews: num(i?.calc_views),
     calcUses: num(i?.calc_uses),
     shareReady: num(i?.share_ready),
@@ -306,7 +345,7 @@ export async function buildDigest(
 ): Promise<string> {
   const now = opts.now ?? new Date();
   const dayAgo = new Date(now.getTime() - DAY);
-  const [kept, search, today, before, week, refs, eng, fresh, problems, reads, [{ accounts }]] = await Promise.all([
+  const [kept, search, today, before, week, refs, eng, fresh, problems, reads, [{ accounts }], notes, notesOpened] = await Promise.all([
     getNewVisitorRetention(db, now),
     (opts.search ?? (() => searchSection({ now })))(),
     getStats(db, 1, now),
@@ -318,6 +357,8 @@ export async function buildDigest(
     getProblems(db, 1, now),
     countScans(db, dayAgo),
     db.select({ accounts: sql<number>`count(*)::int` }).from(users),
+    countFeedback(db, dayAgo, now),
+    countFeedbackOpens(db, dayAgo, now),
   ]);
 
   const device = (d: string) => today.devices.find((x) => x.device === d)?.visitors ?? 0;
@@ -352,9 +393,14 @@ export async function buildDigest(
     ``,
     `**Import**`,
     `Opened ${eng.importOpens} (${eng.importOpensFromCard} from the card) · screenshots read ${eng.importReads} · saved ${eng.importSaves} · wrong screen ${eng.importWrongScreen} · cap ${reads}${opts.cap ? ` of ${opts.cap}` : ""}`,
+    importCheckLine(eng.importRight, eng.importOff, eng.importSaves),
     ``,
     `**Calculator**`,
     `Opened by ${eng.calcViews} · used by ${eng.calcUses}`,
+    ``,
+    `**Feedback**`,
+    feedbackLine(notes, notesOpened),
+    kofiLine(eng.kofiHeader, eng.kofiFooter, eng.kofiImport),
     ``,
     `**Share image**`,
     shareLine(eng),

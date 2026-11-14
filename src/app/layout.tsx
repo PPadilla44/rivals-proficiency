@@ -3,12 +3,16 @@ import localFont from "next/font/local";
 import Link from "next/link";
 import { Analytics } from "@vercel/analytics/next";
 import { SpeedInsights } from "@vercel/speed-insights/next";
-import { DATA_SEASON, FEEDBACK_URL, KOFI_URL } from "@/lib/site";
+import { DATA_SEASON, FEEDBACK_URL } from "@/lib/site";
+import { KofiLink } from "@/components/KofiLink";
+import FeedbackLauncher from "@/components/FeedbackLauncher";
+import FeedbackHost from "@/components/FeedbackHost";
 import { SITE_URL } from "@/lib/site-url";
 import { SiteNav } from "@/components/SiteNav";
 import { EngagementTracker } from "@/components/EngagementTracker";
 import { HEROES } from "@/lib/heroes";
 import { DOM_GUARD_SCRIPT } from "@/lib/dom-guard";
+import { SAVED_BOARD_SCRIPT } from "@/lib/saved-board-flag";
 import "./globals.css";
 
 // Self-hosted (SIL Open Font License) so builds never depend on Google Fonts.
@@ -53,18 +57,67 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
-    <html lang="en" className={`${display.variable} ${body.variable} ${mono.variable}`}>
+    <html lang="en" suppressHydrationWarning className={`${display.variable} ${body.variable} ${mono.variable}`}>
       <head>
         <script dangerouslySetInnerHTML={{ __html: DOM_GUARD_SCRIPT }} />
+        <script dangerouslySetInnerHTML={{ __html: SAVED_BOARD_SCRIPT }} />
       </head>
       <body>
         <SiteNav />
         {children}
         <footer className="foot wrap">
-          <span>
-            {HEROES.length} heroes as of {DATA_SEASON}. A new rank every 5 levels: Lord at 20, Champion at 50, max 70.
-          </span>
-          <span>
+          <div className="foot-grid">
+            <div className="foot-about">
+              <Link href="/" className="brand" aria-label="Proficiency Board home">
+                <span>Proficiency</span>
+                <span className="brand-b">Board</span>
+              </Link>
+              <p>
+                Free, fan-made Marvel Rivals tracker. {HEROES.length} heroes as of {DATA_SEASON}. A new rank every 5 levels: Lord at
+                20, Champion at 50, max 70.
+              </p>
+              <KofiLink from="footer" className="btn primary foot-kofi">
+                <span aria-hidden="true">&#9829;</span> Buy me a coffee on Ko-fi
+              </KofiLink>
+            </div>
+            <nav aria-label="Tools" className="foot-col">
+              <p className="foot-h">Tools</p>
+              <ul>
+                <li>
+                  <Link href="/">Board</Link>
+                </li>
+                <li>
+                  <Link href="/calculator">Calculator</Link>
+                </li>
+                <li>
+                  <Link href="/ranks">Ranks</Link>
+                </li>
+                <li>
+                  <Link href="/whats-new">What&apos;s new</Link>
+                </li>
+              </ul>
+            </nav>
+            <nav aria-label="About" className="foot-col">
+              <p className="foot-h">About</p>
+              <ul>
+                <li>
+                  <FeedbackLauncher />
+                </li>
+                <li>
+                  <a href={FEEDBACK_URL} target="_blank" rel="noreferrer">
+                    GitHub
+                  </a>
+                </li>
+                <li>
+                  <Link href="/privacy">Privacy</Link>
+                </li>
+                <li>
+                  <Link href="/terms">Terms</Link>
+                </li>
+              </ul>
+            </nav>
+          </div>
+          <p className="foot-credit">
             {/* Only mention playtime estimates when sync can actually run. */}
             {process.env.MARVEL_RIVALS_API_KEY ? (
               <>
@@ -76,20 +129,9 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
               </>
             ) : null}
             Hero art © Marvel and NetEase Games, used for this free fan tool. Not affiliated with NetEase or Marvel.
-          </span>
-          <span>
-            Free and fan-made. If it saves you some clicking,{" "}
-            <a href={KOFI_URL} target="_blank" rel="noreferrer">
-              buy me a coffee on Ko-fi
-            </a>
-            .{" "}
-            <a href={FEEDBACK_URL} target="_blank" rel="noreferrer">
-              Report a bug or suggest an idea
-            </a>
-            . <Link href="/calculator">Proficiency calculator</Link> · <Link href="/ranks">Proficiency ranks and points</Link> · <Link href="/privacy">Privacy</Link> ·{" "}
-            <Link href="/terms">Terms</Link>
-          </span>
+          </p>
         </footer>
+        <FeedbackHost />
         <EngagementTracker />
         <Analytics />
         <SpeedInsights />

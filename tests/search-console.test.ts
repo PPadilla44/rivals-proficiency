@@ -56,7 +56,7 @@ describe("search console", () => {
       "**Google Search** · 7 days, Sep 29 to Oct 5 (previous 7 days in brackets)",
       "Clicks 42 (0) · shown 310 times (0) · average position 7.1",
       '• "marvel rivals proficiency tracker": 30 clicks of 90, position 4.2',
-      "Pages: / 40 of 250, /ranks 2 of 60",
+      "Pages (average position in brackets): / 40 of 250 (6.0), /ranks 2 of 60 (12.0)",
     ]);
   });
 
@@ -69,5 +69,45 @@ describe("search console", () => {
     expect(lines[1]).toContain("Could not be read today");
     // The key itself must never appear in the message.
     expect(lines.join(" ")).not.toContain("PRIVATE KEY");
+  });
+
+  it("tries a stalled or failing request once more, but not a refusal", async () => {
+    vi.stubEnv("GOOGLE_SERVICE_ACCOUNT_JSON", JSON.stringify(key));
+
+    // Every request fails once (a timeout, then a 503), and works the second time.
+    const calls = new Map<string, number>();
+    const good = fakeGoogle();
+    const flaky = (async (input: RequestInfo | URL, init?: RequestInit) => {
+      const id = `${String(input)} ${typeof init?.body === "string" ? init.body : ""}`;
+      const n = (calls.get(id) ?? 0) + 1;
+      calls.set(id, n);
+      if (n === 1) {
+        if (calls.size % 2) throw new DOMException("timed out", "TimeoutError");
+        return new Response("busy", { status: 503 });
+      }
+      return good(input, init);
+    }) as typeof fetch;
+    const lines = await searchSection({ now, fetchFn: flaky, retryDelayMs: 0 });
+    expect(lines[0]).toContain("Google Search");
+    expect(lines[1]).toContain("Clicks 42");
+
+    // A refusal (wrong key, no access) is final: one attempt, no repeat.
+    let tries = 0;
+    const refused = (async () => {
+      tries++;
+      return new Response("nope", { status: 403 });
+    }) as typeof fetch;
+    const failed = await searchSection({ now, fetchFn: refused, retryDelayMs: 0 });
+    expect(failed[1]).toContain("Could not be read today");
+    expect(tries).toBe(1);
+
+    // Two failures in a row still end as the one-line note, not a crash.
+    const quiet = vi.spyOn(console, "error").mockImplementation(() => {});
+    const down = (async () => {
+      throw new DOMException("timed out", "TimeoutError");
+    }) as typeof fetch;
+    const gone = await searchSection({ now, fetchFn: down, retryDelayMs: 0 });
+    expect(gone[1]).toContain("Could not be read today");
+    quiet.mockRestore();
   });
 });

@@ -15,8 +15,9 @@ const TO_LORD = pointsBetween(1, LORD);
 const TO_CHAMPION = pointsBetween(1, CHAMPION);
 const LORD_TO_CHAMPION = pointsBetween(LORD, CHAMPION);
 
-const title = "Marvel Rivals Proficiency Calculator: Hours to Lord and Champion";
-const description = `How many hours to Lord or Champion? Enter a hero's level to see the points and hours left, the date you'll get there, and every reward on the way.`;
+// Searchers type this as a question, and a result title is cut at about 60 characters, so the question comes first.
+const title = "How Many Hours to Lord or Champion? Marvel Rivals Calculator";
+const description = `How many hours to Lord or Champion? About ${hours(TO_LORD)} to Lord and ${hours(TO_CHAMPION)} to Champion from level 1. Enter a hero's level for the points, hours and date left.`;
 
 export const metadata: Metadata = {
   title: { absolute: title },
@@ -30,6 +31,10 @@ const FAQ: { q: string; a: string }[] = [
   {
     q: "How many hours does it take to get Lord?",
     a: `About ${hours(TO_LORD)} hours on one hero from level 1. Lord is level 20 and takes ${fmt(TO_LORD)} proficiency points. From level 15 it is ${hoursText(pointsBetween(15, LORD) / DEFAULT_POINTS_PER_HOUR)}.`,
+  },
+  {
+    q: "How many hours does it take to get Champion?",
+    a: `About ${hours(TO_CHAMPION)} hours on one hero from level 1. Champion is level 50 and takes ${fmt(TO_CHAMPION)} proficiency points. From Lord it is about ${hours(LORD_TO_CHAMPION)} hours.`,
   },
   {
     q: "How many hours from Lord to Champion?",

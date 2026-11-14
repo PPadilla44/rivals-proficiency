@@ -69,7 +69,23 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
           <span>
             {HEROES.length} heroes as of {DATA_SEASON}. A new rank every 5 levels: Lord at 20, Champion at 50, max 70.
           </span>
+          <nav className="foot-links" aria-label="More pages">
+            <Link href="/calculator">Proficiency calculator</Link>
+            <Link href="/ranks">Proficiency ranks and points</Link>
+            <Link href="/whats-new">What&apos;s new</Link>
+            <Link href="/privacy">Privacy</Link>
+            <Link href="/terms">Terms</Link>
+          </nav>
           <span>
+            Free and fan-made. If it saves you some clicking,{" "}
+            <KofiLink from="footer">buy me a coffee on Ko-fi</KofiLink>
+            . <FeedbackLauncher /> (or{" "}
+            <a href={FEEDBACK_URL} target="_blank" rel="noreferrer">
+              on GitHub
+            </a>
+            ).
+          </span>
+          <span className="foot-credit">
             {/* Only mention playtime estimates when sync can actually run. */}
             {process.env.MARVEL_RIVALS_API_KEY ? (
               <>
@@ -81,17 +97,6 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
               </>
             ) : null}
             Hero art © Marvel and NetEase Games, used for this free fan tool. Not affiliated with NetEase or Marvel.
-          </span>
-          <span>
-            Free and fan-made. If it saves you some clicking,{" "}
-            <KofiLink from="footer">buy me a coffee on Ko-fi</KofiLink>
-            .{" "}
-            <FeedbackLauncher /> (or{" "}
-            <a href={FEEDBACK_URL} target="_blank" rel="noreferrer">
-              on GitHub
-            </a>
-            ). <Link href="/calculator">Proficiency calculator</Link> · <Link href="/ranks">Proficiency ranks and points</Link> · <Link href="/whats-new">What&apos;s new</Link> · <Link href="/privacy">Privacy</Link> ·{" "}
-            <Link href="/terms">Terms</Link>
           </span>
         </footer>
         <FeedbackHost />

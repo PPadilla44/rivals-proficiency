@@ -90,7 +90,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
             <a href={FEEDBACK_URL} target="_blank" rel="noreferrer">
               on GitHub
             </a>
-            ). <Link href="/calculator">Proficiency calculator</Link> · <Link href="/ranks">Proficiency ranks and points</Link> · <Link href="/privacy">Privacy</Link> ·{" "}
+            ). <Link href="/calculator">Proficiency calculator</Link> · <Link href="/ranks">Proficiency ranks and points</Link> · <Link href="/whats-new">What&apos;s new</Link> · <Link href="/privacy">Privacy</Link> ·{" "}
             <Link href="/terms">Terms</Link>
           </span>
         </footer>

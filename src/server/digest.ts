@@ -44,6 +44,10 @@ export type Engagement = {
   /** People who answered "Did it read your heroes right?" after a save, by answer. */
   importRight: number;
   importOff: number;
+  /** People who clicked a Ko-fi link, by spot. */
+  kofiHeader: number;
+  kofiFooter: number;
+  kofiImport: number;
   /** Visitors who opened the calculator, and who changed something on it. */
   calcViews: number;
   calcUses: number;
@@ -62,6 +66,12 @@ export function importCheckLine(right: number, off: number, saves: number): stri
   // Saves and answers are counted differently (events versus people), so never show a negative.
   const quiet = Math.max(0, saves - right - off);
   return `${lead} looks right ${right} · something's off ${off}${quiet ? ` · ${quiet} of ${saves} saves had no answer` : ""}`;
+}
+
+/** "Ko-fi clicks: header 1 · footer 0 · after an import 2", or "none yet". */
+export function kofiLine(header: number, footer: number, afterImport: number): string {
+  if (!header && !footer && !afterImport) return "Ko-fi clicks: none yet";
+  return `Ko-fi clicks: header ${header} · footer ${footer} · after an import ${afterImport}`;
 }
 
 /** How visitors used the board in a window: who stuck, who bounced, and the import funnel. */
@@ -110,6 +120,9 @@ export async function getEngagement(db: AnyDb, since: Date, until: Date): Promis
         count(*) filter (where ${events.name} = 'import_save') as saves,
         count(distinct ${events.visitorId}) filter (where ${events.name} = 'import_check' and ${events.props}->>'result' = 'right') as check_right,
         count(distinct ${events.visitorId}) filter (where ${events.name} = 'import_check' and ${events.props}->>'result' = 'off') as check_off,
+        count(distinct ${events.visitorId}) filter (where ${events.name} = 'kofi_click' and ${events.props}->>'from' = 'header') as kofi_header,
+        count(distinct ${events.visitorId}) filter (where ${events.name} = 'kofi_click' and ${events.props}->>'from' = 'footer') as kofi_footer,
+        count(distinct ${events.visitorId}) filter (where ${events.name} = 'kofi_click' and ${events.props}->>'from' = 'import') as kofi_import,
         count(distinct ${events.visitorId}) filter (where ${events.name} = 'calc' and ${events.props}->>'action' = 'view') as calc_views,
         count(distinct ${events.visitorId}) filter (where ${events.name} = 'calc' and ${events.props}->>'action' = 'use') as calc_uses
       from ${events}
@@ -133,6 +146,9 @@ export async function getEngagement(db: AnyDb, since: Date, until: Date): Promis
     importSaves: num(i?.saves),
     importRight: num(i?.check_right),
     importOff: num(i?.check_off),
+    kofiHeader: num(i?.kofi_header),
+    kofiFooter: num(i?.kofi_footer),
+    kofiImport: num(i?.kofi_import),
     calcViews: num(i?.calc_views),
     calcUses: num(i?.calc_uses),
   };
@@ -363,6 +379,7 @@ export async function buildDigest(
     ``,
     `**Feedback**`,
     feedbackLine(notes, notesOpened),
+    kofiLine(eng.kofiHeader, eng.kofiFooter, eng.kofiImport),
     ``,
     `**Keeping new visitors**`,
     retentionLine(kept),

@@ -3,7 +3,7 @@ import { events } from "@/db/schema";
 import type { AnyDb } from "./board";
 
 /** Events the site records. Anything else is dropped. */
-export const EVENT_NAMES = ["visit", "level_set", "import_open", "import_read", "import_save", "sign_in", "identify", "ab", "example_start", "calc", "engaged", "problem", "alert_sent", "digest_sent", "indexnow", "feedback_open", "import_check"] as const;
+export const EVENT_NAMES = ["visit", "level_set", "import_open", "import_read", "import_save", "sign_in", "identify", "ab", "example_start", "calc", "engaged", "problem", "alert_sent", "digest_sent", "indexnow", "feedback_open", "import_check", "kofi_click"] as const;
 export type EventName = (typeof EVENT_NAMES)[number];
 
 export type EventProps = Record<string, string | number | boolean | null>;
@@ -119,6 +119,9 @@ export type Stats = {
   /** People who opened the feedback form, and from where (a person can open it from more than one place). */
   feedbackOpens: number;
   feedbackOpensBy: { header: number; footer: number; link: number; import: number };
+  /** People who clicked a Ko-fi link, and from where (a person can click more than one). */
+  kofiClicks: number;
+  kofiClicksBy: { header: number; footer: number; import: number };
   daily: { day: string; visitors: number; interacted: number; levelSets: number; importsSaved: number }[];
   /** Split by phone or computer. Only events recorded with a device are counted. */
   devices: { device: string; visitors: number; interacted: number; signedIn: number; levelSets: number }[];
@@ -151,7 +154,11 @@ export async function getStats(db: AnyDb, days: number, now = new Date()): Promi
       (select count(distinct visitor_id) from e where name = 'feedback_open' and props->>'from' = 'header') as opens_header,
       (select count(distinct visitor_id) from e where name = 'feedback_open' and props->>'from' = 'footer') as opens_footer,
       (select count(distinct visitor_id) from e where name = 'feedback_open' and props->>'from' = 'link') as opens_link,
-      (select count(distinct visitor_id) from e where name = 'feedback_open' and props->>'from' = 'import') as opens_import
+      (select count(distinct visitor_id) from e where name = 'feedback_open' and props->>'from' = 'import') as opens_import,
+      (select count(distinct visitor_id) from e where name = 'kofi_click') as kofi_clicks,
+      (select count(distinct visitor_id) from e where name = 'kofi_click' and props->>'from' = 'header') as kofi_header,
+      (select count(distinct visitor_id) from e where name = 'kofi_click' and props->>'from' = 'footer') as kofi_footer,
+      (select count(distinct visitor_id) from e where name = 'kofi_click' and props->>'from' = 'import') as kofi_import
   `);
   const r = (rows as unknown as { rows?: Record<string, unknown>[] }).rows?.[0] ?? (rows as unknown as Record<string, unknown>[])[0];
 
@@ -203,6 +210,8 @@ export async function getStats(db: AnyDb, days: number, now = new Date()): Promi
     importOff: n(r?.import_off),
     feedbackOpens: n(r?.feedback_opens),
     feedbackOpensBy: { header: n(r?.opens_header), footer: n(r?.opens_footer), link: n(r?.opens_link), import: n(r?.opens_import) },
+    kofiClicks: n(r?.kofi_clicks),
+    kofiClicksBy: { header: n(r?.kofi_header), footer: n(r?.kofi_footer), import: n(r?.kofi_import) },
     daily: list.map((d) => ({
       day: String(d.day),
       visitors: n(d.visitors),

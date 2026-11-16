@@ -872,3 +872,9 @@ html:is([data-saved-board], [data-example-done]):not([data-board-ready]) .board-
 .nav-signin { gap: 8px; }
 .nav-signin-icon { display: none; }
 @media (max-width: 640px) { .nav-signin-icon { display: block; } }
+
+/* Levels found in this browser: loud enough to notice, one gold button. */
+.banner.browser-levels { border-left: 4px solid var(--pop); padding: 18px 20px; gap: 16px 24px; }
+.banner.browser-levels h2 { margin: 0 0 4px; font-size: 18px; font-weight: 700; color: var(--ink); }
+.banner.browser-levels p { color: var(--ink-2); font-size: 15px; }
+.banner.browser-levels .btn { height: 44px; padding: 0 20px; font-size: 15px; }

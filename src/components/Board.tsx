@@ -697,11 +697,13 @@ export function Board({ mode, initial, signInSlot, portraits, screenshotImport, 
       ) : null}
 
       {showImport && !importCheck ? (
-        <div className="banner">
-          <p>
-            This browser has levels for <strong>{localCount} heroes</strong> from before you signed in. Import them into your
-            account? Heroes you already saved are left as they are.
-          </p>
+        <div className="banner accent browser-levels" role="region" aria-label="Levels found in this browser">
+          <div>
+            <h2>
+              You have {localCount} {localCount === 1 ? "level" : "levels"} saved in this browser
+            </h2>
+            <p>Add them to your account so they are on every device. Heroes you already saved are left as they are.</p>
+          </div>
           <div className="actions">
             <button
               className="btn primary"

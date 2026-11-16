@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useId, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { scanScreenshotAction } from "@/app/actions";
 import {
   buildProposals,
@@ -13,6 +13,7 @@ import {
 } from "@/lib/screenshot-import";
 import { clampLevel } from "@/lib/proficiency";
 import { CameraIcon } from "./bits";
+import Dialog from "./Dialog";
 import { deviceKind, track } from "@/lib/track";
 
 type Props = {
@@ -157,66 +158,6 @@ function ImportGuide({ mobile }: { mobile: boolean }) {
           </span>
         </li>
       </ol>
-    </div>
-  );
-}
-
-/** A full dialog: Escape closes it unless locked, the page behind doesn't scroll, focus comes back afterwards. */
-function Modal({
-  title,
-  badge,
-  onClose,
-  escapeCloses,
-  closeDisabled,
-  children,
-  footer,
-}: {
-  title: string;
-  badge?: string;
-  onClose: () => void;
-  escapeCloses: boolean;
-  closeDisabled?: boolean;
-  children: React.ReactNode;
-  footer?: React.ReactNode;
-}) {
-  const titleId = useId();
-  const box = useRef<HTMLDivElement>(null);
-  const closeRef = useRef(onClose);
-  const escRef = useRef(escapeCloses);
-  useEffect(() => {
-    closeRef.current = onClose;
-    escRef.current = escapeCloses;
-  }, [onClose, escapeCloses]);
-  useEffect(() => {
-    const before = document.activeElement as HTMLElement | null;
-    box.current?.focus();
-    const overflow = document.body.style.overflow;
-    document.body.style.overflow = "hidden";
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape" && escRef.current) closeRef.current();
-    };
-    document.addEventListener("keydown", onKey);
-    return () => {
-      document.removeEventListener("keydown", onKey);
-      document.body.style.overflow = overflow;
-      before?.focus?.();
-    };
-  }, []);
-  return (
-    <div className="fb-overlay imp-overlay">
-      <div ref={box} tabIndex={-1} className="imp-sheet" role="dialog" aria-modal="true" aria-labelledby={titleId}>
-        <div className="fb-head">
-          <h2 id={titleId}>
-            {title}
-            {badge ? <b>{badge}</b> : null}
-          </h2>
-          <button type="button" className="fb-x" aria-label="Close" onClick={onClose} disabled={closeDisabled}>
-            ×
-          </button>
-        </div>
-        <div className="imp-body">{children}</div>
-        {footer ? <div className="imp-foot">{footer}</div> : null}
-      </div>
     </div>
   );
 }
@@ -372,7 +313,7 @@ export function ScreenshotImport({ current, empty, onSave }: Props) {
     return (
       <>
         {launcher}
-        <Modal title="Import from screenshots" onClose={close} escapeCloses={!reading} closeDisabled={reading}>
+        <Dialog title="Import from screenshots" width="media" onClose={close} busy={reading}>
           <p className="shot-note" role="note">
             <strong>This reads ranks, not exact levels.</strong> Each hero starts at the first level of its rank (Lord becomes 20),
             unless your saved level is already inside that rank. You can set exact levels afterwards.
@@ -440,7 +381,7 @@ export function ScreenshotImport({ current, empty, onSave }: Props) {
             </p>
           ) : null}
           {phase.kind === "pick" && phase.wrongScreen ? <WrongScreenHint /> : null}
-        </Modal>
+        </Dialog>
       </>
     );
   }
@@ -454,12 +395,13 @@ export function ScreenshotImport({ current, empty, onSave }: Props) {
   return (
     <>
       {launcher}
-      <Modal
+      <Dialog
         title="Check these ranks"
         badge={`${proposals.length} read, ${changes.length} different`}
         onClose={close}
-        escapeCloses={false}
-        closeDisabled={saving}
+        width="media"
+        dirty={!saving}
+        busy={saving}
         footer={
           <>
             <button
@@ -529,7 +471,7 @@ export function ScreenshotImport({ current, empty, onSave }: Props) {
           ))}
         </div>
         {unmatched.length ? <p className="muted">Skipped names it did not recognize: {unmatched.join(", ")}.</p> : null}
-      </Modal>
+      </Dialog>
     </>
   );
 }

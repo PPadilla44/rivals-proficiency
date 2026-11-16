@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useId, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import type { HeroRow } from "@/lib/board-model";
 import { LORD, tierOf } from "@/lib/proficiency";
 import {
@@ -17,6 +17,7 @@ import {
 import { renderCard } from "@/lib/share-draw";
 import { deviceKind, track } from "@/lib/track";
 import { RankBadge } from "./bits";
+import Dialog from "./Dialog";
 
 type Props = {
   rows: HeroRow[];
@@ -35,7 +36,6 @@ type Ready = { blob: Blob; url: string; file: File; key: string };
  * opens the share sheet straight after a tap, and drawing first would lose that tap.
  */
 export default function ShareSheet({ rows, from, onClose }: Props) {
-  const titleId = useId();
   const candidates = useMemo(() => shareCandidates(rows), [rows]);
   const [picks, setPicks] = useState<string[]>(() => defaultPicks(rows));
   const [showAll, setShowAll] = useState(false);
@@ -43,7 +43,6 @@ export default function ShareSheet({ rows, from, onClose }: Props) {
   const [failed, setFailed] = useState(false);
   const [note, setNote] = useState<string | null>(null);
   const phone = useMemo(() => deviceKind() === "mobile", []);
-  const closeRef = useRef<HTMLButtonElement>(null);
   const key = [...picks].sort().join(",");
 
   useEffect(() => {
@@ -85,23 +84,6 @@ export default function ShareSheet({ rows, from, onClose }: Props) {
   useEffect(() => () => {
     if (lastUrl.current) URL.revokeObjectURL(lastUrl.current);
   }, []);
-
-  // A dialog: Escape closes it, the page behind doesn't scroll, focus comes back afterwards.
-  useEffect(() => {
-    const before = document.activeElement as HTMLElement | null;
-    closeRef.current?.focus();
-    const overflow = document.body.style.overflow;
-    document.body.style.overflow = "hidden";
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape") onClose();
-    };
-    document.addEventListener("keydown", onKey);
-    return () => {
-      document.removeEventListener("keydown", onKey);
-      document.body.style.overflow = overflow;
-      before?.focus?.();
-    };
-  }, [onClose]);
 
   const current = ready && ready.key === key ? ready : null;
   const canShareFile = useMemo(() => {
@@ -160,15 +142,26 @@ export default function ShareSheet({ rows, from, onClose }: Props) {
         : null;
 
   return (
-    <div className="share-overlay" onClick={(e) => e.target === e.currentTarget && onClose()}>
-      <div className="share-sheet" role="dialog" aria-modal="true" aria-labelledby={titleId}>
-        <div className="share-head">
-          <h2 id={titleId}>Share my board</h2>
-          <button ref={closeRef} type="button" className="share-x" aria-label="Close" onClick={onClose}>
-            ×
+    <Dialog
+      title="Share my board"
+      width="media"
+      onClose={onClose}
+      footer={
+        <>
+          <button type="button" className="btn primary" disabled={!current} onClick={primary.run}>
+            {primary.label}
           </button>
-        </div>
-
+          {secondary ? (
+            <button type="button" className="btn" disabled={!current} onClick={secondary.run}>
+              {secondary.label}
+            </button>
+          ) : null}
+          <p className="share-note" role="status">
+            {note ?? (phone ? "Or press and hold the picture to save it." : "Saved as a PNG, 1080 by 1080.")}
+          </p>
+        </>
+      }
+    >
         <div className="share-body">
           <div className="share-preview">
             {current ? (
@@ -210,21 +203,6 @@ export default function ShareSheet({ rows, from, onClose }: Props) {
             ) : null}
           </div>
         </div>
-
-        <div className="share-actions">
-          <button type="button" className="btn primary" disabled={!current} onClick={primary.run}>
-            {primary.label}
-          </button>
-          {secondary ? (
-            <button type="button" className="btn" disabled={!current} onClick={secondary.run}>
-              {secondary.label}
-            </button>
-          ) : null}
-          <p className="share-note" role="status">
-            {note ?? (phone ? "Or press and hold the picture to save it." : "Saved as a PNG, 1080 by 1080.")}
-          </p>
-        </div>
-      </div>
-    </div>
+    </Dialog>
   );
 }

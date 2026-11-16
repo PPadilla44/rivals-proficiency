@@ -743,7 +743,7 @@ html:is([data-saved-board], [data-example-done]):not([data-board-ready]) .board-
 .drop:not(.clickable) { display: none; }
 
 /* One toast: text, an optional action, and a 44px close button. */
-.toast.with-x { display: flex; align-items: center; gap: 8px; padding: 2px 4px 2px 16px; min-height: 48px; width: auto; }
+.toast.with-x { display: flex; align-items: center; gap: 8px; padding: 2px 4px 2px 16px; min-height: 48px; width: max-content; }
 .toast.with-x.with-action { width: min(92vw, 460px); }
 .toast.with-x span { flex: 1; padding: 8px 0; }
 .toast-x { width: 44px; height: 44px; flex: none; border: none; background: transparent; color: inherit; font-size: 24px; line-height: 1; cursor: pointer; border-radius: 10px; opacity: 0.8; }

@@ -645,6 +645,7 @@ export function Board({ mode, initial, signInSlot, portraits, screenshotImport, 
         kind={example ? "sample" : guestCard ? "start" : "own"}
         anyLevel={rows.some((r) => r.effective > 1)}
         fromSample={swapped}
+        onSignIn={mode === "guest" && signInSlot ? () => openSignIn() : undefined}
         onEnter={
           example
             ? () => startOwnBoard("button")

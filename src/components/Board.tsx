@@ -255,7 +255,7 @@ export function Board({ mode, initial, signInSlot, portraits, screenshotImport, 
       if (localStorage.getItem(LS_TIP)) return;
       localStorage.setItem(LS_TIP, "1");
     } catch {}
-    setToast({ text: "Tip: tap the number to type a level, or hold + to count up fast.", long: true });
+    setToast({ text: "Tip: tap or click the number to type a level, or hold + to count up fast.", long: true });
   }, []);
 
   // Hovering or focusing a toast holds it, so a button can be reached. Errors stay until dismissed.
@@ -474,7 +474,7 @@ export function Board({ mode, initial, signInSlot, portraits, screenshotImport, 
   // so nobody gets both, and it never lands on top of another message or the open sheet.
   useEffect(() => {
     if (!canShare || toast || importCheck || shareOpen) return;
-    const t = setTimeout(() => {
+    const fire = () => {
       if (document.visibilityState !== "visible") return;
       try {
         if (localStorage.getItem(LS_SHARE_NUDGE)) return;
@@ -483,8 +483,19 @@ export function Board({ mode, initial, signInSlot, portraits, screenshotImport, 
         return;
       }
       setToast({ text: `${lordNow} heroes at Lord or higher. Share your board?`, action: { label: "Share", run: () => openShare("idle") } });
-    }, SHARE_IDLE_MS);
-    return () => clearTimeout(t);
+    };
+    // "Quiet" means the player has stopped: any tap, key press or scroll starts the wait over.
+    let t = setTimeout(fire, SHARE_IDLE_MS);
+    const restart = () => {
+      clearTimeout(t);
+      t = setTimeout(fire, SHARE_IDLE_MS);
+    };
+    const events = ["pointerdown", "keydown", "scroll"] as const;
+    for (const e of events) window.addEventListener(e, restart, { passive: true });
+    return () => {
+      clearTimeout(t);
+      for (const e of events) window.removeEventListener(e, restart);
+    };
   }, [canShare, lordNow, toast, importCheck, shareOpen, openShare]);
 
   const visible = useMemo(() => {

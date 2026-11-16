@@ -53,7 +53,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
                 Free, fan-made Marvel Rivals tracker. {HEROES.length} heroes as of {DATA_SEASON}. A new rank every 5 levels: Lord at
                 20, Champion at 50, max 70.
               </p>
-              <KofiLink from="footer" className="btn primary foot-kofi">
+              <KofiLink from="footer" className="foot-kofi">
                 <span aria-hidden="true">&#9829;</span> Buy me a coffee on Ko-fi
               </KofiLink>
             </div>

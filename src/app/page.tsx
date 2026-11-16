@@ -3,6 +3,7 @@ import { getDb } from "@/db";
 import { getBoard } from "@/server/board";
 import { PREVIEW_PROVIDER, previewLoginEnabled, previewSignIn } from "@/server/preview-login";
 import { Board } from "@/components/Board";
+import { ProviderIcon } from "@/components/ProviderIcon";
 import { PreviewTools } from "@/components/PreviewTools";
 import { getHeroPortraits } from "@/lib/portraits";
 import { visionConfigured } from "@/lib/vision";
@@ -118,6 +119,7 @@ export default async function Home({ searchParams }: PageProps<"/">) {
     <form action={doSignIn} className="actions">
       {providerList.map((p) => (
         <button key={p.id} className="btn primary" name="provider" value={p.id}>
+          <ProviderIcon id={p.id} />
           Sign in with {p.name}
         </button>
       ))}

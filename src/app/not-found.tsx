@@ -11,7 +11,7 @@ export default function NotFound() {
       <header className="top">
         <div>
           <h1 className="page-title">Page not found</h1>
-          <p className="sub">That page doesn&apos;t exist, or it isn&apos;t available to your account.</p>
+          <p className="sub">That page doesn&apos;t exist.</p>
         </div>
       </header>
       <div className="actions" style={{ display: "flex", gap: 10 }}>

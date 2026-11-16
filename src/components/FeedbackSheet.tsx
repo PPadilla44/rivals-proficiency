@@ -4,6 +4,7 @@ import { useEffect, useId, useRef, useState } from "react";
 import { sendFeedbackAction } from "@/app/actions";
 import { FEEDBACK_KINDS, FEEDBACK_KIND_LABEL, FEEDBACK_LIMITS, type FeedbackKind } from "@/lib/feedback-shared";
 import { deviceKind, visitorId } from "@/lib/track";
+import Dialog from "./Dialog";
 
 const HINT: Record<FeedbackKind, string> = {
   bug: "What happened, and what did you expect? Which page or hero?",
@@ -17,7 +18,6 @@ const HINT: Record<FeedbackKind, string> = {
  * tell the server a script filled it in.
  */
 export default function FeedbackSheet({ onClose, initialKind }: { onClose: () => void; initialKind?: FeedbackKind }) {
-  const titleId = useId();
   const [kind, setKind] = useState<FeedbackKind>(initialKind ?? "idea");
   const [message, setMessage] = useState("");
   const [email, setEmail] = useState("");
@@ -25,28 +25,11 @@ export default function FeedbackSheet({ onClose, initialKind }: { onClose: () =>
   const [state, setState] = useState<"idle" | "sending" | "done">("idle");
   const [error, setError] = useState<string | null>(null);
   const openedAt = useRef(0);
-  const messageRef = useRef<HTMLTextAreaElement>(null);
+  const formId = useId();
 
   useEffect(() => {
     openedAt.current = Date.now();
   }, []);
-
-  // A dialog: Escape closes it, the page behind doesn't scroll, focus comes back afterwards.
-  useEffect(() => {
-    const before = document.activeElement as HTMLElement | null;
-    messageRef.current?.focus();
-    const overflow = document.body.style.overflow;
-    document.body.style.overflow = "hidden";
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape") onClose();
-    };
-    document.addEventListener("keydown", onKey);
-    return () => {
-      document.removeEventListener("keydown", onKey);
-      document.body.style.overflow = overflow;
-      before?.focus?.();
-    };
-  }, [onClose]);
 
   const left = FEEDBACK_LIMITS.maxChars - message.length;
   const tooShort = message.trim().length < FEEDBACK_LIMITS.minChars;
@@ -73,25 +56,33 @@ export default function FeedbackSheet({ onClose, initialKind }: { onClose: () =>
     }
   }
 
-  return (
-    <div className="fb-overlay" onClick={(e) => e.target === e.currentTarget && onClose()}>
-      <div className="fb-sheet" role="dialog" aria-modal="true" aria-labelledby={titleId}>
-        <div className="fb-head">
-          <h2 id={titleId}>{state === "done" ? "Thank you" : "Send feedback"}</h2>
-          <button type="button" className="fb-x" aria-label="Close" onClick={onClose}>
-            ×
-          </button>
-        </div>
+  const canSend = state !== "sending" && !tooShort && left >= 0;
 
-        {state === "done" ? (
-          <div className="fb-done">
-            <p>Got it. I read every message, and bugs get fixed fastest when they have details.</p>
-            <button type="button" className="btn primary" onClick={onClose}>
-              Close
-            </button>
-          </div>
+  return (
+    <Dialog
+      title={state === "done" ? "Thank you" : "Send feedback"}
+      onClose={onClose}
+      dirty={state !== "done" && message.trim().length > 0}
+      busy={state === "sending"}
+      footer={
+        state === "done" ? (
+          <button type="button" className="btn primary" onClick={onClose}>
+            Close
+          </button>
         ) : (
-          <form onSubmit={submit} className="fb-form" noValidate>
+          <>
+            <button type="submit" form={formId} className="btn primary" disabled={!canSend}>
+              {state === "sending" ? "Sending…" : "Send"}
+            </button>
+            <p className="fb-note">Goes to the person who built this. Don&apos;t include anything private.</p>
+          </>
+        )
+      }
+    >
+      {state === "done" ? (
+        <p className="fb-done">Got it. I read every message, and bugs get fixed fastest when they have details.</p>
+      ) : (
+        <form id={formId} onSubmit={submit} className="fb-form" noValidate>
             <div className="fb-kinds" role="radiogroup" aria-label="What kind of feedback">
               {FEEDBACK_KINDS.map((k) => (
                 <label key={k} className={kind === k ? "on" : ""}>
@@ -104,7 +95,7 @@ export default function FeedbackSheet({ onClose, initialKind }: { onClose: () =>
             <label className="fb-field">
               <span>Your message</span>
               <textarea
-                ref={messageRef}
+                data-autofocus
                 value={message}
                 onChange={(e) => setMessage(e.target.value)}
                 placeholder={HINT[kind]}
@@ -135,16 +126,8 @@ export default function FeedbackSheet({ onClose, initialKind }: { onClose: () =>
                 {error}
               </p>
             ) : null}
-
-            <div className="fb-actions">
-              <button type="submit" className="btn primary" disabled={state === "sending" || tooShort || left < 0}>
-                {state === "sending" ? "Sending…" : "Send"}
-              </button>
-              <p className="fb-note">Goes to the person who built this. Don&apos;t include anything private.</p>
-            </div>
-          </form>
-        )}
-      </div>
-    </div>
+        </form>
+      )}
+    </Dialog>
   );
 }

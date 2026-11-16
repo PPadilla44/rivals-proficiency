@@ -157,7 +157,7 @@ export default async function Home({ searchParams }: PageProps<"/">) {
           <p className="sub">
             See which heroes are closest to Lord and Champion, and the hours left.{" "}
             <span className="sub-more">
-              Set a level once, bump it after a session. <Link href="/ranks">How ranks and points work</Link>.
+              <Link href="/ranks">How ranks and points work</Link>.
             </span>
           </p>
         </div>

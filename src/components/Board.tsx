@@ -20,6 +20,7 @@ import { LS_CARD, ScreenshotImport } from "./ScreenshotImport";
 import { referrerSite, track, visitorId } from "@/lib/track";
 import { openFeedback } from "@/lib/feedback-open";
 import { KofiLink } from "./KofiLink";
+import Dialog from "./Dialog";
 import { armFor, showsExample, type ExampleMode } from "@/lib/ab";
 import { EXAMPLE_BOARD } from "@/lib/example-board";
 import { OFFLINE_SAVE_MESSAGE, requeueFailed } from "@/lib/save-queue";
@@ -178,7 +179,7 @@ export function Board({ mode, initial, signInSlot, portraits, screenshotImport, 
       localStorage.setItem(LS_EXAMPLE_DONE, "1");
     } catch {}
     track("example_start", { via });
-    if (via === "tap") setToast({ text: "That was a sample. This is your board: set your first level." });
+    if (via === "tap") setToast({ text: "This is your board now. Set your first level." });
     window.scrollTo({ top: 0, behavior: "smooth" });
   }, []);
 
@@ -231,11 +232,13 @@ export function Board({ mode, initial, signInSlot, portraits, screenshotImport, 
     setToast({ text: "Tip: tap the number to type a level, or hold + to count up fast.", long: true });
   }, []);
 
+  // Hovering or focusing a toast holds it, so a button can be reached. Errors stay until dismissed.
+  const [toastHeld, setToastHeld] = useState(false);
   useEffect(() => {
-    if (!toast || toast.sticky) return;
-    const t = setTimeout(() => setToast(null), toast.action ? 9000 : toast.error || toast.long ? 6000 : 3500);
+    if (!toast || toast.sticky || toast.error || toastHeld) return;
+    const t = setTimeout(() => setToast(null), toast.action ? 15000 : toast.long ? 6000 : 4000);
     return () => clearTimeout(t);
-  }, [toast]);
+  }, [toast, toastHeld]);
 
   const apply = useCallback((res: ActionResult, reorder = false) => {
     if (!res.ok) {
@@ -509,6 +512,46 @@ export function Board({ mode, initial, signInSlot, portraits, screenshotImport, 
     </div>
   );
 
+  const roleChips = (
+  <div className="chips">
+    {(
+      [
+        ["all", "All roles", null],
+        ["V", "Vanguard", "var(--van)"],
+        ["D", "Duelist", "var(--duel)"],
+        ["S", "Strategist", "var(--strat)"],
+        ["M", "Deadpool", "var(--multi)"],
+      ] as const
+    ).map(([val, label, color]) => (
+      <button
+        key={val}
+        type="button"
+        className="chip"
+        aria-pressed={role === val}
+        onClick={() => setRole((r) => (r === val && val !== "all" ? "all" : val))}
+      >
+        {color ? <i className="dot" style={{ background: color }} /> : null}
+        {label}
+      </button>
+    ))}
+  </div>
+  );
+  const goalChips = (
+  <div className="chips">
+    {(Object.keys(GOALS) as Goal[]).map((g) => (
+      <button
+        key={g}
+        type="button"
+        className="chip"
+        aria-pressed={goal === g}
+        onClick={() => setGoal((cur) => (cur === g && g !== "all" ? "all" : g))}
+      >
+        {GOALS[g].label}
+      </button>
+    ))}
+  </div>
+  );
+
   return (
     <div className={exampleForAll ? "board-zone hold" : "board-zone"}>
       {example ? (
@@ -529,17 +572,17 @@ export function Board({ mode, initial, signInSlot, portraits, screenshotImport, 
             <p>
               <span className="example-tag">Sample</span>
               <span>
-                <strong>This is a sample board, not yours.</strong> Tap Enter my levels to start yours.
+                <strong>This is a sample board, not yours.</strong>
               </span>
             </p>
             {screenshotImport && signInSlot ? (
               <p className="example-note-import">
-                Want to skip typing? Tap Enter my levels, then sign in to import your ranks from screenshots.
+                Skip the typing: sign in to import your ranks from screenshots.
               </p>
             ) : null}
           </div>
           <div className="example-sticky" role="region" aria-label="Sample board">
-            <span>Add your levels to see your hours to Lord.</span>
+            <span>Sample board</span>
             <button type="button" className="btn primary" onClick={() => startOwnBoard("button")}>
               Enter my levels
             </button>
@@ -606,10 +649,6 @@ export function Board({ mode, initial, signInSlot, portraits, screenshotImport, 
               setEmptyAtLoad(false);
               setImportCheck({ count: updates.length, answer: null });
             }
-            if (ok)
-              setToast({
-                text: `Saved ${updates.length} rank${updates.length === 1 ? "" : "s"}. Each starts at its rank's first level; tap a level to set it exactly.`,
-              });
             return ok;
           }}
         />
@@ -720,7 +759,7 @@ export function Board({ mode, initial, signInSlot, portraits, screenshotImport, 
         }
       />
 
-      <div className={`board-main${filtersOpen ? " filters-open" : ""}`}>
+      <div className="board-main">
       <section className="controls" aria-label="Search and sort">
         <div className="row1">
           <div className="search">
@@ -778,42 +817,9 @@ export function Board({ mode, initial, signInSlot, portraits, screenshotImport, 
       </section>
       <section className="filters" id="board-filters" aria-label="Filters">
         <div className="row1">
-          <div className="chips">
-            {(
-              [
-                ["all", "All roles", null],
-                ["V", "Vanguard", "var(--van)"],
-                ["D", "Duelist", "var(--duel)"],
-                ["S", "Strategist", "var(--strat)"],
-                ["M", "Deadpool", "var(--multi)"],
-              ] as const
-            ).map(([val, label, color]) => (
-              <button
-                key={val}
-                type="button"
-                className="chip"
-                aria-pressed={role === val}
-                onClick={() => setRole((r) => (r === val && val !== "all" ? "all" : val))}
-              >
-                {color ? <i className="dot" style={{ background: color }} /> : null}
-                {label}
-              </button>
-            ))}
-          </div>
+          {roleChips}
           <span className="sep" aria-hidden="true" />
-          <div className="chips">
-            {(Object.keys(GOALS) as Goal[]).map((g) => (
-              <button
-                key={g}
-                type="button"
-                className="chip"
-                aria-pressed={goal === g}
-                onClick={() => setGoal((cur) => (cur === g && g !== "all" ? "all" : g))}
-              >
-                {GOALS[g].label}
-              </button>
-            ))}
-          </div>
+          {goalChips}
         </div>
       </section>
 
@@ -861,19 +867,64 @@ export function Board({ mode, initial, signInSlot, portraits, screenshotImport, 
       </div>
       </div>
 
+      {filtersOpen ? (
+        <Dialog title="Filter" onClose={() => setFiltersOpen(false)} footer={<button type="button" className="btn primary" onClick={() => setFiltersOpen(false)}>Show {shown.length} heroes</button>}>
+          <div className="filter-sheet">
+            <label className="lbl" htmlFor="m-sort">
+              <span className="lbl-text">Sort</span>
+              <select id="m-sort" value={sort} onChange={(e) => changeSort(e.target.value as Sort)}>
+                {Object.entries(SORTS).map(([k, v]) => (
+                  <option key={k} value={k}>
+                    {v}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <label className="lbl" htmlFor="m-rank">
+              <span className="lbl-text">Rank</span>
+              <select id="m-rank" value={rank ?? ""} onChange={(e) => setRank(e.target.value === "" ? null : Number(e.target.value))}>
+                <option value="">All ranks</option>
+                {RANKS.map((r, i) => (
+                  <option key={r} value={i}>
+                    {r}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <div className="view-toggle" role="group" aria-label="Layout">
+              <button type="button" aria-pressed={view === "cards"} onClick={() => changeView("cards")}>
+                Cards
+              </button>
+              <button type="button" aria-pressed={view === "list"} onClick={() => changeView("list")}>
+                List
+              </button>
+            </div>
+            <p className="filter-label">Role</p>
+            {roleChips}
+            <p className="filter-label">Goal</p>
+            {goalChips}
+          </div>
+        </Dialog>
+      ) : null}
+
       {toast ? (
-        <div className={`toast${toast.error ? " error" : ""}${toast.action ? " with-action" : ""}`} role={toast.error ? "alert" : "status"}>
+        <div
+          className={`toast with-x${toast.error ? " error" : ""}${toast.action ? " with-action" : ""}`}
+          role={toast.error ? "alert" : "status"}
+          onMouseEnter={() => setToastHeld(true)}
+          onMouseLeave={() => setToastHeld(false)}
+          onFocus={() => setToastHeld(true)}
+          onBlur={() => setToastHeld(false)}
+        >
           <span>{toast.text}</span>
           {toast.action ? (
             <button type="button" className="btn small primary" onClick={toast.action.run}>
               {toast.action.label}
             </button>
           ) : null}
-          {toast.sticky ? (
-            <button type="button" className="btn small" onClick={() => setToast(null)}>
-              Dismiss
-            </button>
-          ) : null}
+          <button type="button" className="toast-x" aria-label="Dismiss" onClick={() => setToast(null)}>
+            ×
+          </button>
         </div>
       ) : null}
 

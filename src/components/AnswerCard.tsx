@@ -13,6 +13,8 @@ type Props = {
   kind: "sample" | "start" | "own";
   /** Whether the player has set any level yet. */
   anyLevel: boolean;
+  /** The player just left the sample board, whose card is taller on a phone: keep that height for the visit. */
+  fromSample?: boolean;
   /** Gold button: leave the sample, or start typing levels. */
   onEnter?: () => void;
   /** Extra buttons on the right, such as Share. */
@@ -24,7 +26,7 @@ type Props = {
  * started hero has reached Lord). It always takes the same height, so nothing below it moves
  * when the answer appears or changes.
  */
-export default function AnswerCard({ rows, linked, kind, anyLevel, onEnter, actions }: Props) {
+export default function AnswerCard({ rows, linked, kind, anyLevel, fromSample, onEnter, actions }: Props) {
   const started = rows.filter((r) => r.effective > 1);
   const toLord = started
     .filter((r) => r.effective < LORD)
@@ -37,7 +39,7 @@ export default function AnswerCard({ rows, linked, kind, anyLevel, onEnter, acti
   const lordPlus = rows.filter((r) => r.effective >= LORD).length;
 
   return (
-    <section className="answer" aria-label="Closest to Lord">
+    <section className={`answer${kind === "start" ? " start" : ""}${kind === "sample" || fromSample ? " sample-height" : ""}`} aria-label="Closest to Lord">
       <div className="answer-main">
         <p className="answer-label">
           {kind === "sample" ? <span className="answer-tag">Sample</span> : null}

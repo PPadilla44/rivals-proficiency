@@ -20,6 +20,8 @@ type Props = {
   current: Record<string, number | undefined>;
   /** No hero is set yet: show the import as the first step instead of a small bar. */
   empty?: boolean;
+  /** The sample board is showing and has its own gold button, so the launcher stays plain. */
+  quiet?: boolean;
   onSave: (updates: { heroId: string; level: number; approx: boolean }[]) => Promise<boolean>;
 };
 
@@ -172,7 +174,7 @@ function WrongScreenHint() {
   );
 }
 
-export function ScreenshotImport({ current, empty, onSave }: Props) {
+export function ScreenshotImport({ current, empty, quiet, onSave }: Props) {
   const [phase, setPhase] = useState<Phase>({ kind: "closed" });
   const [saving, setSaving] = useState(false);
   const [dragging, setDragging] = useState(false);
@@ -290,7 +292,7 @@ export function ScreenshotImport({ current, empty, onSave }: Props) {
           </p>
         </div>
         <div className="shot-start-actions">
-          <button className="btn primary" onClick={open}>
+          <button className={quiet ? "btn" : "btn primary"} onClick={open}>
             <CameraIcon />
             {mobile ? "Take or choose photos" : "Import from screenshots"}
           </button>
@@ -300,7 +302,7 @@ export function ScreenshotImport({ current, empty, onSave }: Props) {
       </section>
     ) : (
       <div className="shot-bar">
-        <button className="btn primary" onClick={open}>
+        <button className="btn" onClick={open}>
           <CameraIcon />
           Import from screenshots
         </button>
@@ -344,6 +346,18 @@ export function ScreenshotImport({ current, empty, onSave }: Props) {
           }
         >
           <p className="muted">Reads ranks, not exact levels: each hero starts at the first level of its rank. You can set exact levels afterwards.</p>
+          {/* Status and errors come first: on a phone the guide below is long enough to push them off screen. */}
+          {reading ? (
+            <p className="drop-status" role="status">
+              Reading {phase.total > 1 ? `${phase.total} pictures (${phase.done} done)` : "your picture"}, about 10 seconds each
+              <span className="dots" aria-hidden="true" />
+            </p>
+          ) : null}
+          {phase.kind === "pick" && phase.error ? (
+            <p className="danger-error" role="alert">
+              {phase.error}
+            </p>
+          ) : null}
           <ImportGuide mobile={mobile} />
           <div
             className={`drop${dragging ? " over" : ""}${reading ? "" : " clickable"}`}
@@ -378,12 +392,6 @@ export function ScreenshotImport({ current, empty, onSave }: Props) {
               </>
             )}
           </div>
-          {reading ? (
-            <p className="drop-status" role="status">
-              Reading {phase.total > 1 ? `${phase.total} pictures (${phase.done} done)` : "your picture"}, about 10 seconds each
-              <span className="dots" aria-hidden="true" />
-            </p>
-          ) : null}
           <input
             ref={input}
             type="file"
@@ -396,11 +404,6 @@ export function ScreenshotImport({ current, empty, onSave }: Props) {
               if (files.length) void read(files);
             }}
           />
-          {phase.kind === "pick" && phase.error ? (
-            <p className="danger-error" role="alert">
-              {phase.error}
-            </p>
-          ) : null}
           {phase.kind === "pick" && phase.wrongScreen ? <WrongScreenHint /> : null}
         </Dialog>
       </>

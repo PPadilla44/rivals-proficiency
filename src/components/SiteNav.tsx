@@ -2,8 +2,10 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useEffect, useRef, useState } from "react";
 import { KofiLink } from "./KofiLink";
 import { openFeedback } from "@/lib/feedback-open";
+import { openSignIn } from "@/lib/signin-open";
 
 // `more` is dropped on phones so all three links fit beside the wordmark.
 const LINKS = [
@@ -12,9 +14,107 @@ const LINKS = [
   { href: "/ranks", label: "Ranks", more: "guide" },
 ];
 
-/** Site-wide top bar: wordmark, page links, Feedback, Ko-fi. */
-export function SiteNav() {
+type Who = { name: string | null; image: string | null };
+const LS_WHO = "pb-who";
+
+/** Signed-in state, read after the page loads so the nav never makes a page dynamic. */
+function useWho(enabled: boolean): Who | null {
+  const [who, setWho] = useState<Who | null>(null);
+  useEffect(() => {
+    if (!enabled) return;
+    try {
+      const hint = localStorage.getItem(LS_WHO);
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- reading browser storage after mount
+      if (hint) setWho(JSON.parse(hint));
+    } catch {}
+    let live = true;
+    fetch("/api/auth/session", { credentials: "same-origin" })
+      .then((r) => (r.ok ? r.json() : null))
+      .then((s) => {
+        if (!live) return;
+        const u = s?.user;
+        const next = u ? { name: u.name ?? null, image: u.image ?? null } : null;
+        setWho(next);
+        try {
+          if (next) localStorage.setItem(LS_WHO, JSON.stringify(next));
+          else localStorage.removeItem(LS_WHO);
+        } catch {}
+      })
+      .catch(() => {});
+    return () => {
+      live = false;
+    };
+  }, [enabled]);
+  return who;
+}
+
+/** Sign out the way Auth.js wants it: a POST with a csrf token. */
+async function signOutNow() {
+  try {
+    localStorage.removeItem(LS_WHO);
+    const { csrfToken } = await (await fetch("/api/auth/csrf", { credentials: "same-origin" })).json();
+    const f = document.createElement("form");
+    f.method = "POST";
+    f.action = "/api/auth/signout";
+    for (const [k, v] of [["csrfToken", csrfToken], ["callbackUrl", "/"]]) {
+      const i = document.createElement("input");
+      i.type = "hidden";
+      i.name = k;
+      i.value = v;
+      f.appendChild(i);
+    }
+    document.body.appendChild(f);
+    f.submit();
+  } catch {
+    // eslint-disable-next-line @next/next/no-location-assign-relative-destination -- a full page load on purpose
+    window.location.href = "/api/auth/signout";
+  }
+}
+
+function AccountMenu({ who }: { who: Who }) {
+  const [open, setOpen] = useState(false);
+  const box = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    if (!open) return;
+    const onDown = (e: MouseEvent) => {
+      if (!box.current?.contains(e.target as Node)) setOpen(false);
+    };
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setOpen(false);
+    };
+    document.addEventListener("mousedown", onDown);
+    document.addEventListener("keydown", onKey);
+    return () => {
+      document.removeEventListener("mousedown", onDown);
+      document.removeEventListener("keydown", onKey);
+    };
+  }, [open]);
+  return (
+    <div className="acct" ref={box}>
+      <button type="button" className="acct-btn" aria-haspopup="menu" aria-expanded={open} aria-label="Account" onClick={() => setOpen((o) => !o)}>
+        {who.image ? (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img src={who.image} alt="" />
+        ) : (
+          <span aria-hidden="true">{(who.name ?? "?").slice(0, 1).toUpperCase()}</span>
+        )}
+      </button>
+      {open ? (
+        <div className="acct-menu" role="menu">
+          <p>{who.name ?? "Signed in"}</p>
+          <button type="button" role="menuitem" className="btn" onClick={signOutNow}>
+            Sign out
+          </button>
+        </div>
+      ) : null}
+    </div>
+  );
+}
+
+/** Site-wide top bar: wordmark, page links, Feedback, Ko-fi, sign in or the account menu. */
+export function SiteNav({ signIn = false }: { signIn?: boolean }) {
   const path = usePathname();
+  const who = useWho(signIn);
   return (
     <header className="site-nav">
       <div className="nav-inner">
@@ -31,16 +131,22 @@ export function SiteNav() {
           ))}
         </nav>
         <div className="nav-actions">
-          <button type="button" className="fb-btn" onClick={() => openFeedback("header")} aria-label="Send feedback">
-            <svg aria-hidden="true" viewBox="0 0 20 20" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinejoin="round" strokeLinecap="round">
-              <path d="M3.5 4.5h13a1 1 0 0 1 1 1v7.5a1 1 0 0 1-1 1H9l-3.5 3v-3h-2a1 1 0 0 1-1-1V5.5a1 1 0 0 1 1-1z" />
-            </svg>
-            <span className="fb-btn-label">Feedback</span>
+          <button type="button" className="nav-text" onClick={() => openFeedback("header")}>
+            Feedback
           </button>
           <KofiLink from="header" className="kofi" aria-label="Support on Ko-fi">
             <span aria-hidden="true">&#9829;</span>
             <span className="kofi-label">Support</span>
           </KofiLink>
+          {signIn ? (
+            who ? (
+              <AccountMenu who={who} />
+            ) : (
+              <button type="button" className="btn nav-signin" onClick={openSignIn}>
+                Sign in
+              </button>
+            )
+          ) : null}
         </div>
       </div>
     </header>

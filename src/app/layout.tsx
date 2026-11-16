@@ -12,6 +12,7 @@ import { EngagementTracker } from "@/components/EngagementTracker";
 import { HEROES } from "@/lib/heroes";
 import { DOM_GUARD_SCRIPT } from "@/lib/dom-guard";
 import { SAVED_BOARD_SCRIPT } from "@/lib/saved-board-flag";
+import { authConfigured } from "@/auth";
 import { body, display, mono } from "./fonts";
 import "./globals.css";
 
@@ -39,7 +40,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
         <script dangerouslySetInnerHTML={{ __html: SAVED_BOARD_SCRIPT }} />
       </head>
       <body>
-        <SiteNav />
+        <SiteNav signIn={authConfigured} />
         {children}
         <footer className="foot wrap">
           <div className="foot-grid">

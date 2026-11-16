@@ -1,4 +1,4 @@
-import { auth, authConfigured, providerList, signIn, signOut } from "@/auth";
+import { auth, authConfigured, providerList, signIn } from "@/auth";
 import { getDb } from "@/db";
 import { getBoard } from "@/server/board";
 import { PREVIEW_PROVIDER, previewLoginEnabled, previewSignIn } from "@/server/preview-login";
@@ -115,11 +115,6 @@ export default async function Home({ searchParams }: PageProps<"/">) {
     }
     await signIn(provider, { redirectTo: "/" });
   }
-  async function doSignOut() {
-    "use server";
-    await signOut({ redirectTo: "/" });
-  }
-
   // Guests see the import as a sign-in button. With several providers the
   // guest banner's buttons already say it, so this would only repeat them.
   const importSignIn =
@@ -161,18 +156,6 @@ export default async function Home({ searchParams }: PageProps<"/">) {
             </span>
           </p>
         </div>
-        {session?.user ? (
-          <div className="who">
-            {session.user.image ? (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img src={session.user.image} alt="" />
-            ) : null}
-            <span>{session.user.name ?? "Signed in"}</span>
-            <form action={doSignOut}>
-              <button className="btn small">Sign out</button>
-            </form>
-          </div>
-        ) : null}
       </header>
 
       {authError ? (

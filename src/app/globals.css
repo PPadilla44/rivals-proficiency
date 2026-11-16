@@ -842,3 +842,23 @@ html:is([data-saved-board], [data-example-done]):not([data-board-ready]) .board-
 .answer-signin .btn, .answer-signin button { background: var(--panel); border-color: var(--line-2); color: var(--ink); }
 .answer-signin form, .answer-signin > div { display: flex; flex-wrap: wrap; gap: 8px; }
 .answer-signin .btn.primary:hover:not(:disabled) { background: var(--panel-2); border-color: var(--ink-3); }
+
+/* ---------- nav: Feedback as a text link, sign in or the account menu ---------- */
+.nav-text { background: none; border: none; padding: 0 8px; height: 36px; font: inherit; font-size: 14px; font-weight: 500; color: var(--ink-2); cursor: pointer; text-decoration: none; }
+.nav-text:hover { color: var(--ink); text-decoration: underline; text-underline-offset: 3px; }
+.nav-signin { height: 36px; padding: 0 14px; font-size: 14px; }
+.acct { position: relative; }
+.acct-btn { width: 36px; height: 36px; padding: 0; border-radius: 50%; border: 1px solid var(--line-2); background: var(--panel-2); color: var(--ink); font-weight: 700; cursor: pointer; overflow: hidden; display: grid; place-items: center; }
+.acct-btn img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.acct-menu { position: absolute; right: 0; top: calc(100% + 8px); min-width: 180px; z-index: 70; padding: 12px; display: flex; flex-direction: column; gap: 10px; background: var(--panel); border: 1px solid var(--line-2); border-radius: 12px; box-shadow: 0 12px 32px rgb(0 0 0 / 0.2); }
+.acct-menu p { margin: 0; font-size: 14px; font-weight: 600; color: var(--ink); overflow-wrap: anywhere; }
+.acct-menu .btn { height: 44px; justify-content: center; }
+@media (max-width: 640px) {
+  .nav-text { display: none; }
+  .nav-signin { padding: 0 10px; font-size: 13.5px; }
+}
+.signin-dialog { display: flex; flex-direction: column; gap: 14px; }
+.signin-dialog p { margin: 0; color: var(--ink-2); font-size: 15px; }
+.signin-dialog form, .signin-dialog .actions { display: flex; flex-direction: column; gap: 8px; }
+.signin-dialog .btn { height: 48px; justify-content: center; font-size: 15px; background: var(--panel); border-color: var(--line-2); color: var(--ink); }
+.signin-dialog .btn:first-child { background: var(--ink); border-color: var(--ink); color: var(--panel); }

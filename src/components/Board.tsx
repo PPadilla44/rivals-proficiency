@@ -21,6 +21,7 @@ import { referrerSite, track, visitorId } from "@/lib/track";
 import { openFeedback } from "@/lib/feedback-open";
 import { KofiLink } from "./KofiLink";
 import Dialog from "./Dialog";
+import { SIGNIN_OPEN_EVENT, openSignIn } from "@/lib/signin-open";
 import { armFor, showsExample, type ExampleMode } from "@/lib/ab";
 import { EXAMPLE_BOARD } from "@/lib/example-board";
 import { OFFLINE_SAVE_MESSAGE, requeueFailed } from "@/lib/save-queue";
@@ -82,6 +83,21 @@ export function Board({ mode, initial, signInSlot, portraits, screenshotImport, 
   const lastChange = useRef<{ id: string; level: number } | null>(null);
   // Phones show search and one Filter button; sort, layout and the chips open from it.
   const [filtersOpen, setFiltersOpen] = useState(false);
+  const [signInOpen, setSignInOpen] = useState(false);
+  // The nav's Sign in button (or a link to /?signin=1) opens the sign-in dialog here, where the server form is.
+  useEffect(() => {
+    const open = () => setSignInOpen(true);
+    window.addEventListener(SIGNIN_OPEN_EVENT, open);
+    try {
+      const u = new URL(window.location.href);
+      if (u.searchParams.get("signin") === "1") {
+        u.searchParams.delete("signin");
+        window.history.replaceState(null, "", u.pathname + u.search + u.hash);
+        open();
+      }
+    } catch {}
+    return () => window.removeEventListener(SIGNIN_OPEN_EVENT, open);
+  }, []);
   const [busy, setBusy] = useState(false);
   const [guestLevels, setGuestLevels] = useState<Record<string, number>>({});
   const [loadVersion, setLoadVersion] = useState(0);
@@ -508,7 +524,13 @@ export function Board({ mode, initial, signInSlot, portraits, screenshotImport, 
         <strong>Playing as a guest.</strong> Levels save in this browser only. Sign in to keep them on every device
         {screenshotImport ? " and import your ranks from Heroes tab screenshots" : ""}.
       </p>
-      {signInSlot ?? <p>Sign-in is not configured on this server yet.</p>}
+      {signInSlot ? (
+        <button type="button" className="btn" onClick={openSignIn}>
+          Sign in
+        </button>
+      ) : (
+        <p>Sign-in is not configured on this server yet.</p>
+      )}
     </div>
   );
 
@@ -579,10 +601,9 @@ export function Board({ mode, initial, signInSlot, portraits, screenshotImport, 
         }
         below={
           guestCard ? (
-            <div className="answer-signin">
-              <p>Sign in to import every rank from screenshots.</p>
-              {signInSlot}
-            </div>
+            <button type="button" className="link-btn answer-signin" onClick={openSignIn}>
+              Or sign in to import every rank from screenshots
+            </button>
           ) : null
         }
       />
@@ -831,6 +852,18 @@ export function Board({ mode, initial, signInSlot, portraits, screenshotImport, 
             {roleChips}
             <p className="filter-label">Goal</p>
             {goalChips}
+          </div>
+        </Dialog>
+      ) : null}
+
+      {signInOpen && signInSlot ? (
+        <Dialog title="Sign in" onClose={() => setSignInOpen(false)}>
+          <div className="signin-dialog">
+            <p>
+              Keep your board on every device
+              {screenshotImport ? " and import your ranks from screenshots of the in-game Heroes tab" : ""}.
+            </p>
+            {signInSlot}
           </div>
         </Dialog>
       ) : null}

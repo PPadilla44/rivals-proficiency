@@ -855,7 +855,8 @@ html:is([data-saved-board], [data-example-done]):not([data-board-ready]) .board-
 .acct-menu .btn { height: 44px; justify-content: center; }
 @media (max-width: 640px) {
   .nav-text { display: none; }
-  .nav-signin { padding: 0 10px; font-size: 13.5px; }
+  .nav-signin { width: 38px; padding: 0; }
+  .nav-signin-label { display: none; }
 }
 .signin-dialog { display: flex; flex-direction: column; gap: 14px; }
 .signin-dialog p { margin: 0; color: var(--ink-2); font-size: 15px; }
@@ -867,3 +868,7 @@ html:is([data-saved-board], [data-example-done]):not([data-board-ready]) .board-
 .banner-x { color: var(--ink-2); opacity: 1; }
 .banner-x:hover { background: var(--panel-2); }
 .banner.import-check .actions { align-items: center; }
+
+.nav-signin { gap: 8px; }
+.nav-signin-icon { display: none; }
+@media (max-width: 640px) { .nav-signin-icon { display: block; } }

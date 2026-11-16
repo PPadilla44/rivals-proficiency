@@ -142,8 +142,12 @@ export function SiteNav({ signIn = false }: { signIn?: boolean }) {
             who ? (
               <AccountMenu who={who} />
             ) : (
-              <button type="button" className="btn nav-signin" onClick={openSignIn}>
-                Sign in
+              <button type="button" className="btn nav-signin" onClick={openSignIn} aria-label="Sign in">
+                <svg className="nav-signin-icon" aria-hidden="true" viewBox="0 0 20 20" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round">
+                  <circle cx="10" cy="7" r="3.2" />
+                  <path d="M3.8 16.5c.8-3 3.2-4.6 6.2-4.6s5.4 1.6 6.2 4.6" />
+                </svg>
+                <span className="nav-signin-label">Sign in</span>
               </button>
             )
           ) : null}

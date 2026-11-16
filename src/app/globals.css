@@ -229,7 +229,7 @@ html[data-saved-board] .start-here, html[data-saved-board] .shot-start.guest, ht
 .chips { display: flex; flex-wrap: wrap; gap: 8px; }
 .chip { height: 32px; padding: 0 12px; border-radius: 16px; border: 1px solid var(--line-2); background: transparent; cursor: pointer; font-size: 13.5px; font-weight: 500; display: inline-flex; align-items: center; gap: 6px; color: var(--ink-2); }
 .chip:hover { color: var(--ink); border-color: var(--ink-3); }
-.chip[aria-pressed="true"] { background: var(--pop); color: var(--pop-ink); border-color: var(--pop); font-weight: 600; }
+.chip[aria-pressed="true"] { background: var(--ink); color: var(--panel); border-color: var(--ink); font-weight: 600; }
 .chip .dot { width: 8px; height: 8px; border-radius: 50%; }
 .sep { width: 1px; height: 22px; background: var(--line-2); margin: 0 4px; }
 .count { font-size: 13px; color: var(--ink-3); margin-left: auto; font-family: var(--mono); }
@@ -392,7 +392,7 @@ footer.foot .foot-kofi:hover { color: var(--pop-ink); text-decoration: none; }
 .prose h2 { font-size: 18px; margin-top: 14px; }
 .prose h2:first-child { margin-top: 0; }
 .prose p, .prose li { margin: 0; color: var(--ink-2); font-size: 15px; line-height: 1.6; max-width: 68ch; }
-.prose ul { margin: 0; padding-left: 20px; display: flex; flex-direction: column; gap: 8px; }
+.prose ul { margin: 0; padding-left: 20px; display: flex; flex-direction: column; gap: 8px; list-style: disc; }
 .prose strong { color: var(--ink); }
 .prose a { color: var(--ink); font-weight: 600; text-decoration-color: var(--pop); text-decoration-thickness: 2px; text-underline-offset: 3px; }
 .prose .muted { color: var(--ink-3); font-style: italic; }

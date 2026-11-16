@@ -21,7 +21,7 @@ export function CrashScreen({ error, retry }: { error: Error & { digest?: string
         <div>
           <h1 className="page-title">Something went wrong</h1>
           <p className="sub">
-            This page hit an error and we&apos;ve been notified. Your levels are safe. Try again, or reload the page.
+            This page hit an error and I&apos;ve been told. Saved levels are safe. Try again, or reload the page.
           </p>
         </div>
       </header>

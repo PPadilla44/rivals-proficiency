@@ -36,13 +36,13 @@ export function StatTiles({ rows }: { rows: HeroRow[] }) {
     {
       label: "Next Champion",
       value: nextChamp ? String(CHAMPION - nextChamp.effective) : "-",
-      unit: nextChamp ? "levels" : "",
+      unit: nextChamp ? (CHAMPION - nextChamp.effective === 1 ? "level" : "levels") : "",
       sub: nextChamp ? `${nextChamp.name} · Lv ${nextChamp.effective}` : "get a hero to Lord first",
     },
     {
       label: "Next Lord",
       value: nextLord ? String(LORD - nextLord.effective) : "-",
-      unit: nextLord ? "levels" : "",
+      unit: nextLord ? (LORD - nextLord.effective === 1 ? "level" : "levels") : "",
       sub: nextLord ? `${nextLord.name} · Lv ${nextLord.effective}` : "set a few levels to see it",
     },
   ];

@@ -178,7 +178,7 @@ export function Board({ mode, initial, signInSlot, portraits, screenshotImport, 
       localStorage.setItem(LS_EXAMPLE_DONE, "1");
     } catch {}
     track("example_start", { via });
-    if (via === "tap") setToast({ text: "That was a sample. This is your board: set your first level." });
+    if (via === "tap") setToast({ text: "This is your board now. Set your first level." });
     window.scrollTo({ top: 0, behavior: "smooth" });
   }, []);
 
@@ -529,17 +529,17 @@ export function Board({ mode, initial, signInSlot, portraits, screenshotImport, 
             <p>
               <span className="example-tag">Sample</span>
               <span>
-                <strong>This is a sample board, not yours.</strong> Tap Enter my levels to start yours.
+                <strong>This is a sample board, not yours.</strong>
               </span>
             </p>
             {screenshotImport && signInSlot ? (
               <p className="example-note-import">
-                Want to skip typing? Tap Enter my levels, then sign in to import your ranks from screenshots.
+                Skip the typing: sign in to import your ranks from screenshots.
               </p>
             ) : null}
           </div>
           <div className="example-sticky" role="region" aria-label="Sample board">
-            <span>Add your levels to see your hours to Lord.</span>
+            <span>Sample board</span>
             <button type="button" className="btn primary" onClick={() => startOwnBoard("button")}>
               Enter my levels
             </button>

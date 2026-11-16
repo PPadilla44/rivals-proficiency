@@ -11,6 +11,31 @@ export type WhatsNewEntry = {
  */
 export const WHATS_NEW: WhatsNewEntry[] = [
   {
+    date: "2026-11-16",
+    title: "A calmer home page",
+    text: "One card at the top tells you which hero is closest to Lord. There is one gold button per screen, and the search, Filter and Sort sit in a single bar.",
+  },
+  {
+    date: "2026-11-16",
+    title: "Sign in from the top bar",
+    text: "Sign in and your account menu are in the top bar on every page, with the Discord and Google logos on the buttons. Feedback is a plain link there too.",
+  },
+  {
+    date: "2026-11-16",
+    title: "Windows that behave",
+    text: "Sign in, import, Share and Feedback open as sheets you can close with the X, Escape or a tap outside. If you have typed something, it asks before throwing it away.",
+  },
+  {
+    date: "2026-11-16",
+    title: "Your first tap counts",
+    text: "Tapping a level on the sample board now sets that level on your own board instead of starting over.",
+  },
+  {
+    date: "2026-11-16",
+    title: "Easier to add the levels from this browser",
+    text: "If you saved levels as a guest and then sign in, a clear card offers to add them to your account.",
+  },
+  {
     date: "2026-11-14",
     title: "Clearer sample board on phones",
     text: "First-time visitors on a phone now see a plain note that the sample board isn't theirs, and a pointer to the screenshot import.",

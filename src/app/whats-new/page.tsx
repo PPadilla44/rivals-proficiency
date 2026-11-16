@@ -9,6 +9,13 @@ export const metadata: Metadata = {
 };
 
 export default function WhatsNewPage() {
+  // Entries are newest first, so grouping keeps the days in order too.
+  const days: [string, typeof WHATS_NEW][] = [];
+  for (const e of WHATS_NEW) {
+    const last = days[days.length - 1];
+    if (last && last[0] === e.date) last[1].push(e);
+    else days.push([e.date, [e]]);
+  }
   return (
     <div className="wrap prose-page">
       <header className="top">
@@ -19,17 +26,21 @@ export default function WhatsNewPage() {
       </header>
 
       <section className="panel prose">
-        <ul className="news-list">
-          {WHATS_NEW.map((e) => (
-            <li key={`${e.date}-${e.title}`}>
-              <time dateTime={e.date} className="news-date">
-                {formatWhatsNewDate(e.date)}
-              </time>
-              <strong>{e.title}</strong>
-              <p>{e.text}</p>
-            </li>
-          ))}
-        </ul>
+        {days.map(([date, entries]) => (
+          <div key={date} className="news-day">
+            <h2>
+              <time dateTime={date}>{formatWhatsNewDate(date)}</time>
+            </h2>
+            <ul className="news-list">
+              {entries.map((e) => (
+                <li key={e.title}>
+                  <strong>{e.title}</strong>
+                  <p>{e.text}</p>
+                </li>
+              ))}
+            </ul>
+          </div>
+        ))}
         <p>
           Got an idea for what should come next? <FeedbackLauncher />.
         </p>

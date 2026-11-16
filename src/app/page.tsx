@@ -1,9 +1,9 @@
-import { auth, authConfigured, providerList, signIn, signOut } from "@/auth";
+import { auth, authConfigured, providerList, signIn } from "@/auth";
 import { getDb } from "@/db";
 import { getBoard } from "@/server/board";
 import { PREVIEW_PROVIDER, previewLoginEnabled, previewSignIn } from "@/server/preview-login";
 import { Board } from "@/components/Board";
-import { CameraIcon } from "@/components/bits";
+import { ProviderIcon } from "@/components/ProviderIcon";
 import { PreviewTools } from "@/components/PreviewTools";
 import { getHeroPortraits } from "@/lib/portraits";
 import { visionConfigured } from "@/lib/vision";
@@ -115,28 +115,11 @@ export default async function Home({ searchParams }: PageProps<"/">) {
     }
     await signIn(provider, { redirectTo: "/" });
   }
-  async function doSignOut() {
-    "use server";
-    await signOut({ redirectTo: "/" });
-  }
-
-  // Guests see the import as a sign-in button. With several providers the
-  // guest banner's buttons already say it, so this would only repeat them.
-  const importSignIn =
-    authConfigured && visionConfigured && providerList.length === 1 ? (
-      <form action={doSignIn} className="shot-bar">
-        <button className="btn primary" name="provider" value={providerList[0].id}>
-          <CameraIcon />
-          Sign in to import from screenshots
-        </button>
-        <span>Screenshot each page of the in-game Heroes tab and every rank fills in.</span>
-      </form>
-    ) : null;
-
   const signInButtons = authConfigured ? (
     <form action={doSignIn} className="actions">
       {providerList.map((p) => (
         <button key={p.id} className="btn primary" name="provider" value={p.id}>
+          <ProviderIcon id={p.id} />
           Sign in with {p.name}
         </button>
       ))}
@@ -161,18 +144,6 @@ export default async function Home({ searchParams }: PageProps<"/">) {
             </span>
           </p>
         </div>
-        {session?.user ? (
-          <div className="who">
-            {session.user.image ? (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img src={session.user.image} alt="" />
-            ) : null}
-            <span>{session.user.name ?? "Signed in"}</span>
-            <form action={doSignOut}>
-              <button className="btn small">Sign out</button>
-            </form>
-          </div>
-        ) : null}
       </header>
 
       {authError ? (
@@ -202,7 +173,6 @@ export default async function Home({ searchParams }: PageProps<"/">) {
 
       <Board mode={board ? "user" : "guest"} initial={board} signInSlot={signInButtons} portraits={portraits}
         screenshotImport={visionConfigured}
-        importSignIn={importSignIn}
         syncEnabled={syncEnabled}
         exampleMode={exampleMode}
       />

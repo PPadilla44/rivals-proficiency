@@ -15,8 +15,6 @@ type Props = {
   anyLevel: boolean;
   /** Gold button: leave the sample, or start typing levels. */
   onEnter?: () => void;
-  /** Quiet line under the button, e.g. the sign-in buttons that unlock importing. */
-  below?: ReactNode;
   /** Extra buttons on the right, such as Share. */
   actions?: ReactNode;
 };
@@ -26,7 +24,7 @@ type Props = {
  * started hero has reached Lord). It always takes the same height, so nothing below it moves
  * when the answer appears or changes.
  */
-export default function AnswerCard({ rows, linked, kind, anyLevel, onEnter, below, actions }: Props) {
+export default function AnswerCard({ rows, linked, kind, anyLevel, onEnter, actions }: Props) {
   const started = rows.filter((r) => r.effective > 1);
   const toLord = started
     .filter((r) => r.effective < LORD)
@@ -72,12 +70,11 @@ export default function AnswerCard({ rows, linked, kind, anyLevel, onEnter, belo
       <div className="answer-side">
         {kind === "sample" ? <p className="answer-note">This is a sample board, not yours.</p> : null}
         {onEnter ? (
-          <button type="button" className="btn primary" onClick={onEnter}>
+          <button type="button" className={kind === "sample" ? "btn primary" : "btn"} onClick={onEnter}>
             Enter my levels
           </button>
         ) : null}
         {actions}
-        {below}
       </div>
     </section>
   );

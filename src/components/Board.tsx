@@ -14,6 +14,7 @@ import { buildRows, GOALS, SORTS, type Goal, type HeroRow, type Sort } from "@/l
 import { ROLE_SORT, type Role } from "@/lib/heroes";
 import { CHAMPION, LORD, RANKS, clampLevel, tierOf } from "@/lib/proficiency";
 import AnswerCard from "./AnswerCard";
+import { CameraIcon } from "./bits";
 import { HeroCard, HeroLine } from "./HeroViews";
 import { Account } from "./Account";
 import { LS_CARD, ScreenshotImport } from "./ScreenshotImport";
@@ -21,6 +22,8 @@ import { referrerSite, track, visitorId } from "@/lib/track";
 import { openFeedback } from "@/lib/feedback-open";
 import { KofiLink } from "./KofiLink";
 import Dialog from "./Dialog";
+import { SIGNIN_OPEN_EVENT, openSignIn } from "@/lib/signin-open";
+import { SESSION_CHANGED_EVENT } from "./SiteNav";
 import { armFor, showsExample, type ExampleMode } from "@/lib/ab";
 import { EXAMPLE_BOARD } from "@/lib/example-board";
 import { OFFLINE_SAVE_MESSAGE, requeueFailed } from "@/lib/save-queue";
@@ -46,7 +49,6 @@ type Props = {
   /** Server can read screenshots (vision key configured). */
   screenshotImport: boolean;
   /** Guest-only: a button that signs in and leads to the screenshot import. */
-  importSignIn?: ReactNode;
   /** Playtime sync is available (stats API key configured). */
   syncEnabled: boolean;
   /** Whether first-time visitors see an example board (the example-board flag). */
@@ -67,7 +69,7 @@ function readLocal(): Record<string, number> {
   }
 }
 
-export function Board({ mode, initial, signInSlot, portraits, screenshotImport, importSignIn, syncEnabled, exampleMode = "off" }: Props) {
+export function Board({ mode, initial, signInSlot, portraits, screenshotImport, syncEnabled, exampleMode = "off" }: Props) {
   const [board, setBoard] = useState<BoardData>(initial ?? EMPTY);
   const [q, setQ] = useState("");
   const [sort, setSort] = useState<Sort>(mode === "guest" && exampleMode === "on" ? "lord" : "level-desc");
@@ -82,6 +84,26 @@ export function Board({ mode, initial, signInSlot, portraits, screenshotImport, 
   const lastChange = useRef<{ id: string; level: number } | null>(null);
   // Phones show search and one Filter button; sort, layout and the chips open from it.
   const [filtersOpen, setFiltersOpen] = useState(false);
+  const [signInOpen, setSignInOpen] = useState(false);
+  // The nav's Sign in button (or a link to /?signin=1) opens the sign-in dialog here, where the server form is.
+  useEffect(() => {
+    const open = () => setSignInOpen(true);
+    window.addEventListener(SIGNIN_OPEN_EVENT, open);
+    try {
+      const u = new URL(window.location.href);
+      if (u.searchParams.get("signin") === "1") {
+        u.searchParams.delete("signin");
+        window.history.replaceState(null, "", u.pathname + u.search + u.hash);
+        open();
+      }
+    } catch {}
+    return () => window.removeEventListener(SIGNIN_OPEN_EVENT, open);
+  }, []);
+  // Signing in can happen without a page load (the server redirects back here), and the nav lives above
+  // this page, so tell it to read the session again whenever this board is for a different player.
+  useEffect(() => {
+    window.dispatchEvent(new Event(SESSION_CHANGED_EVENT));
+  }, [mode]);
   const [busy, setBusy] = useState(false);
   const [guestLevels, setGuestLevels] = useState<Record<string, number>>({});
   const [loadVersion, setLoadVersion] = useState(0);
@@ -99,6 +121,10 @@ export function Board({ mode, initial, signInSlot, portraits, screenshotImport, 
   const [example, setExample] = useState(exampleForAll);
   const [ready, setReady] = useState(false);
   const exampleRef = useRef(false);
+  // True once this visit left the sample for the visitor's own board.
+  const [swapped, setSwapped] = useState(false);
+  // The rows as last drawn, so the first tap on the sample can be turned into a level on the visitor's own board.
+  const rowsRef = useRef<HeroRow[]>([]);
   const exampleEndedAt = useRef(0);
   const initialEmpty = useRef(Object.keys(initial?.levels ?? {}).length === 0);
   useEffect(() => {
@@ -115,7 +141,6 @@ export function Board({ mode, initial, signInSlot, portraits, screenshotImport, 
   // Guest mode keeps levels in this browser. Signed-in users may import them.
   useEffect(() => {
     const local = readLocal();
-    // eslint-disable-next-line react-hooks/set-state-in-effect -- reading browser storage after mount
     setGuestLevels(local);
     if (mode === "guest") setEmptyAtLoad(Object.keys(local).length === 0);
     if (mode === "guest") {
@@ -170,16 +195,17 @@ export function Board({ mode, initial, signInSlot, portraits, screenshotImport, 
   }, [ready]);
 
   /** Leave the example for the visitor's own empty board. `via` is how they did it. */
-  const startOwnBoard = useCallback((via: "button" | "tap") => {
+  const startOwnBoard = useCallback((via: "button" | "tap", applied = false) => {
     if (!exampleRef.current) return;
     exampleRef.current = false;
     exampleEndedAt.current = Date.now();
     setExample(false);
+    setSwapped(true);
     try {
       localStorage.setItem(LS_EXAMPLE_DONE, "1");
     } catch {}
     track("example_start", { via });
-    if (via === "tap") setToast({ text: "This is your board now. Set your first level." });
+    if (via === "tap" && !applied) setToast({ text: "This is your board now. Set your first level." });
     window.scrollTo({ top: 0, behavior: "smooth" });
   }, []);
 
@@ -306,11 +332,21 @@ export function Board({ mode, initial, signInSlot, portraits, screenshotImport, 
   }, [flush]);
 
   const setLevel = useCallback(
-    (heroId: string, level: number, fromEstimate = false, held = false) => {
-      // The example is not editable: touching a control starts the visitor's own board. A hold
-      // that began on the example keeps firing for a moment, so ignore changes right after.
-      if (exampleRef.current) return startOwnBoard("tap");
-      if (Date.now() - exampleEndedAt.current < 900) return;
+    function apply(heroId: string, level: number, fromEstimate = false, held = false, first = false) {
+      // The example is not editable: touching a control starts the visitor's own board, and that first
+      // touch counts. A step up or down moves the hero one level from 1; a typed number is taken as typed.
+      // A hold that began on the example keeps firing for a moment, so ignore the rest of it.
+      if (exampleRef.current) {
+        const from = rowsRef.current.find((r) => r.id === heroId)?.effective ?? 1;
+        const own = clampLevel(Math.abs(level - from) === 1 ? 1 + (level - from) : level);
+        startOwnBoard("tap", own > 1);
+        if (own > 1) {
+          apply(heroId, own, false, false, true);
+          setToast({ text: "This is your own board now. That level is saved here." });
+        }
+        return;
+      }
+      if (!first && Date.now() - exampleEndedAt.current < 900) return;
       const v = clampLevel(level);
       userChanged.current = true;
       lastChange.current = { id: heroId, level: v };
@@ -376,6 +412,9 @@ export function Board({ mode, initial, signInSlot, portraits, screenshotImport, 
       }),
     [shownBoard, syncEnabled],
   );
+  useEffect(() => {
+    rowsRef.current = rows;
+  }, [rows]);
 
   // Share my board: offered once the board has a few heroes worth showing (never on the sample).
   const lordNow = lordCount(rows);
@@ -493,6 +532,9 @@ export function Board({ mode, initial, signInSlot, portraits, screenshotImport, 
   const serverCount = Object.keys(board.levels).length;
   const [importDismissed, setImportDismissed] = useState(false);
   const showImport = mode === "user" && localCount > 0 && !importDismissed && serverCount < localCount;
+  // One message above the board at a time: the import check first, then levels found in this browser,
+  // and only then the usual account, sign-in or import cards.
+  const oneMessage = !!importCheck || showImport;
 
   // A guest with nothing set yet sees the screenshot import first, as a sign-in card.
   // "Untouched" is decided when the board loads and then held for the visit. If the first tap
@@ -508,7 +550,13 @@ export function Board({ mode, initial, signInSlot, portraits, screenshotImport, 
         <strong>Playing as a guest.</strong> Levels save in this browser only. Sign in to keep them on every device
         {screenshotImport ? " and import your ranks from Heroes tab screenshots" : ""}.
       </p>
-      {signInSlot ?? <p>Sign-in is not configured on this server yet.</p>}
+      {signInSlot ? (
+        <button type="button" className="btn" onClick={openSignIn}>
+          Sign in
+        </button>
+      ) : (
+        <p>Sign-in is not configured on this server yet.</p>
+      )}
     </div>
   );
 
@@ -562,7 +610,7 @@ export function Board({ mode, initial, signInSlot, portraits, screenshotImport, 
         onEnter={
           example
             ? () => startOwnBoard("button")
-            : guestCard
+            : guestCard && !swapped && !rows.some((r) => r.effective > 1)
               ? () => {
                   document.getElementById("q")?.scrollIntoView({ block: "center" });
                   document.getElementById("q")?.focus();
@@ -577,17 +625,9 @@ export function Board({ mode, initial, signInSlot, portraits, screenshotImport, 
             </button>
           ) : null
         }
-        below={
-          guestCard ? (
-            <div className="answer-signin">
-              <p>Sign in to import every rank from screenshots.</p>
-              {signInSlot}
-            </div>
-          ) : null
-        }
       />
 
-      {example ? null : guestCard ? (
+      {example || oneMessage ? null : guestCard ? (
         guestBanner(" banner-alt")
       ) : mode === "guest" ? (
         guestBanner("")
@@ -601,9 +641,17 @@ export function Board({ mode, initial, signInSlot, portraits, screenshotImport, 
         />
       ) : null}
 
-      {mode === "guest" && !guestCard && !example ? importSignIn : null}
+      {mode === "guest" && screenshotImport && !!signInSlot && !example && !oneMessage ? (
+        <div className="shot-bar">
+          <button type="button" className="btn primary" onClick={openSignIn}>
+            <CameraIcon />
+            Import from screenshots
+          </button>
+          <span>Sign in, then screenshot each page of the in-game Heroes tab and every rank fills in.</span>
+        </div>
+      ) : null}
 
-      {mode === "user" && screenshotImport && !example ? (
+      {mode === "user" && screenshotImport && !example && !oneMessage ? (
         <ScreenshotImport
           current={currentLevels}
           empty={untouched}
@@ -633,7 +681,7 @@ export function Board({ mode, initial, signInSlot, portraits, screenshotImport, 
           )}
           <div className="actions">
             {importCheck.answer === "right" ? (
-              <KofiLink from="import" className="btn primary">
+              <KofiLink from="import" className="link-btn">
                 <span aria-hidden="true">&#9829;</span> Support on Ko-fi
               </KofiLink>
             ) : (
@@ -659,19 +707,21 @@ export function Board({ mode, initial, signInSlot, portraits, screenshotImport, 
                 </button>
               </>
             )}
-            <button className="btn" onClick={() => setImportCheck(null)}>
-              {importCheck.answer === "right" ? "Close" : "Dismiss"}
+            <button type="button" className="toast-x banner-x" aria-label="Dismiss" onClick={() => setImportCheck(null)}>
+              ×
             </button>
           </div>
         </div>
       ) : null}
 
-      {showImport ? (
-        <div className="banner">
-          <p>
-            This browser has levels for <strong>{localCount} heroes</strong> from before you signed in. Import them into your
-            account? Heroes you already saved are left as they are.
-          </p>
+      {showImport && !importCheck ? (
+        <div className="banner accent browser-levels" role="region" aria-label="Levels found in this browser">
+          <div>
+            <h2>
+              You have {localCount} {localCount === 1 ? "level" : "levels"} saved in this browser
+            </h2>
+            <p>Add them to your account so they are on every device. Heroes you already saved are left as they are.</p>
+          </div>
           <div className="actions">
             <button
               className="btn primary"
@@ -686,7 +736,7 @@ export function Board({ mode, initial, signInSlot, portraits, screenshotImport, 
                 }
               }}
             >
-              Import levels
+              Add to my account
             </button>
             <button className="btn" onClick={() => setImportDismissed(true)}>
               Not now
@@ -831,6 +881,21 @@ export function Board({ mode, initial, signInSlot, portraits, screenshotImport, 
             {roleChips}
             <p className="filter-label">Goal</p>
             {goalChips}
+          </div>
+        </Dialog>
+      ) : null}
+
+      {signInOpen && signInSlot ? (
+        <Dialog title="Sign in" onClose={() => setSignInOpen(false)}>
+          <div className="signin-dialog">
+            <p>Keep your board on every device and any levels you set here come with you.</p>
+            {screenshotImport ? (
+              <p>
+                Once you are in, add screenshots or photos of the in-game <strong>Heroes</strong> tab and every rank fills in at
+                once, no typing.
+              </p>
+            ) : null}
+            {signInSlot}
           </div>
         </Dialog>
       ) : null}

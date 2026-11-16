@@ -842,3 +842,45 @@ html:is([data-saved-board], [data-example-done]):not([data-board-ready]) .board-
 .answer-signin .btn, .answer-signin button { background: var(--panel); border-color: var(--line-2); color: var(--ink); }
 .answer-signin form, .answer-signin > div { display: flex; flex-wrap: wrap; gap: 8px; }
 .answer-signin .btn.primary:hover:not(:disabled) { background: var(--panel-2); border-color: var(--ink-3); }
+
+/* ---------- nav: Feedback as a text link, sign in or the account menu ---------- */
+.nav-text { background: none; border: none; padding: 0 8px; height: 36px; font: inherit; font-size: 14px; font-weight: 500; color: var(--ink-2); cursor: pointer; text-decoration: none; }
+.nav-text:hover { color: var(--ink); text-decoration: underline; text-underline-offset: 3px; }
+.nav-signin { height: 36px; padding: 0 14px; font-size: 14px; }
+.acct { position: relative; }
+.acct-btn { width: 36px; height: 36px; padding: 0; border-radius: 50%; border: 1px solid var(--line-2); background: var(--panel-2); color: var(--ink); font-weight: 700; cursor: pointer; overflow: hidden; display: grid; place-items: center; }
+.acct-btn img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.acct-menu { position: absolute; right: 0; top: calc(100% + 8px); min-width: 180px; z-index: 70; padding: 12px; display: flex; flex-direction: column; gap: 10px; background: var(--panel); border: 1px solid var(--line-2); border-radius: 12px; box-shadow: 0 12px 32px rgb(0 0 0 / 0.2); }
+.acct-menu p { margin: 0; font-size: 14px; font-weight: 600; color: var(--ink); overflow-wrap: anywhere; }
+.acct-menu .btn { height: 44px; justify-content: center; }
+@media (max-width: 640px) {
+  .nav-text { display: none; }
+  .nav-signin { width: 38px; padding: 0; }
+  .nav-signin-label { display: none; }
+}
+.signin-dialog { display: flex; flex-direction: column; gap: 14px; }
+.signin-dialog p { margin: 0; color: var(--ink-2); font-size: 15px; }
+.signin-dialog form, .signin-dialog .actions { display: flex; flex-direction: column; gap: 8px; }
+.signin-dialog .btn { height: 48px; justify-content: center; font-size: 15px; background: var(--panel); border-color: var(--line-2); color: var(--ink); }
+
+.signin-dialog .btn { gap: 10px; }
+.signin-dialog button[value="discord"] { background: #5865f2; border-color: #5865f2; color: #fff; }
+.signin-dialog button[value="discord"]:hover:not(:disabled) { background: #4752c4; border-color: #4752c4; }
+.signin-dialog button[value="google"] { gap: 10px; background: #fff; border-color: #747775; color: #1f1f1f; }
+.signin-dialog button[value="google"]:hover:not(:disabled) { background: #f6f6f6; border-color: #747775; }
+.provider-icon { flex: none; }
+
+/* The import check closes with an X, like a toast. */
+.banner-x { color: var(--ink-2); opacity: 1; }
+.banner-x:hover { background: var(--panel-2); }
+.banner.import-check .actions { align-items: center; }
+
+.nav-signin { gap: 8px; }
+.nav-signin-icon { display: none; }
+@media (max-width: 640px) { .nav-signin-icon { display: block; } }
+
+/* Levels found in this browser: loud enough to notice, one gold button. */
+.banner.browser-levels { border-left: 4px solid var(--pop); padding: 18px 20px; gap: 16px 24px; }
+.banner.browser-levels h2 { margin: 0 0 4px; font-size: 18px; font-weight: 700; color: var(--ink); }
+.banner.browser-levels p { color: var(--ink-2); font-size: 15px; }
+.banner.browser-levels .btn { height: 44px; padding: 0 20px; font-size: 15px; }

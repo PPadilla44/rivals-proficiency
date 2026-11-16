@@ -14,7 +14,7 @@ import {
 import { clampLevel } from "@/lib/proficiency";
 import { CameraIcon } from "./bits";
 import Dialog from "./Dialog";
-import { deviceKind, track } from "@/lib/track";
+import { track } from "@/lib/track";
 
 type Props = {
   current: Record<string, number | undefined>;
@@ -27,9 +27,9 @@ type Props = {
 
 type Phase =
   | { kind: "closed" }
-  | { kind: "pick"; error?: string; wrongScreen?: boolean }
+  | { kind: "pick"; errors?: string[]; wrongScreen?: boolean }
   | { kind: "reading"; done: number; total: number }
-  | { kind: "review"; proposals: Proposal[]; unmatched: string[]; notes: string[]; wrongScreen: boolean };
+  | { kind: "review"; proposals: Proposal[]; unmatched: string[]; notes: string[]; wrongScreen: boolean; lists: Detection[][] };
 
 const MAX_FILES = 6;
 export const LS_CARD = "pb-import-card-hidden";
@@ -127,6 +127,16 @@ function ExampleScreen() {
   );
 }
 
+/** Wording for phones and desktops, picked by CSS so there is no swap after the page loads. */
+function Words({ touch, mouse }: { touch: string; mouse: string }) {
+  return (
+    <>
+      <span className="on-touch">{touch}</span>
+      <span className="on-mouse">{mouse}</span>
+    </>
+  );
+}
+
 function UploadIcon() {
   return (
     <svg className="drop-icon" viewBox="0 0 48 48" width="44" height="44" fill="none" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
@@ -136,7 +146,7 @@ function UploadIcon() {
   );
 }
 
-function ImportGuide({ mobile }: { mobile: boolean }) {
+function ImportGuide() {
   return (
     <div className="guide">
       <ExampleScreen />
@@ -156,7 +166,7 @@ function ImportGuide({ mobile }: { mobile: boolean }) {
         <li>
           <span className="step-n" aria-hidden="true">3</span>
           <span>
-            {mobile ? "Photograph" : "Screenshot"} the grid, then scroll and do it again for each page. Up to {MAX_FILES}.
+            <Words touch="Photograph" mouse="Screenshot" /> the grid, then scroll and do it again for each page. Up to {MAX_FILES}.
           </span>
         </li>
       </ol>
@@ -183,14 +193,13 @@ export function ScreenshotImport({ current, empty, quiet, onSave }: Props) {
   const runRef = useRef(0);
   // The big first-run card can be dismissed; remembered in this browser.
   const [cardHidden, setCardHidden] = useState(false);
-  const [mobile, setMobile] = useState(false);
+  // Pictures already read, kept when the player adds more from the review step.
+  const priorRef = useRef<Detection[][]>([]);
   useEffect(() => {
     try {
       // eslint-disable-next-line react-hooks/set-state-in-effect -- reading browser storage after mount
       if (localStorage.getItem(LS_CARD)) setCardHidden(true);
     } catch {}
-    // Phones get photo wording: the game runs on a TV or monitor, not on the phone.
-    setMobile(deviceKind() === "mobile");
   }, []);
   const currentRef = useRef(current);
   useEffect(() => {
@@ -200,7 +209,7 @@ export function ScreenshotImport({ current, empty, quiet, onSave }: Props) {
   const read = useCallback(async (files: File[]) => {
     const images = files.filter((f) => f.type.startsWith("image/")).slice(0, MAX_FILES);
     if (!images.length) {
-      setPhase({ kind: "pick", error: "Choose a screenshot image (PNG or JPG)." });
+      setPhase({ kind: "pick", errors: ["Choose a screenshot image (PNG or JPG)."] });
       return;
     }
     const run = ++runRef.current;
@@ -229,7 +238,7 @@ export function ScreenshotImport({ current, empty, quiet, onSave }: Props) {
       }),
     );
     if (run !== runRef.current) return;
-    const lists = results.flatMap((r) => (r.heroes ? [r.heroes] : []));
+    const lists = [...priorRef.current, ...results.flatMap((r) => (r.heroes ? [r.heroes] : []))];
     const notes = results.flatMap((r) => (r.note ? [r.note] : []));
     const { byHero, unmatched } = mergeDetections(lists);
     const proposals = buildProposals(byHero, currentRef.current);
@@ -237,13 +246,13 @@ export function ScreenshotImport({ current, empty, quiet, onSave }: Props) {
     if (!proposals.length) {
       setPhase({
         kind: "pick",
-        error: notes.join(" ") || "No hero levels were readable. Try a full-screen capture.",
+        errors: notes.length ? notes : ["No hero levels were readable. Try a full-screen capture."],
         wrongScreen,
       });
       return;
     }
     track("import_read", { screenshots: images.length, heroes: proposals.length, failed: notes.length, single: wrongScreen });
-    setPhase({ kind: "review", proposals, unmatched, notes, wrongScreen });
+    setPhase({ kind: "review", proposals, unmatched, notes, wrongScreen, lists });
   }, []);
 
   // Paste a screenshot straight from the clipboard while the panel is open.
@@ -284,20 +293,18 @@ export function ScreenshotImport({ current, empty, quiet, onSave }: Props) {
           </svg>
         </button>
         <div>
-          <h2>Fill in your whole board from screenshots</h2>
+          <h2>Fill in your whole board at once</h2>
           <p>
-            In game, open <strong>Heroes</strong>, then the <strong>Heroes</strong> tab at the top.{" "}
-            {mobile ? "Take a photo of your TV or monitor, one per page." : "Add a screenshot of each page, or a photo of your screen."}{" "}
-            Every hero&apos;s rank fills in at once, no typing.
+            <Words touch="Photograph" mouse="Screenshot" /> each page of the in-game <strong>Heroes</strong> tab and every
+            hero&apos;s rank fills in, no typing.
           </p>
         </div>
         <div className="shot-start-actions">
           <button className={quiet ? "btn" : "btn primary"} onClick={open}>
             <CameraIcon />
-            {mobile ? "Take or choose photos" : "Import from screenshots"}
+            Import from screenshots
           </button>
           <span>or tap any level below to type it in</span>
-          {mobile ? <span>Not at your game right now? Your board is saved to your account, so come back any time.</span> : null}
         </div>
       </section>
     ) : (
@@ -312,7 +319,10 @@ export function ScreenshotImport({ current, empty, quiet, onSave }: Props) {
 
   if (phase.kind === "closed") return launcher;
 
-  const close = () => setPhase({ kind: "closed" });
+  const close = () => {
+    priorRef.current = [];
+    setPhase({ kind: "closed" });
+  };
   const cancelRead = () => {
     runRef.current += 1;
     setPhase({ kind: "pick" });
@@ -336,7 +346,7 @@ export function ScreenshotImport({ current, empty, quiet, onSave }: Props) {
               <>
                 <button type="button" className="btn primary" onClick={() => input.current?.click()}>
                   <CameraIcon />
-                  {mobile ? "Take or choose photos" : "Choose pictures"}
+                  {phase.kind === "pick" && phase.errors?.length ? "Try again" : "Choose pictures"}
                 </button>
                 <button type="button" className="btn" onClick={close}>
                   Cancel
@@ -353,12 +363,14 @@ export function ScreenshotImport({ current, empty, quiet, onSave }: Props) {
               <span className="dots" aria-hidden="true" />
             </p>
           ) : null}
-          {phase.kind === "pick" && phase.error ? (
-            <p className="danger-error" role="alert">
-              {phase.error}
-            </p>
+          {phase.kind === "pick" && phase.errors?.length ? (
+            <ul className="shot-errors" role="alert">
+              {phase.errors.map((e) => (
+                <li key={e}>{e}</li>
+              ))}
+            </ul>
           ) : null}
-          <ImportGuide mobile={mobile} />
+          <ImportGuide />
           <div
             className={`drop${dragging ? " over" : ""}${reading ? "" : " clickable"}`}
             onClick={(e) => {
@@ -387,7 +399,7 @@ export function ScreenshotImport({ current, empty, quiet, onSave }: Props) {
                   </>
                 )}
                 <p className="muted">
-                  {mobile ? "Straight on, the whole screen in the picture. " : ""}Pictures are read once and not stored.
+                  <span className="on-touch">Straight on, the whole screen in the picture. </span>Pictures are read once and not stored.
                 </p>
               </>
             )}
@@ -410,7 +422,7 @@ export function ScreenshotImport({ current, empty, quiet, onSave }: Props) {
     );
   }
 
-  const { proposals, unmatched, notes, wrongScreen } = phase;
+  const { proposals, unmatched, notes, wrongScreen, lists } = phase;
   const chosen = proposals.filter((p) => p.selected && p.proposed !== (p.current ?? 1));
   const update = (heroId: string, patch: Partial<Proposal>) =>
     setPhase({ ...phase, proposals: proposals.map((p) => (p.heroId === heroId ? { ...p, ...patch } : p)) });
@@ -421,7 +433,6 @@ export function ScreenshotImport({ current, empty, quiet, onSave }: Props) {
       {launcher}
       <Dialog
         title="Check these ranks"
-        badge={`${proposals.length} read, ${changes.length} different`}
         onClose={close}
         width="media"
         dirty={!saving}
@@ -444,15 +455,22 @@ export function ScreenshotImport({ current, empty, quiet, onSave }: Props) {
             >
               {saving ? "Saving" : chosen.length ? `Save ${chosen.length} level${chosen.length === 1 ? "" : "s"}` : "Nothing to change"}
             </button>
-            <button className="btn" onClick={() => setPhase({ kind: "pick" })} disabled={saving}>
-              Try other screenshots
-            </button>
-            <button className="btn" onClick={close} disabled={saving}>
-              Cancel
+            <button
+              className="btn"
+              onClick={() => {
+                priorRef.current = lists;
+                setPhase({ kind: "pick" });
+              }}
+              disabled={saving}
+            >
+              Add more pictures
             </button>
           </>
         }
       >
+        <p className="shot-count">
+          {proposals.length} {proposals.length === 1 ? "hero" : "heroes"} read, {changes.length} changed.
+        </p>
         {wrongScreen ? <WrongScreenHint /> : null}
         <p className="muted">Each hero is set to the first level of its rank (Lord becomes 20) unless your saved level is already inside it. Tap a level afterwards to set it exactly.</p>
         {notes.length ? (
@@ -476,7 +494,7 @@ export function ScreenshotImport({ current, empty, quiet, onSave }: Props) {
               <span className="now">
                 {p.current == null ? "not set" : `now ${p.current}`}
                 {p.status === "lower" ? (
-                  <em title="Lower than your saved level. Left unchecked in case the screenshot was misread."> lower than saved</em>
+                  <em> lower than saved, left unchecked</em>
                 ) : null}
               </span>
               <span className="to">

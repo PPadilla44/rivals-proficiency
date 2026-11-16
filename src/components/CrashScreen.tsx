@@ -21,7 +21,7 @@ export function CrashScreen({ error, retry }: { error: Error & { digest?: string
         <div>
           <h1 className="page-title">Something went wrong</h1>
           <p className="sub">
-            This page hit an error and I&apos;ve been told. Saved levels are safe. Try again, or reload the page.
+            This page hit an error. Levels you already saved are safe, but a change you made a moment ago may not have saved. Try again, or reload the page.
           </p>
         </div>
       </header>
@@ -33,6 +33,11 @@ export function CrashScreen({ error, retry }: { error: Error & { digest?: string
         {/* eslint-disable-next-line @next/next/no-html-link-for-pages */}
         <a className="btn" href="/">
           Back to the board
+        </a>
+        {/* A full page load too: the feedback form opens from the #feedback link on the board. */}
+        {/* eslint-disable-next-line @next/next/no-html-link-for-pages */}
+        <a className="btn" href="/#feedback">
+          Tell me what happened
         </a>
       </div>
     </div>

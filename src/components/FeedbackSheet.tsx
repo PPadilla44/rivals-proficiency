@@ -2,7 +2,7 @@
 
 import { useEffect, useId, useRef, useState } from "react";
 import { sendFeedbackAction } from "@/app/actions";
-import { FEEDBACK_KINDS, FEEDBACK_KIND_LABEL, FEEDBACK_LIMITS, type FeedbackKind } from "@/lib/feedback-shared";
+import { FEEDBACK_KINDS, FEEDBACK_KIND_LABEL, FEEDBACK_LIMITS, type FeedbackKind, type FeedbackSource } from "@/lib/feedback-shared";
 import { deviceKind, visitorId } from "@/lib/track";
 import Dialog from "./Dialog";
 
@@ -17,7 +17,7 @@ const HINT: Record<FeedbackKind, string> = {
  * Works for guests and signed-in players. A hidden field and the time the form was open
  * tell the server a script filled it in.
  */
-export default function FeedbackSheet({ onClose, initialKind }: { onClose: () => void; initialKind?: FeedbackKind }) {
+export default function FeedbackSheet({ onClose, initialKind, from }: { onClose: () => void; initialKind?: FeedbackKind; from?: FeedbackSource }) {
   const [kind, setKind] = useState<FeedbackKind>(initialKind ?? "idea");
   const [message, setMessage] = useState("");
   const [email, setEmail] = useState("");
@@ -36,7 +36,11 @@ export default function FeedbackSheet({ onClose, initialKind }: { onClose: () =>
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();
-    if (state === "sending" || tooShort || left < 0) return;
+    if (state === "sending" || left < 0) return;
+    if (tooShort) {
+      setError("Add a few more words so I can act on it.");
+      return;
+    }
     setState("sending");
     setError(null);
     try {
@@ -56,7 +60,7 @@ export default function FeedbackSheet({ onClose, initialKind }: { onClose: () =>
     }
   }
 
-  const canSend = state !== "sending" && !tooShort && left >= 0;
+  const canSend = state !== "sending" && left >= 0;
 
   return (
     <Dialog
@@ -97,8 +101,8 @@ export default function FeedbackSheet({ onClose, initialKind }: { onClose: () =>
               <textarea
                 data-autofocus
                 value={message}
-                onChange={(e) => setMessage(e.target.value)}
-                placeholder={HINT[kind]}
+                onChange={(e) => { setMessage(e.target.value); if (error) setError(null); }}
+                placeholder={from === "import" ? "Which hero read wrong, and what rank should it be?" : HINT[kind]}
                 rows={5}
                 maxLength={FEEDBACK_LIMITS.maxChars + 200}
                 required

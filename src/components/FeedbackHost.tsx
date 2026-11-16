@@ -50,7 +50,7 @@ export default function FeedbackHost() {
   if (!req) return null;
   return (
     <Suspense fallback={null}>
-      <FeedbackSheet key={req.n} initialKind={req.kind} onClose={close} />
+      <FeedbackSheet key={req.n} initialKind={req.kind} from={req.from} onClose={close} />
     </Suspense>
   );
 }

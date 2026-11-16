@@ -896,4 +896,5 @@ html:is([data-saved-board], [data-example-done]):not([data-board-ready]) .board-
 @media (min-width: 641px) { .enter-toolbar { display: inline-flex; margin-left: auto; } }
 /* Phone, first visit with nothing set: the card is taller while it holds the "Enter my levels" button. Keep that
    height after the first tap so the list under the player's finger does not jump up. */
-@media (max-width: 640px) { .answer.start { min-height: 184px; } }
+@media (max-width: 640px) { .answer.start { min-height: 184px; } .answer.sample-height { min-height: 222px; } }
+.ghost-slot { display: contents; visibility: hidden; }

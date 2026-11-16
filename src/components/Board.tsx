@@ -633,6 +633,7 @@ export function Board({ mode, initial, signInSlot, portraits, screenshotImport, 
         linked={syncEnabled && !!board?.link}
         kind={example ? "sample" : guestCard ? "start" : "own"}
         anyLevel={rows.some((r) => r.effective > 1)}
+        fromSample={swapped}
         onEnter={
           example
             ? () => startOwnBoard("button")
@@ -653,21 +654,25 @@ export function Board({ mode, initial, signInSlot, portraits, screenshotImport, 
         }
       />
 
-      {example || oneMessage ? null : guestCard ? (
-        guestBanner(rows.some((r) => r.effective > 1) ? " banner-alt on" : " banner-alt")
+      {/* The sample board shows these same rows (or holds their space), so swapping to your own board
+          does not push the list down under the first tap. */}
+      {oneMessage ? null : guestCard || (example && mode === "guest") ? (
+        guestBanner(!example && rows.some((r) => r.effective > 1) ? " banner-alt on" : " banner-alt")
       ) : mode === "guest" ? (
         guestBanner("")
       ) : syncEnabled && board ? (
-        <Account
-          link={board.link}
-          busy={busy}
-          onLink={(query) => withBusy(() => linkPlayerAction(query))}
-          onSync={() => withBusy(() => syncAction())}
-          onUnlink={() => withBusy(() => unlinkPlayerAction())}
-        />
+        <div className={example ? "ghost-slot" : undefined} inert={example}>
+          <Account
+            link={board.link}
+            busy={busy}
+            onLink={(query) => withBusy(() => linkPlayerAction(query))}
+            onSync={() => withBusy(() => syncAction())}
+            onUnlink={() => withBusy(() => unlinkPlayerAction())}
+          />
+        </div>
       ) : null}
 
-      {mode === "guest" && screenshotImport && !!signInSlot && !example && !oneMessage ? (
+      {mode === "guest" && screenshotImport && !!signInSlot && !oneMessage ? (
         <div className="shot-bar">
           <button type="button" className="btn" onClick={openSignIn}>
             <CameraIcon />
@@ -677,10 +682,11 @@ export function Board({ mode, initial, signInSlot, portraits, screenshotImport, 
         </div>
       ) : null}
 
-      {mode === "user" && screenshotImport && !example && !oneMessage ? (
+      {mode === "user" && screenshotImport && !oneMessage ? (
         <ScreenshotImport
           current={currentLevels}
           empty={untouched}
+          quiet={example}
           onSave={async (updates) => {
             const ok = await withBusy(() => saveLevelsAction(updates));
             if (ok) {

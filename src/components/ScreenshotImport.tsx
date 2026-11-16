@@ -20,6 +20,8 @@ type Props = {
   current: Record<string, number | undefined>;
   /** No hero is set yet: show the import as the first step instead of a small bar. */
   empty?: boolean;
+  /** The sample board is showing and has its own gold button, so the launcher stays plain. */
+  quiet?: boolean;
   onSave: (updates: { heroId: string; level: number; approx: boolean }[]) => Promise<boolean>;
 };
 
@@ -172,7 +174,7 @@ function WrongScreenHint() {
   );
 }
 
-export function ScreenshotImport({ current, empty, onSave }: Props) {
+export function ScreenshotImport({ current, empty, quiet, onSave }: Props) {
   const [phase, setPhase] = useState<Phase>({ kind: "closed" });
   const [saving, setSaving] = useState(false);
   const [dragging, setDragging] = useState(false);
@@ -290,7 +292,7 @@ export function ScreenshotImport({ current, empty, onSave }: Props) {
           </p>
         </div>
         <div className="shot-start-actions">
-          <button className="btn primary" onClick={open}>
+          <button className={quiet ? "btn" : "btn primary"} onClick={open}>
             <CameraIcon />
             {mobile ? "Take or choose photos" : "Import from screenshots"}
           </button>

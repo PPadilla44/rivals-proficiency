@@ -419,7 +419,7 @@ footer.foot .foot-kofi:hover { color: var(--pop-ink); text-decoration: none; }
 .shot-bar span { font-size: 13.5px; color: var(--ink-3); }
 .shot { gap: 14px; }
 .shot .muted { margin: 0; color: var(--ink-3); font-size: 13.5px; }
-.shot-note { margin: 0; padding: 10px 12px; border-radius: 8px; background: color-mix(in srgb, var(--pop) 10%, var(--panel)); border: 1px solid color-mix(in srgb, var(--pop) 45%, var(--line)); font-size: 13.5px; color: var(--ink-2); }
+.shot-note { margin: 0; padding: 2px 0 2px 12px; border-left: 3px solid var(--line-2); font-size: 13.5px; color: var(--ink-2); }
 .shot-note strong { color: var(--ink); }
 .drop { border: 1.5px dashed var(--line-2); border-radius: 10px; background: var(--panel-2); padding: 26px 18px; text-align: center; display: grid; gap: 8px; transition: background 0.15s, border-color 0.15s; }
 .drop.over { border-color: var(--pop); background: color-mix(in srgb, var(--pop) 14%, var(--panel)); }
@@ -531,8 +531,8 @@ footer.foot .foot-kofi:hover { color: var(--pop-ink); text-decoration: none; }
 .shot-start-actions { display: grid; justify-items: start; gap: 6px; }
 .shot-start-actions .btn { display: inline-flex; align-items: center; gap: 8px; }
 .shot-start-actions span { font-size: 13px; color: var(--ink-3); }
-.shot-start { position: relative; padding-right: 44px; }
-.shot-start-x { position: absolute; top: 8px; right: 8px; width: 28px; height: 28px; display: grid; place-items: center; border: 0; border-radius: 6px; background: transparent; color: var(--ink-3); cursor: pointer; }
+.shot-start { position: relative; padding-right: 48px; }
+.shot-start-x { position: absolute; top: 0; right: 0; width: 44px; height: 44px; display: grid; place-items: center; border: 0; border-radius: 10px; background: transparent; color: var(--ink-3); cursor: pointer; }
 .shot-start-x:hover { color: var(--ink); background: color-mix(in srgb, var(--ink) 8%, transparent); }
 .shot-start-x:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
 .shot-start-actions .actions { display: flex; flex-wrap: wrap; gap: 10px; }
@@ -697,7 +697,7 @@ footer.foot .foot-kofi:hover { color: var(--pop-ink); text-decoration: none; }
 .guide-art .ex-nav { fill: color-mix(in srgb, var(--ink) 12%, var(--panel)); }
 .guide-art .ex-label { fill: var(--ink-3); font: 700 9px var(--body); letter-spacing: 0.04em; }
 .guide-art .ex-label.on { fill: var(--ink); }
-.guide-art .ex-pop { fill: var(--pop); }
+.guide-art .ex-pop { fill: var(--ink); }
 .guide-art .ex-card { fill: color-mix(in srgb, var(--ink) 10%, var(--panel)); }
 .guide-art .ex-strip { fill: color-mix(in srgb, var(--ink) 30%, var(--panel)); }
 .guide-art .ex-name { fill: var(--panel); }
@@ -710,7 +710,7 @@ footer.foot .foot-kofi:hover { color: var(--pop-ink); text-decoration: none; }
 }
 .drop.clickable { cursor: pointer; }
 .drop.clickable:hover { border-color: var(--pop); background: color-mix(in srgb, var(--pop) 7%, var(--panel-2)); }
-.drop-icon { justify-self: center; color: var(--pop); }
+.drop-icon { justify-self: center; color: var(--ink-3); }
 .drop .btn { display: inline-flex; align-items: center; gap: 8px; }
 .drop-title { font-weight: 700; font-size: 17px; color: var(--ink) !important; }
 
@@ -898,3 +898,14 @@ html:is([data-saved-board], [data-example-done]):not([data-board-ready]) .board-
    height after the first tap so the list under the player's finger does not jump up. */
 @media (max-width: 640px) { .answer.start { min-height: 184px; } .answer.sample-height { min-height: 222px; } }
 .ghost-slot { display: contents; visibility: hidden; }
+
+/* Import dialog: wording for phones and desktops is chosen here, not after load. */
+.on-touch { display: none; }
+@media (hover: none) and (pointer: coarse) { .on-touch { display: inline; } .on-mouse { display: none; } }
+.shot-errors { margin: 0; padding: 0; list-style: none; display: grid; gap: 4px; color: var(--bad); font-weight: 600; font-size: 14.5px; }
+.shot-count { margin: 0; font-size: 14px; color: var(--ink-2); font-weight: 600; }
+@media (max-width: 640px) {
+  .shot-row { padding: 10px 12px; grid-template-columns: 28px minmax(0, 1fr) auto; }
+  .shot-row input[type="checkbox"] { width: 24px; height: 24px; }
+  .shot-row .to input { height: 44px; width: 64px; font-size: 16px; }
+}

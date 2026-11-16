@@ -22,6 +22,7 @@ import { openFeedback } from "@/lib/feedback-open";
 import { KofiLink } from "./KofiLink";
 import { armFor, showsExample, type ExampleMode } from "@/lib/ab";
 import { EXAMPLE_BOARD } from "@/lib/example-board";
+import { OFFLINE_SAVE_MESSAGE, requeueFailed } from "@/lib/save-queue";
 import { SHARE_MIN_LORD, lordCount, shareEligible } from "@/lib/share-card";
 
 // The share sheet and its drawing code load only when someone opens it.
@@ -73,7 +74,7 @@ export function Board({ mode, initial, signInSlot, portraits, screenshotImport, 
   const [role, setRole] = useState<Role | "all">("all");
   const [goal, setGoal] = useState<Goal>("all");
   const [rank, setRank] = useState<number | null>(null);
-  const [toast, setToast] = useState<{ text: string; error?: boolean; long?: boolean; action?: { label: string; run: () => void } } | null>(null);
+  const [toast, setToast] = useState<{ text: string; error?: boolean; long?: boolean; sticky?: boolean; action?: { label: string; run: () => void } } | null>(null);
   const [shareOpen, setShareOpen] = useState<"button" | "nudge" | "idle" | null>(null);
   // Set once the player changes something this visit, so levels loading in don't count as progress.
   const userChanged = useRef(false);
@@ -105,6 +106,10 @@ export function Board({ mode, initial, signInSlot, portraits, screenshotImport, 
 
   const pending = useRef(new Map<string, number>());
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  // Set while levels are waiting to be saved again after a failed save.
+  const saveFailed = useRef(false);
+  const retryEstimate = useRef(false);
+  const flushRef = useRef<(fromEstimate?: boolean) => Promise<void>>(async () => {});
 
   // Guest mode keeps levels in this browser. Signed-in users may import them.
   useEffect(() => {
@@ -227,7 +232,7 @@ export function Board({ mode, initial, signInSlot, portraits, screenshotImport, 
   }, []);
 
   useEffect(() => {
-    if (!toast) return;
+    if (!toast || toast.sticky) return;
     const t = setTimeout(() => setToast(null), toast.action ? 9000 : toast.error || toast.long ? 6000 : 3500);
     return () => clearTimeout(t);
   }, [toast]);
@@ -254,10 +259,48 @@ export function Board({ mode, initial, signInSlot, portraits, screenshotImport, 
       const updates = [...pending.current].map(([heroId, level]) => ({ heroId, level }));
       pending.current.clear();
       if (!updates.length) return;
-      apply(await saveLevelsAction(updates, fromEstimate));
+      let res: ActionResult;
+      try {
+        res = await saveLevelsAction(updates, fromEstimate);
+      } catch {
+        // The request never reached the server (offline, dropped connection).
+        res = { ok: false, error: OFFLINE_SAVE_MESSAGE };
+      }
+      if (!res.ok) {
+        // Keep the levels queued: the board already shows them, so they must not be forgotten.
+        requeueFailed(pending.current, updates);
+        saveFailed.current = true;
+        retryEstimate.current = fromEstimate;
+        setToast({ text: res.error, error: true, sticky: true, action: { label: "Retry", run: () => void flushRef.current(retryEstimate.current) } });
+        return;
+      }
+      if (saveFailed.current && !pending.current.size) {
+        saveFailed.current = false;
+        setToast((t) => (t?.sticky ? null : t));
+      }
+      apply(res);
     },
     [apply],
   );
+  useEffect(() => {
+    flushRef.current = flush;
+  }, [flush]);
+
+  // Levels left over from a failed save are tried again when the connection returns or the tab is shown.
+  useEffect(() => {
+    const retry = () => {
+      if (pending.current.size && !timer.current) void flush(retryEstimate.current);
+    };
+    const onVisible = () => {
+      if (document.visibilityState === "visible") retry();
+    };
+    window.addEventListener("online", retry);
+    document.addEventListener("visibilitychange", onVisible);
+    return () => {
+      window.removeEventListener("online", retry);
+      document.removeEventListener("visibilitychange", onVisible);
+    };
+  }, [flush]);
 
   const setLevel = useCallback(
     (heroId: string, level: number, fromEstimate = false, held = false) => {
@@ -819,11 +862,16 @@ export function Board({ mode, initial, signInSlot, portraits, screenshotImport, 
       </div>
 
       {toast ? (
-        <div className={`toast${toast.error ? " error" : ""}${toast.action ? " with-action" : ""}`} role="status">
+        <div className={`toast${toast.error ? " error" : ""}${toast.action ? " with-action" : ""}`} role={toast.error ? "alert" : "status"}>
           <span>{toast.text}</span>
           {toast.action ? (
             <button type="button" className="btn small primary" onClick={toast.action.run}>
               {toast.action.label}
+            </button>
+          ) : null}
+          {toast.sticky ? (
+            <button type="button" className="btn small" onClick={() => setToast(null)}>
+              Dismiss
             </button>
           ) : null}
         </div>

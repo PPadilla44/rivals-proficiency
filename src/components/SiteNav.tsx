@@ -17,7 +17,14 @@ const LINKS = [
 type Who = { name: string | null; image: string | null };
 const LS_WHO = "pb-who";
 
-/** Signed-in state, read after the page loads so the nav never makes a page dynamic. */
+/** Tell the nav the sign-in state may have changed (the board does this when it loads as a different user). */
+export const SESSION_CHANGED_EVENT = "pb:session";
+
+/**
+ * Signed-in state, read in the browser so the nav never makes a page dynamic. It is read again when the
+ * board says the player changed (signing in without leaving the page, such as the test-user login does)
+ * and when the tab comes back into view.
+ */
 function useWho(enabled: boolean): Who | null {
   const [who, setWho] = useState<Who | null>(null);
   useEffect(() => {
@@ -28,21 +35,31 @@ function useWho(enabled: boolean): Who | null {
       if (hint) setWho(JSON.parse(hint));
     } catch {}
     let live = true;
-    fetch("/api/auth/session", { credentials: "same-origin" })
-      .then((r) => (r.ok ? r.json() : null))
-      .then((s) => {
-        if (!live) return;
-        const u = s?.user;
-        const next = u ? { name: u.name ?? null, image: u.image ?? null } : null;
-        setWho(next);
-        try {
-          if (next) localStorage.setItem(LS_WHO, JSON.stringify(next));
-          else localStorage.removeItem(LS_WHO);
-        } catch {}
-      })
-      .catch(() => {});
+    const read = () => {
+      fetch("/api/auth/session", { credentials: "same-origin", cache: "no-store" })
+        .then((r) => (r.ok ? r.json() : null))
+        .then((sess) => {
+          if (!live) return;
+          const u = sess?.user;
+          const next = u ? { name: u.name ?? null, image: u.image ?? null } : null;
+          setWho(next);
+          try {
+            if (next) localStorage.setItem(LS_WHO, JSON.stringify(next));
+            else localStorage.removeItem(LS_WHO);
+          } catch {}
+        })
+        .catch(() => {});
+    };
+    const onVisible = () => {
+      if (document.visibilityState === "visible") read();
+    };
+    read();
+    window.addEventListener(SESSION_CHANGED_EVENT, read);
+    document.addEventListener("visibilitychange", onVisible);
     return () => {
       live = false;
+      window.removeEventListener(SESSION_CHANGED_EVENT, read);
+      document.removeEventListener("visibilitychange", onVisible);
     };
   }, [enabled]);
   return who;

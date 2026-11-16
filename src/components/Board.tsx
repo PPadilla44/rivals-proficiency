@@ -22,6 +22,7 @@ import { openFeedback } from "@/lib/feedback-open";
 import { KofiLink } from "./KofiLink";
 import Dialog from "./Dialog";
 import { SIGNIN_OPEN_EVENT, openSignIn } from "@/lib/signin-open";
+import { SESSION_CHANGED_EVENT } from "./SiteNav";
 import { armFor, showsExample, type ExampleMode } from "@/lib/ab";
 import { EXAMPLE_BOARD } from "@/lib/example-board";
 import { OFFLINE_SAVE_MESSAGE, requeueFailed } from "@/lib/save-queue";
@@ -98,6 +99,11 @@ export function Board({ mode, initial, signInSlot, portraits, screenshotImport, 
     } catch {}
     return () => window.removeEventListener(SIGNIN_OPEN_EVENT, open);
   }, []);
+  // Signing in can happen without a page load (the server redirects back here), and the nav lives above
+  // this page, so tell it to read the session again whenever this board is for a different player.
+  useEffect(() => {
+    window.dispatchEvent(new Event(SESSION_CHANGED_EVENT));
+  }, [mode]);
   const [busy, setBusy] = useState(false);
   const [guestLevels, setGuestLevels] = useState<Record<string, number>>({});
   const [loadVersion, setLoadVersion] = useState(0);

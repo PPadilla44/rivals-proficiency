@@ -14,6 +14,7 @@ import { buildRows, GOALS, SORTS, type Goal, type HeroRow, type Sort } from "@/l
 import { ROLE_SORT, type Role } from "@/lib/heroes";
 import { CHAMPION, LORD, RANKS, clampLevel, tierOf } from "@/lib/proficiency";
 import AnswerCard from "./AnswerCard";
+import { CameraIcon } from "./bits";
 import { HeroCard, HeroLine } from "./HeroViews";
 import { Account } from "./Account";
 import { LS_CARD, ScreenshotImport } from "./ScreenshotImport";
@@ -48,7 +49,6 @@ type Props = {
   /** Server can read screenshots (vision key configured). */
   screenshotImport: boolean;
   /** Guest-only: a button that signs in and leads to the screenshot import. */
-  importSignIn?: ReactNode;
   /** Playtime sync is available (stats API key configured). */
   syncEnabled: boolean;
   /** Whether first-time visitors see an example board (the example-board flag). */
@@ -69,7 +69,7 @@ function readLocal(): Record<string, number> {
   }
 }
 
-export function Board({ mode, initial, signInSlot, portraits, screenshotImport, importSignIn, syncEnabled, exampleMode = "off" }: Props) {
+export function Board({ mode, initial, signInSlot, portraits, screenshotImport, syncEnabled, exampleMode = "off" }: Props) {
   const [board, setBoard] = useState<BoardData>(initial ?? EMPTY);
   const [q, setQ] = useState("");
   const [sort, setSort] = useState<Sort>(mode === "guest" && exampleMode === "on" ? "lord" : "level-desc");
@@ -610,7 +610,7 @@ export function Board({ mode, initial, signInSlot, portraits, screenshotImport, 
         onEnter={
           example
             ? () => startOwnBoard("button")
-            : guestCard && !swapped
+            : guestCard && !swapped && !rows.some((r) => r.effective > 1)
               ? () => {
                   document.getElementById("q")?.scrollIntoView({ block: "center" });
                   document.getElementById("q")?.focus();
@@ -622,13 +622,6 @@ export function Board({ mode, initial, signInSlot, portraits, screenshotImport, 
             <button type="button" className="btn" onClick={() => openShare("button")}>
               <ShareIcon />
               Share my board
-            </button>
-          ) : null
-        }
-        below={
-          guestCard ? (
-            <button type="button" className="link-btn answer-signin" onClick={openSignIn}>
-              Or sign in to import every rank from screenshots
             </button>
           ) : null
         }
@@ -648,7 +641,15 @@ export function Board({ mode, initial, signInSlot, portraits, screenshotImport, 
         />
       ) : null}
 
-      {mode === "guest" && !guestCard && !example && !oneMessage ? importSignIn : null}
+      {mode === "guest" && screenshotImport && !!signInSlot && !example && !oneMessage ? (
+        <div className="shot-bar">
+          <button type="button" className="btn primary" onClick={openSignIn}>
+            <CameraIcon />
+            Import from screenshots
+          </button>
+          <span>Sign in, then screenshot each page of the in-game Heroes tab and every rank fills in.</span>
+        </div>
+      ) : null}
 
       {mode === "user" && screenshotImport && !example && !oneMessage ? (
         <ScreenshotImport
@@ -887,10 +888,13 @@ export function Board({ mode, initial, signInSlot, portraits, screenshotImport, 
       {signInOpen && signInSlot ? (
         <Dialog title="Sign in" onClose={() => setSignInOpen(false)}>
           <div className="signin-dialog">
-            <p>
-              Keep your board on every device
-              {screenshotImport ? " and import your ranks from screenshots of the in-game Heroes tab" : ""}.
-            </p>
+            <p>Keep your board on every device and any levels you set here come with you.</p>
+            {screenshotImport ? (
+              <p>
+                Once you are in, add screenshots or photos of the in-game <strong>Heroes</strong> tab and every rank fills in at
+                once, no typing.
+              </p>
+            ) : null}
             {signInSlot}
           </div>
         </Dialog>

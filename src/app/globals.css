@@ -862,3 +862,8 @@ html:is([data-saved-board], [data-example-done]):not([data-board-ready]) .board-
 .signin-dialog form, .signin-dialog .actions { display: flex; flex-direction: column; gap: 8px; }
 .signin-dialog .btn { height: 48px; justify-content: center; font-size: 15px; background: var(--panel); border-color: var(--line-2); color: var(--ink); }
 .signin-dialog .btn:first-child { background: var(--ink); border-color: var(--ink); color: var(--panel); }
+
+/* The import check closes with an X, like a toast. */
+.banner-x { color: var(--ink-2); opacity: 1; }
+.banner-x:hover { background: var(--panel-2); }
+.banner.import-check .actions { align-items: center; }

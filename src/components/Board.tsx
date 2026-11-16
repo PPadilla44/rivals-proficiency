@@ -509,6 +509,9 @@ export function Board({ mode, initial, signInSlot, portraits, screenshotImport, 
   const serverCount = Object.keys(board.levels).length;
   const [importDismissed, setImportDismissed] = useState(false);
   const showImport = mode === "user" && localCount > 0 && !importDismissed && serverCount < localCount;
+  // One message above the board at a time: the import check first, then levels found in this browser,
+  // and only then the usual account, sign-in or import cards.
+  const oneMessage = !!importCheck || showImport;
 
   // A guest with nothing set yet sees the screenshot import first, as a sign-in card.
   // "Untouched" is decided when the board loads and then held for the visit. If the first tap
@@ -608,7 +611,7 @@ export function Board({ mode, initial, signInSlot, portraits, screenshotImport, 
         }
       />
 
-      {example ? null : guestCard ? (
+      {example || oneMessage ? null : guestCard ? (
         guestBanner(" banner-alt")
       ) : mode === "guest" ? (
         guestBanner("")
@@ -622,9 +625,9 @@ export function Board({ mode, initial, signInSlot, portraits, screenshotImport, 
         />
       ) : null}
 
-      {mode === "guest" && !guestCard && !example ? importSignIn : null}
+      {mode === "guest" && !guestCard && !example && !oneMessage ? importSignIn : null}
 
-      {mode === "user" && screenshotImport && !example ? (
+      {mode === "user" && screenshotImport && !example && !oneMessage ? (
         <ScreenshotImport
           current={currentLevels}
           empty={untouched}
@@ -654,7 +657,7 @@ export function Board({ mode, initial, signInSlot, portraits, screenshotImport, 
           )}
           <div className="actions">
             {importCheck.answer === "right" ? (
-              <KofiLink from="import" className="btn primary">
+              <KofiLink from="import" className="link-btn">
                 <span aria-hidden="true">&#9829;</span> Support on Ko-fi
               </KofiLink>
             ) : (
@@ -680,14 +683,14 @@ export function Board({ mode, initial, signInSlot, portraits, screenshotImport, 
                 </button>
               </>
             )}
-            <button className="btn" onClick={() => setImportCheck(null)}>
-              {importCheck.answer === "right" ? "Close" : "Dismiss"}
+            <button type="button" className="toast-x banner-x" aria-label="Dismiss" onClick={() => setImportCheck(null)}>
+              ×
             </button>
           </div>
         </div>
       ) : null}
 
-      {showImport ? (
+      {showImport && !importCheck ? (
         <div className="banner">
           <p>
             This browser has levels for <strong>{localCount} heroes</strong> from before you signed in. Import them into your
@@ -707,7 +710,7 @@ export function Board({ mode, initial, signInSlot, portraits, screenshotImport, 
                 }
               }}
             >
-              Import levels
+              Add to my account
             </button>
             <button className="btn" onClick={() => setImportDismissed(true)}>
               Not now

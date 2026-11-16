@@ -606,10 +606,6 @@ export function Board({ mode, initial, signInSlot, portraits, screenshotImport, 
               setEmptyAtLoad(false);
               setImportCheck({ count: updates.length, answer: null });
             }
-            if (ok)
-              setToast({
-                text: `Saved ${updates.length} rank${updates.length === 1 ? "" : "s"}. Each starts at its rank's first level; tap a level to set it exactly.`,
-              });
             return ok;
           }}
         />

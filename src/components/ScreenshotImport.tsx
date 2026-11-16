@@ -177,6 +177,8 @@ export function ScreenshotImport({ current, empty, onSave }: Props) {
   const [saving, setSaving] = useState(false);
   const [dragging, setDragging] = useState(false);
   const input = useRef<HTMLInputElement>(null);
+  // Bumped when a reading is cancelled, so its late results are ignored.
+  const runRef = useRef(0);
   // The big first-run card can be dismissed; remembered in this browser.
   const [cardHidden, setCardHidden] = useState(false);
   const [mobile, setMobile] = useState(false);
@@ -199,6 +201,7 @@ export function ScreenshotImport({ current, empty, onSave }: Props) {
       setPhase({ kind: "pick", error: "Choose a screenshot image (PNG or JPG)." });
       return;
     }
+    const run = ++runRef.current;
     setPhase({ kind: "reading", done: 0, total: images.length });
     let done = 0;
     // Read all screenshots at once; each takes around ten seconds.
@@ -219,10 +222,11 @@ export function ScreenshotImport({ current, empty, onSave }: Props) {
           return { note: label + "Could not open that image." };
         } finally {
           done += 1;
-          setPhase({ kind: "reading", done, total: images.length });
+          if (run === runRef.current) setPhase({ kind: "reading", done, total: images.length });
         }
       }),
     );
+    if (run !== runRef.current) return;
     const lists = results.flatMap((r) => (r.heroes ? [r.heroes] : []));
     const notes = results.flatMap((r) => (r.note ? [r.note] : []));
     const { byHero, unmatched } = mergeDetections(lists);
@@ -307,17 +311,39 @@ export function ScreenshotImport({ current, empty, onSave }: Props) {
   if (phase.kind === "closed") return launcher;
 
   const close = () => setPhase({ kind: "closed" });
+  const cancelRead = () => {
+    runRef.current += 1;
+    setPhase({ kind: "pick" });
+  };
 
   if (phase.kind === "pick" || phase.kind === "reading") {
     const reading = phase.kind === "reading";
     return (
       <>
         {launcher}
-        <Dialog title="Import from screenshots" width="media" onClose={close} busy={reading}>
-          <p className="shot-note" role="note">
-            <strong>This reads ranks, not exact levels.</strong> Each hero starts at the first level of its rank (Lord becomes 20),
-            unless your saved level is already inside that rank. You can set exact levels afterwards.
-          </p>
+        <Dialog
+          title="Import from screenshots"
+          width="media"
+          onClose={close}
+          footer={
+            reading ? (
+              <button type="button" className="btn" onClick={cancelRead}>
+                Cancel
+              </button>
+            ) : (
+              <>
+                <button type="button" className="btn primary" onClick={() => input.current?.click()}>
+                  <CameraIcon />
+                  {mobile ? "Take or choose photos" : "Choose pictures"}
+                </button>
+                <button type="button" className="btn" onClick={close}>
+                  Cancel
+                </button>
+              </>
+            )
+          }
+        >
+          <p className="muted">Reads ranks, not exact levels: each hero starts at the first level of its rank. You can set exact levels afterwards.</p>
           <ImportGuide mobile={mobile} />
           <div
             className={`drop${dragging ? " over" : ""}${reading ? "" : " clickable"}`}
@@ -336,25 +362,14 @@ export function ScreenshotImport({ current, empty, onSave }: Props) {
               if (!reading) void read([...e.dataTransfer.files]);
             }}
           >
-            {reading ? (
-              <p className="drop-status" role="status">
-                Reading {phase.total > 1 ? `${phase.total} screenshots (${phase.done} done)` : "your screenshot"}
-                <span className="dots" aria-hidden="true" />
-              </p>
-            ) : (
+            {reading ? null : (
               <>
                 <UploadIcon />
                 {dragging ? (
                   <p className="drop-title">Drop to read</p>
                 ) : (
                   <>
-                    <p>
-                      <button type="button" className="btn primary">
-                        <CameraIcon />
-                        {mobile ? "Take or choose photos" : "Choose screenshots"}
-                      </button>
-                    </p>
-                    {mobile ? null : <p>or drop them here, or paste one</p>}
+                    <p className="drop-title">Drop pictures here, or paste one</p>
                   </>
                 )}
                 <p className="muted">
@@ -362,19 +377,25 @@ export function ScreenshotImport({ current, empty, onSave }: Props) {
                 </p>
               </>
             )}
-            <input
-              ref={input}
-              type="file"
-              accept="image/png,image/jpeg,image/webp"
-              multiple
-              hidden
-              onChange={(e) => {
-                const files = [...(e.target.files ?? [])];
-                e.target.value = "";
-                if (files.length) void read(files);
-              }}
-            />
           </div>
+          {reading ? (
+            <p className="drop-status" role="status">
+              Reading {phase.total > 1 ? `${phase.total} pictures (${phase.done} done)` : "your picture"}, about 10 seconds each
+              <span className="dots" aria-hidden="true" />
+            </p>
+          ) : null}
+          <input
+            ref={input}
+            type="file"
+            accept="image/png,image/jpeg,image/webp"
+            multiple
+            hidden
+            onChange={(e) => {
+              const files = [...(e.target.files ?? [])];
+              e.target.value = "";
+              if (files.length) void read(files);
+            }}
+          />
           {phase.kind === "pick" && phase.error ? (
             <p className="danger-error" role="alert">
               {phase.error}
@@ -430,12 +451,14 @@ export function ScreenshotImport({ current, empty, onSave }: Props) {
         }
       >
         {wrongScreen ? <WrongScreenHint /> : null}
-        <p className="shot-note" role="note">
-          <strong>Ranks, not exact levels.</strong> The Heroes tab only shows each hero&apos;s rank badge, so a hero is set to the
-          first level of its rank (Lord becomes 20) unless your saved level is already inside that rank. Afterwards, tap a level to
-          set it exactly; the in-game hero page shows the real number.
-        </p>
-        {notes.length ? <p className="muted">{notes.join(" ")}</p> : null}
+        <p className="muted">Each hero is set to the first level of its rank (Lord becomes 20) unless your saved level is already inside it. Tap a level afterwards to set it exactly.</p>
+        {notes.length ? (
+          <ul className="muted shot-fails">
+            {notes.map((n) => (
+              <li key={n}>{n}</li>
+            ))}
+          </ul>
+        ) : null}
         <div className="shot-list" role="list">
           {proposals.map((p) => (
             <label key={p.heroId} className={`shot-row ${p.status}`} role="listitem">
@@ -450,7 +473,7 @@ export function ScreenshotImport({ current, empty, onSave }: Props) {
               <span className="now">
                 {p.current == null ? "not set" : `now ${p.current}`}
                 {p.status === "lower" ? (
-                  <em title="Lower than your saved level. Left unchecked in case the screenshot was misread."> lower?</em>
+                  <em title="Lower than your saved level. Left unchecked in case the screenshot was misread."> lower than saved</em>
                 ) : null}
               </span>
               <span className="to">

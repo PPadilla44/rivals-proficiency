@@ -686,7 +686,7 @@ footer.foot .foot-kofi:hover { color: var(--pop-ink); text-decoration: none; }
 .guide-steps { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 14px; font-size: 15px; color: var(--ink-2); }
 .guide-steps li { display: grid; grid-template-columns: 26px minmax(0, 1fr); gap: 10px; align-items: start; }
 .guide-steps strong { color: var(--ink); }
-.step-n { width: 24px; height: 24px; border-radius: 50%; background: var(--pop); color: var(--pop-ink); font-weight: 800; font-size: 13px; display: grid; place-items: center; }
+.step-n { width: 24px; height: 24px; border-radius: 50%; background: var(--ink); color: var(--panel); font-weight: 800; font-size: 13px; display: grid; place-items: center; }
 .guide-art .ex-bg { fill: var(--panel); stroke: var(--line-2); }
 .guide-art .ex-nav { fill: color-mix(in srgb, var(--ink) 12%, var(--panel)); }
 .guide-art .ex-label { fill: var(--ink-3); font: 700 9px var(--body); letter-spacing: 0.04em; }
@@ -696,10 +696,11 @@ footer.foot .foot-kofi:hover { color: var(--pop-ink); text-decoration: none; }
 .guide-art .ex-strip { fill: color-mix(in srgb, var(--ink) 30%, var(--panel)); }
 .guide-art .ex-name { fill: var(--panel); }
 .guide-art .ex-ring { fill: none; stroke: var(--pop); stroke-width: 1.5; stroke-dasharray: 4 3; }
-.guide-art .ex-pin { fill: var(--pop); stroke: var(--panel); stroke-width: 1.5; }
-.guide-art .ex-pin-n { fill: var(--pop-ink); font: 800 10px system-ui, sans-serif; }
+.guide-art .ex-pin { fill: var(--ink); stroke: var(--panel); stroke-width: 1.5; }
+.guide-art .ex-pin-n { fill: var(--panel); font: 800 10px system-ui, sans-serif; }
 @media (max-width: 640px) {
   .guide { grid-template-columns: 1fr; }
+  .drop { display: none; }
 }
 .drop.clickable { cursor: pointer; }
 .drop.clickable:hover { border-color: var(--pop); background: color-mix(in srgb, var(--pop) 7%, var(--panel-2)); }
@@ -783,3 +784,6 @@ html:is([data-saved-board], [data-example-done]):not([data-board-ready]) .board-
   .dlg-foot { padding: 10px 16px calc(12px + env(safe-area-inset-bottom)); }
   .dlg-foot .btn { flex: 1 1 auto; }
 }
+
+.shot-fails { padding-left: 18px; }
+.drop:not(.clickable) { display: none; }

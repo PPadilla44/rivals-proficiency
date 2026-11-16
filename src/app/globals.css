@@ -609,10 +609,11 @@ footer.foot .foot-kofi:hover { color: var(--pop-ink); text-decoration: none; }
   .controls .search { flex: 1 1 160px; min-width: 0; }
   .controls .lbl { flex: 1 1 160px; }
   .filter-toggle { display: inline-flex; flex: none; height: 40px; padding: 0 12px; }
-  .filter-toggle[aria-expanded="true"] { border-color: var(--pop); background: color-mix(in srgb, var(--pop) 14%, var(--panel)); }
-  .board-main:not(.filters-open) .controls .lbl,
-  .board-main:not(.filters-open) .controls .view-toggle,
-  .board-main:not(.filters-open) .filters { display: none; }
+  .filter-toggle { height: 44px; }
+  .board-main .controls .lbl,
+  .board-main .controls .view-toggle,
+  .board-main .filters { display: none; }
+  .controls .search { height: 44px; }
 
   /* Sign-in cards: buttons side by side, less text. */
   .shot-start { padding: 12px 14px; gap: 10px; }
@@ -794,3 +795,12 @@ html:is([data-saved-board], [data-example-done]):not([data-board-ready]) .board-
 .toast.with-x span { flex: 1; padding: 8px 0; }
 .toast-x { width: 44px; height: 44px; flex: none; border: none; background: transparent; color: inherit; font-size: 24px; line-height: 1; cursor: pointer; border-radius: 10px; opacity: 0.8; }
 .toast-x:hover { opacity: 1; background: rgb(255 255 255 / 0.12); }
+
+/* Phone Filter sheet: chips wrap instead of scrolling sideways, every target is 44px. */
+.filter-sheet { display: flex; flex-direction: column; gap: 12px; }
+.filter-sheet .lbl { display: flex; flex-direction: column; gap: 4px; flex: none; }
+.filter-sheet select { height: 44px; width: 100%; }
+.filter-sheet .chips { flex-wrap: wrap; overflow: visible; margin: 0; padding: 0; }
+.filter-sheet .chip { height: 44px; padding: 0 16px; }
+.filter-sheet .view-toggle button { min-height: 44px; flex: 1; }
+.filter-label { margin: 4px 0 -4px; font-size: 13px; font-weight: 600; color: var(--ink-3); }

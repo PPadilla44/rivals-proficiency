@@ -20,6 +20,7 @@ import { LS_CARD, ScreenshotImport } from "./ScreenshotImport";
 import { referrerSite, track, visitorId } from "@/lib/track";
 import { openFeedback } from "@/lib/feedback-open";
 import { KofiLink } from "./KofiLink";
+import Dialog from "./Dialog";
 import { armFor, showsExample, type ExampleMode } from "@/lib/ab";
 import { EXAMPLE_BOARD } from "@/lib/example-board";
 import { OFFLINE_SAVE_MESSAGE, requeueFailed } from "@/lib/save-queue";
@@ -511,6 +512,46 @@ export function Board({ mode, initial, signInSlot, portraits, screenshotImport, 
     </div>
   );
 
+  const roleChips = (
+  <div className="chips">
+    {(
+      [
+        ["all", "All roles", null],
+        ["V", "Vanguard", "var(--van)"],
+        ["D", "Duelist", "var(--duel)"],
+        ["S", "Strategist", "var(--strat)"],
+        ["M", "Deadpool", "var(--multi)"],
+      ] as const
+    ).map(([val, label, color]) => (
+      <button
+        key={val}
+        type="button"
+        className="chip"
+        aria-pressed={role === val}
+        onClick={() => setRole((r) => (r === val && val !== "all" ? "all" : val))}
+      >
+        {color ? <i className="dot" style={{ background: color }} /> : null}
+        {label}
+      </button>
+    ))}
+  </div>
+  );
+  const goalChips = (
+  <div className="chips">
+    {(Object.keys(GOALS) as Goal[]).map((g) => (
+      <button
+        key={g}
+        type="button"
+        className="chip"
+        aria-pressed={goal === g}
+        onClick={() => setGoal((cur) => (cur === g && g !== "all" ? "all" : g))}
+      >
+        {GOALS[g].label}
+      </button>
+    ))}
+  </div>
+  );
+
   return (
     <div className={exampleForAll ? "board-zone hold" : "board-zone"}>
       {example ? (
@@ -718,7 +759,7 @@ export function Board({ mode, initial, signInSlot, portraits, screenshotImport, 
         }
       />
 
-      <div className={`board-main${filtersOpen ? " filters-open" : ""}`}>
+      <div className="board-main">
       <section className="controls" aria-label="Search and sort">
         <div className="row1">
           <div className="search">
@@ -776,42 +817,9 @@ export function Board({ mode, initial, signInSlot, portraits, screenshotImport, 
       </section>
       <section className="filters" id="board-filters" aria-label="Filters">
         <div className="row1">
-          <div className="chips">
-            {(
-              [
-                ["all", "All roles", null],
-                ["V", "Vanguard", "var(--van)"],
-                ["D", "Duelist", "var(--duel)"],
-                ["S", "Strategist", "var(--strat)"],
-                ["M", "Deadpool", "var(--multi)"],
-              ] as const
-            ).map(([val, label, color]) => (
-              <button
-                key={val}
-                type="button"
-                className="chip"
-                aria-pressed={role === val}
-                onClick={() => setRole((r) => (r === val && val !== "all" ? "all" : val))}
-              >
-                {color ? <i className="dot" style={{ background: color }} /> : null}
-                {label}
-              </button>
-            ))}
-          </div>
+          {roleChips}
           <span className="sep" aria-hidden="true" />
-          <div className="chips">
-            {(Object.keys(GOALS) as Goal[]).map((g) => (
-              <button
-                key={g}
-                type="button"
-                className="chip"
-                aria-pressed={goal === g}
-                onClick={() => setGoal((cur) => (cur === g && g !== "all" ? "all" : g))}
-              >
-                {GOALS[g].label}
-              </button>
-            ))}
-          </div>
+          {goalChips}
         </div>
       </section>
 
@@ -858,6 +866,46 @@ export function Board({ mode, initial, signInSlot, portraits, screenshotImport, 
 
       </div>
       </div>
+
+      {filtersOpen ? (
+        <Dialog title="Filter" onClose={() => setFiltersOpen(false)} footer={<button type="button" className="btn primary" onClick={() => setFiltersOpen(false)}>Show {shown.length} heroes</button>}>
+          <div className="filter-sheet">
+            <label className="lbl" htmlFor="m-sort">
+              <span className="lbl-text">Sort</span>
+              <select id="m-sort" value={sort} onChange={(e) => changeSort(e.target.value as Sort)}>
+                {Object.entries(SORTS).map(([k, v]) => (
+                  <option key={k} value={k}>
+                    {v}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <label className="lbl" htmlFor="m-rank">
+              <span className="lbl-text">Rank</span>
+              <select id="m-rank" value={rank ?? ""} onChange={(e) => setRank(e.target.value === "" ? null : Number(e.target.value))}>
+                <option value="">All ranks</option>
+                {RANKS.map((r, i) => (
+                  <option key={r} value={i}>
+                    {r}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <div className="view-toggle" role="group" aria-label="Layout">
+              <button type="button" aria-pressed={view === "cards"} onClick={() => changeView("cards")}>
+                Cards
+              </button>
+              <button type="button" aria-pressed={view === "list"} onClick={() => changeView("list")}>
+                List
+              </button>
+            </div>
+            <p className="filter-label">Role</p>
+            {roleChips}
+            <p className="filter-label">Goal</p>
+            {goalChips}
+          </div>
+        </Dialog>
+      ) : null}
 
       {toast ? (
         <div

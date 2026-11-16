@@ -37,7 +37,7 @@ function Totals({ s, title }: { s: Stats; title: string }) {
       `header ${s.kofiClicksBy.header}, footer ${s.kofiClicksBy.footer}, after an import ${s.kofiClicksBy.import}`,
     ],
     ["Could share", s.shareReady, "had 3 or more heroes at Lord or higher"],
-    ["Opened Share", s.shareOpens, `button ${s.shareOpensBy.button}, nudge ${s.shareOpensBy.nudge}`],
+    ["Opened Share", s.shareOpens, `button ${s.shareOpensBy.button}, nudge ${s.shareOpensBy.nudge}, idle nudge ${s.shareOpensBy.idle}`],
     ["Shared a picture", s.shareDone, `share sheet ${s.shareBy.share}, saved ${s.shareBy.save}, copied ${s.shareBy.copy}`],
   ];
   return (

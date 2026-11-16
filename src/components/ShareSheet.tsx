@@ -21,7 +21,7 @@ import { RankBadge } from "./bits";
 type Props = {
   rows: HeroRow[];
   /** What opened the sheet: the button, or the toast after a hero reached Lord or Champion. */
-  from: "button" | "nudge";
+  from: "button" | "nudge" | "idle";
   onClose: () => void;
 };
 

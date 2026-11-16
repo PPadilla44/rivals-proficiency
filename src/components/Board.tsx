@@ -34,6 +34,7 @@ const LS_EXAMPLE_DONE = "pb-example-done";
 const LS_AB_SENT = "pb-ab-example";
 const TIP_AFTER_STEPS = 3;
 const LS_SHARE_NUDGE = "pb-share-nudged";
+const SHARE_IDLE_MS = 10_000;
 
 type Props = {
   mode: "guest" | "user";
@@ -73,7 +74,7 @@ export function Board({ mode, initial, signInSlot, portraits, screenshotImport, 
   const [goal, setGoal] = useState<Goal>("all");
   const [rank, setRank] = useState<number | null>(null);
   const [toast, setToast] = useState<{ text: string; error?: boolean; long?: boolean; action?: { label: string; run: () => void } } | null>(null);
-  const [shareOpen, setShareOpen] = useState<"button" | "nudge" | null>(null);
+  const [shareOpen, setShareOpen] = useState<"button" | "nudge" | "idle" | null>(null);
   // Set once the player changes something this visit, so levels loading in don't count as progress.
   const userChanged = useRef(false);
   const lastChange = useRef<{ id: string; level: number } | null>(null);
@@ -334,7 +335,7 @@ export function Board({ mode, initial, signInSlot, portraits, screenshotImport, 
   const lordNow = lordCount(rows);
   const champNow = rows.filter((r) => r.effective >= CHAMPION).length;
   const canShare = !example && shareEligible(rows);
-  const openShare = useCallback((from: "button" | "nudge") => {
+  const openShare = useCallback((from: "button" | "nudge" | "idle") => {
     setToast(null);
     setShareOpen(from);
   }, []);
@@ -382,6 +383,24 @@ export function Board({ mode, initial, signInSlot, portraits, screenshotImport, 
           : `${now.lord} heroes at Lord or higher.`;
     setToast({ text: `${lead} Share your board?`, action: { label: "Share", run: () => openShare("nudge") } });
   }, [lordNow, champNow, toast, importCheck, example, rows, openShare]);
+
+  // People who already qualify when they arrive never "rise" during the visit, so the nudge above never
+  // reaches them. Ask them once too, after a few quiet seconds on their board. Same once-per-browser key,
+  // so nobody gets both, and it never lands on top of another message or the open sheet.
+  useEffect(() => {
+    if (!canShare || toast || importCheck || shareOpen) return;
+    const t = setTimeout(() => {
+      if (document.visibilityState !== "visible") return;
+      try {
+        if (localStorage.getItem(LS_SHARE_NUDGE)) return;
+        localStorage.setItem(LS_SHARE_NUDGE, "1");
+      } catch {
+        return;
+      }
+      setToast({ text: `${lordNow} heroes at Lord or higher. Share your board?`, action: { label: "Share", run: () => openShare("idle") } });
+    }, SHARE_IDLE_MS);
+    return () => clearTimeout(t);
+  }, [canShare, lordNow, toast, importCheck, shareOpen, openShare]);
 
   const visible = useMemo(() => {
     const needle = q.trim().toLowerCase();

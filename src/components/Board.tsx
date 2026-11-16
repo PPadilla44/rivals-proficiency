@@ -121,6 +121,10 @@ export function Board({ mode, initial, signInSlot, portraits, screenshotImport, 
   const [example, setExample] = useState(exampleForAll);
   const [ready, setReady] = useState(false);
   const exampleRef = useRef(false);
+  // True once this visit left the sample for the visitor's own board.
+  const [swapped, setSwapped] = useState(false);
+  // The rows as last drawn, so the first tap on the sample can be turned into a level on the visitor's own board.
+  const rowsRef = useRef<HeroRow[]>([]);
   const exampleEndedAt = useRef(0);
   const initialEmpty = useRef(Object.keys(initial?.levels ?? {}).length === 0);
   useEffect(() => {
@@ -137,7 +141,6 @@ export function Board({ mode, initial, signInSlot, portraits, screenshotImport, 
   // Guest mode keeps levels in this browser. Signed-in users may import them.
   useEffect(() => {
     const local = readLocal();
-    // eslint-disable-next-line react-hooks/set-state-in-effect -- reading browser storage after mount
     setGuestLevels(local);
     if (mode === "guest") setEmptyAtLoad(Object.keys(local).length === 0);
     if (mode === "guest") {
@@ -192,16 +195,17 @@ export function Board({ mode, initial, signInSlot, portraits, screenshotImport, 
   }, [ready]);
 
   /** Leave the example for the visitor's own empty board. `via` is how they did it. */
-  const startOwnBoard = useCallback((via: "button" | "tap") => {
+  const startOwnBoard = useCallback((via: "button" | "tap", applied = false) => {
     if (!exampleRef.current) return;
     exampleRef.current = false;
     exampleEndedAt.current = Date.now();
     setExample(false);
+    setSwapped(true);
     try {
       localStorage.setItem(LS_EXAMPLE_DONE, "1");
     } catch {}
     track("example_start", { via });
-    if (via === "tap") setToast({ text: "This is your board now. Set your first level." });
+    if (via === "tap" && !applied) setToast({ text: "This is your board now. Set your first level." });
     window.scrollTo({ top: 0, behavior: "smooth" });
   }, []);
 
@@ -328,11 +332,21 @@ export function Board({ mode, initial, signInSlot, portraits, screenshotImport, 
   }, [flush]);
 
   const setLevel = useCallback(
-    (heroId: string, level: number, fromEstimate = false, held = false) => {
-      // The example is not editable: touching a control starts the visitor's own board. A hold
-      // that began on the example keeps firing for a moment, so ignore changes right after.
-      if (exampleRef.current) return startOwnBoard("tap");
-      if (Date.now() - exampleEndedAt.current < 900) return;
+    function apply(heroId: string, level: number, fromEstimate = false, held = false, first = false) {
+      // The example is not editable: touching a control starts the visitor's own board, and that first
+      // touch counts. A step up or down moves the hero one level from 1; a typed number is taken as typed.
+      // A hold that began on the example keeps firing for a moment, so ignore the rest of it.
+      if (exampleRef.current) {
+        const from = rowsRef.current.find((r) => r.id === heroId)?.effective ?? 1;
+        const own = clampLevel(Math.abs(level - from) === 1 ? 1 + (level - from) : level);
+        startOwnBoard("tap", own > 1);
+        if (own > 1) {
+          apply(heroId, own, false, false, true);
+          setToast({ text: "This is your own board now. That level is saved here." });
+        }
+        return;
+      }
+      if (!first && Date.now() - exampleEndedAt.current < 900) return;
       const v = clampLevel(level);
       userChanged.current = true;
       lastChange.current = { id: heroId, level: v };
@@ -398,6 +412,9 @@ export function Board({ mode, initial, signInSlot, portraits, screenshotImport, 
       }),
     [shownBoard, syncEnabled],
   );
+  useEffect(() => {
+    rowsRef.current = rows;
+  }, [rows]);
 
   // Share my board: offered once the board has a few heroes worth showing (never on the sample).
   const lordNow = lordCount(rows);
@@ -593,7 +610,7 @@ export function Board({ mode, initial, signInSlot, portraits, screenshotImport, 
         onEnter={
           example
             ? () => startOwnBoard("button")
-            : guestCard
+            : guestCard && !swapped
               ? () => {
                   document.getElementById("q")?.scrollIntoView({ block: "center" });
                   document.getElementById("q")?.focus();

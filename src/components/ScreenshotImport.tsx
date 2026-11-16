@@ -28,7 +28,7 @@ type Props = {
 type Phase =
   | { kind: "closed" }
   | { kind: "pick"; errors?: string[]; wrongScreen?: boolean }
-  | { kind: "reading"; done: number; total: number }
+  | { kind: "reading"; done: number; total: number; thumbs: string[]; finished: boolean[] }
   | { kind: "review"; proposals: Proposal[]; unmatched: string[]; notes: string[]; wrongScreen: boolean; lists: Detection[][] };
 
 const MAX_FILES = 6;
@@ -206,6 +206,13 @@ export function ScreenshotImport({ current, empty, quiet, onSave }: Props) {
     currentRef.current = current;
   }, [current]);
 
+  const thumbsRef = useRef<string[]>([]);
+  const freeThumbs = useCallback(() => {
+    for (const u of thumbsRef.current) URL.revokeObjectURL(u);
+    thumbsRef.current = [];
+  }, []);
+  useEffect(() => freeThumbs, [freeThumbs]);
+
   const read = useCallback(async (files: File[]) => {
     const images = files.filter((f) => f.type.startsWith("image/")).slice(0, MAX_FILES);
     if (!images.length) {
@@ -213,7 +220,11 @@ export function ScreenshotImport({ current, empty, quiet, onSave }: Props) {
       return;
     }
     const run = ++runRef.current;
-    setPhase({ kind: "reading", done: 0, total: images.length });
+    // Small previews of what was picked, so it is clear the upload landed. Freed when reading ends.
+    const thumbs = images.map((f) => URL.createObjectURL(f));
+    thumbsRef.current = thumbs;
+    const finished = images.map(() => false);
+    setPhase({ kind: "reading", done: 0, total: images.length, thumbs, finished: [...finished] });
     let done = 0;
     // Read all screenshots at once; each takes around ten seconds.
     const results = await Promise.all(
@@ -233,11 +244,13 @@ export function ScreenshotImport({ current, empty, quiet, onSave }: Props) {
           return { note: label + "Could not open that image." };
         } finally {
           done += 1;
-          if (run === runRef.current) setPhase({ kind: "reading", done, total: images.length });
+          finished[i] = true;
+          if (run === runRef.current) setPhase({ kind: "reading", done, total: images.length, thumbs, finished: [...finished] });
         }
       }),
     );
     if (run !== runRef.current) return;
+    freeThumbs();
     const lists = [...priorRef.current, ...results.flatMap((r) => (r.heroes ? [r.heroes] : []))];
     const notes = results.flatMap((r) => (r.note ? [r.note] : []));
     const { byHero, unmatched } = mergeDetections(lists);
@@ -253,7 +266,7 @@ export function ScreenshotImport({ current, empty, quiet, onSave }: Props) {
     }
     track("import_read", { screenshots: images.length, heroes: proposals.length, failed: notes.length, single: wrongScreen });
     setPhase({ kind: "review", proposals, unmatched, notes, wrongScreen, lists });
-  }, []);
+  }, [freeThumbs]);
 
   // Paste a screenshot straight from the clipboard while the panel is open.
   useEffect(() => {
@@ -325,6 +338,7 @@ export function ScreenshotImport({ current, empty, quiet, onSave }: Props) {
   };
   const cancelRead = () => {
     runRef.current += 1;
+    freeThumbs();
     setPhase({ kind: "pick" });
   };
 
@@ -358,10 +372,25 @@ export function ScreenshotImport({ current, empty, quiet, onSave }: Props) {
           <p className="muted">Reads ranks, not exact levels: each hero starts at the first level of its rank. You can set exact levels afterwards.</p>
           {/* Status and errors come first: on a phone the guide below is long enough to push them off screen. */}
           {reading ? (
-            <p className="drop-status" role="status">
-              Reading {phase.total > 1 ? `${phase.total} pictures (${phase.done} done)` : "your picture"}, about 10 seconds each
-              <span className="dots" aria-hidden="true" />
-            </p>
+            <div className="shot-reading" role="status">
+              <span className="spin" aria-hidden="true" />
+              <p className="shot-reading-title">
+                {phase.total > 1 ? `Reading picture ${Math.min(phase.done + 1, phase.total)} of ${phase.total}` : "Reading your picture"}
+              </p>
+              <div className="shot-progress" aria-hidden="true">
+                <span style={{ width: `${Math.max(6, (phase.done / phase.total) * 100)}%` }} />
+              </div>
+              <p className="muted">Usually about 10 seconds, even with several pictures.</p>
+              <ul className="shot-thumbs" aria-label="Pictures being read">
+                {phase.thumbs.map((u, i) => (
+                  <li key={u} className={phase.finished[i] ? "done" : ""}>
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img src={u} alt="" />
+                    {phase.finished[i] ? <span className="tick" aria-hidden="true">✓</span> : null}
+                  </li>
+                ))}
+              </ul>
+            </div>
           ) : null}
           {phase.kind === "pick" && phase.errors?.length ? (
             <ul className="shot-errors" role="alert">
@@ -370,8 +399,8 @@ export function ScreenshotImport({ current, empty, quiet, onSave }: Props) {
               ))}
             </ul>
           ) : null}
-          <ImportGuide />
-          <div
+          {reading ? null : <ImportGuide />}
+          {reading ? null : <div
             className={`drop${dragging ? " over" : ""}${reading ? "" : " clickable"}`}
             onClick={(e) => {
               // The whole box opens the file picker (the hidden input's own click bubbles here too, so skip it).
@@ -388,7 +417,7 @@ export function ScreenshotImport({ current, empty, quiet, onSave }: Props) {
               if (!reading) void read([...e.dataTransfer.files]);
             }}
           >
-            {reading ? null : (
+            {(
               <>
                 <UploadIcon />
                 {dragging ? (
@@ -403,7 +432,7 @@ export function ScreenshotImport({ current, empty, quiet, onSave }: Props) {
                 </p>
               </>
             )}
-          </div>
+          </div>}
           <input
             ref={input}
             type="file"

@@ -464,7 +464,7 @@ export function ScreenshotImport({ current, empty, quiet, onSave }: Props) {
         title="Check these ranks"
         onClose={close}
         width="media"
-        dirty={!saving}
+        dirty={!saving && chosen.length > 0}
         busy={saving}
         footer={
           <>

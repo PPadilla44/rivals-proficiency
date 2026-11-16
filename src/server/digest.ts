@@ -55,14 +55,14 @@ export type Engagement = {
   shareReady: number;
   shareOpens: number;
   /** Opens by where they started: the button or the one-time nudge (a person can open from both). */
-  shareOpensBy: { button: number; nudge: number };
+  shareOpensBy: { button: number; nudge: number; idle: number };
   shareDone: number;
   shareBy: { share: number; save: number; copy: number };
 };
 
-/** "Could share 5 · opened 2 (button 1, nudge 1) · shared 1 (share sheet 1, saved 0, copied 0)". Visitors, except the ways, which count pictures. */
+/** "Could share 5 · opened 2 (button 1, nudge 1, idle nudge 0) · shared 1 (share sheet 1, saved 0, copied 0)". Visitors, except the ways, which count pictures. */
 export function shareLine(e: Pick<Engagement, "shareReady" | "shareOpens" | "shareOpensBy" | "shareDone" | "shareBy">): string {
-  const from = e.shareOpens ? ` (button ${e.shareOpensBy.button}, nudge ${e.shareOpensBy.nudge})` : "";
+  const from = e.shareOpens ? ` (button ${e.shareOpensBy.button}, nudge ${e.shareOpensBy.nudge}, idle nudge ${e.shareOpensBy.idle})` : "";
   const by = e.shareDone ? ` (share sheet ${e.shareBy.share}, saved ${e.shareBy.save}, copied ${e.shareBy.copy})` : "";
   return `Could share ${e.shareReady} · opened ${e.shareOpens}${from} · shared ${e.shareDone}${by}`;
 }
@@ -143,6 +143,7 @@ export async function getEngagement(db: AnyDb, since: Date, until: Date): Promis
         count(distinct ${events.visitorId}) filter (where ${events.name} = 'share' and ${events.props}->>'action' = 'open') as share_opens,
         count(distinct ${events.visitorId}) filter (where ${events.name} = 'share' and ${events.props}->>'action' = 'open' and ${events.props}->>'from' = 'button') as share_open_button,
         count(distinct ${events.visitorId}) filter (where ${events.name} = 'share' and ${events.props}->>'action' = 'open' and ${events.props}->>'from' = 'nudge') as share_open_nudge,
+        count(distinct ${events.visitorId}) filter (where ${events.name} = 'share' and ${events.props}->>'action' = 'open' and ${events.props}->>'from' = 'idle') as share_open_idle,
         count(distinct ${events.visitorId}) filter (where ${events.name} = 'share' and ${events.props}->>'action' = 'done') as share_done,
         count(*) filter (where ${events.name} = 'share' and ${events.props}->>'action' = 'done' and ${events.props}->>'how' = 'share') as share_by_share,
         count(*) filter (where ${events.name} = 'share' and ${events.props}->>'action' = 'done' and ${events.props}->>'how' = 'save') as share_by_save,
@@ -175,7 +176,7 @@ export async function getEngagement(db: AnyDb, since: Date, until: Date): Promis
     calcUses: num(i?.calc_uses),
     shareReady: num(i?.share_ready),
     shareOpens: num(i?.share_opens),
-    shareOpensBy: { button: num(i?.share_open_button), nudge: num(i?.share_open_nudge) },
+    shareOpensBy: { button: num(i?.share_open_button), nudge: num(i?.share_open_nudge), idle: num(i?.share_open_idle) },
     shareDone: num(i?.share_done),
     shareBy: { share: num(i?.share_by_share), save: num(i?.share_by_save), copy: num(i?.share_by_copy) },
   };

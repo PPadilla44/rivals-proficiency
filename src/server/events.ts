@@ -125,7 +125,7 @@ export type Stats = {
   /** People who could share (3 or more Lords), opened the Share sheet and shared, and the ways: a person can do more than one. */
   shareReady: number;
   shareOpens: number;
-  shareOpensBy: { button: number; nudge: number };
+  shareOpensBy: { button: number; nudge: number; idle: number };
   shareDone: number;
   shareBy: { share: number; save: number; copy: number };
   daily: { day: string; visitors: number; interacted: number; levelSets: number; importsSaved: number }[];
@@ -169,6 +169,7 @@ export async function getStats(db: AnyDb, days: number, now = new Date()): Promi
       (select count(distinct visitor_id) from e where name = 'share' and props->>'action' = 'open') as share_opens,
       (select count(distinct visitor_id) from e where name = 'share' and props->>'action' = 'open' and props->>'from' = 'button') as share_open_button,
       (select count(distinct visitor_id) from e where name = 'share' and props->>'action' = 'open' and props->>'from' = 'nudge') as share_open_nudge,
+      (select count(distinct visitor_id) from e where name = 'share' and props->>'action' = 'open' and props->>'from' = 'idle') as share_open_idle,
       (select count(distinct visitor_id) from e where name = 'share' and props->>'action' = 'done') as share_done,
       (select count(distinct visitor_id) from e where name = 'share' and props->>'action' = 'done' and props->>'how' = 'share') as share_by_share,
       (select count(distinct visitor_id) from e where name = 'share' and props->>'action' = 'done' and props->>'how' = 'save') as share_by_save,
@@ -228,7 +229,7 @@ export async function getStats(db: AnyDb, days: number, now = new Date()): Promi
     kofiClicksBy: { header: n(r?.kofi_header), footer: n(r?.kofi_footer), import: n(r?.kofi_import) },
     shareReady: n(r?.share_ready),
     shareOpens: n(r?.share_opens),
-    shareOpensBy: { button: n(r?.share_open_button), nudge: n(r?.share_open_nudge) },
+    shareOpensBy: { button: n(r?.share_open_button), nudge: n(r?.share_open_nudge), idle: n(r?.share_open_idle) },
     shareDone: n(r?.share_done),
     shareBy: { share: n(r?.share_by_share), save: n(r?.share_by_save), copy: n(r?.share_by_copy) },
     daily: list.map((d) => ({

@@ -163,11 +163,12 @@ describe("stats for the feedback buttons and the import prompt", () => {
     await share("share-aaaa1", { action: "done", how: "save", heroes: 5 });
     await share("share-bbbb2", { action: "ready", lord: 3 });
     await share("share-bbbb2", { action: "open", from: "button" });
+    await share("share-dddd4", { action: "open", from: "idle" });
     await share("share-cccc3", { action: "ready", lord: 9 }, new Date(now.getTime() - 10 * 86_400_000)); // outside the window
     const s = await getStats(db, 7, now);
     expect(s.shareReady).toBe(2);
-    expect(s.shareOpens).toBe(2);
-    expect(s.shareOpensBy).toEqual({ button: 2, nudge: 1 });
+    expect(s.shareOpens).toBe(3);
+    expect(s.shareOpensBy).toEqual({ button: 2, nudge: 1, idle: 1 });
     expect(s.shareDone).toBe(1);
     expect(s.shareBy).toEqual({ share: 1, save: 1, copy: 0 });
   });

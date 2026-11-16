@@ -43,8 +43,9 @@ export default function Dialog({ title, badge, width = "form", onClose, dirty, b
   const requestClose = useCallback(() => {
     const s = latest.current;
     if (s.busy) return;
-    if (s.asking) setAsking(false);
-    else if (s.dirty) setAsking(true);
+    // While the question is open, X and the backdrop leave it alone (they used to toggle it, so the footer kept flipping).
+    if (s.asking) return;
+    if (s.dirty) setAsking(true);
     else s.onClose();
   }, []);
 
@@ -63,7 +64,9 @@ export default function Dialog({ title, badge, width = "form", onClose, dirty, b
     const onKey = (e: KeyboardEvent) => {
       if (e.key === "Escape") {
         e.preventDefault();
-        requestClose();
+        // Escape answers the question with "keep editing", as it would in any confirm.
+        if (latest.current.asking) setAsking(false);
+        else requestClose();
         return;
       }
       if (e.key !== "Tab" || !box.current) return;
@@ -115,7 +118,7 @@ export default function Dialog({ title, badge, width = "form", onClose, dirty, b
             <button ref={keepRef} type="button" className="btn" onClick={() => setAsking(false)}>
               Keep editing
             </button>
-            <button type="button" className="btn" onClick={() => latest.current.onClose()}>
+            <button type="button" className="btn danger" onClick={() => latest.current.onClose()}>
               Discard
             </button>
           </div>

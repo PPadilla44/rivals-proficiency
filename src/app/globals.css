@@ -406,9 +406,20 @@ footer.foot .foot-kofi:hover { color: var(--ink); text-decoration: none; }
 .drop { border: 1.5px dashed var(--line-2); border-radius: 10px; background: var(--panel-2); padding: 26px 18px; text-align: center; display: grid; gap: 8px; transition: background 0.15s, border-color 0.15s; }
 .drop.over { border-color: var(--pop); background: color-mix(in srgb, var(--pop) 14%, var(--panel)); }
 .drop p { margin: 0; color: var(--ink-2); }
-.drop-status { font-weight: 600; color: var(--ink) !important; }
-.dots::after { content: "..."; display: inline-block; width: 1.2em; text-align: left; animation: shot-dots 1.2s steps(4, end) infinite; overflow: hidden; vertical-align: bottom; }
-@keyframes shot-dots { from { width: 0; } to { width: 1.2em; } }
+/* Reading state: movement, a bar that advances, and the pictures that were picked. */
+.shot-reading { display: grid; justify-items: center; gap: 10px; text-align: center; padding: 18px 8px 10px; }
+.shot-reading p { margin: 0; }
+.shot-reading-title { font-size: 17px; font-weight: 700; color: var(--ink); }
+.spin { width: 28px; height: 28px; border-radius: 50%; border: 3px solid var(--line-2); border-top-color: var(--pop); animation: shot-spin 0.8s linear infinite; }
+@keyframes shot-spin { to { transform: rotate(360deg); } }
+.shot-progress { width: min(100%, 360px); height: 8px; border-radius: 4px; background: var(--line); overflow: hidden; }
+.shot-progress span { display: block; height: 100%; background: var(--pop); border-radius: 4px; transition: width 0.4s ease; }
+.shot-thumbs { list-style: none; margin: 8px 0 0; padding: 0; display: flex; flex-wrap: wrap; justify-content: center; gap: 10px; }
+.shot-thumbs li { position: relative; width: 96px; height: 64px; border-radius: 8px; overflow: hidden; border: 1px solid var(--line-2); opacity: 0.75; }
+.shot-thumbs li.done { opacity: 1; border-color: var(--pop); }
+.shot-thumbs img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.shot-thumbs .tick { position: absolute; right: 4px; bottom: 4px; width: 20px; height: 20px; border-radius: 50%; background: var(--pop); color: var(--pop-ink); font-size: 13px; font-weight: 800; display: grid; place-items: center; }
+@media (prefers-reduced-motion: reduce) { .spin { animation-duration: 2.4s; } .shot-progress span { transition: none; } }
 .shot-list { display: grid; border: 1px solid var(--line); border-radius: 10px; }
 .shot-row { display: grid; grid-template-columns: 22px minmax(0, 1.3fr) minmax(0, 1.4fr) minmax(0, 0.8fr) auto; align-items: center; gap: 10px; padding: 8px 12px; font-size: 14px; border-bottom: 1px solid var(--line); cursor: pointer; }
 .shot-row:last-child { border-bottom: 0; }
@@ -426,7 +437,6 @@ footer.foot .foot-kofi:hover { color: var(--ink); text-decoration: none; }
   .shot-row .seen, .shot-row .now { grid-column: 2; }
   .shot-row .to { grid-column: 3; grid-row: 1 / span 3; }
 }
-@media (prefers-reduced-motion: reduce) { .dots::after { animation: none; width: 1.2em; } }
 
 /* ---------- ranks guide ---------- */
 .stat-row { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px; max-width: 780px; }
@@ -726,8 +736,11 @@ html:is([data-saved-board], [data-example-done]):not([data-board-ready]) .board-
 .dlg-x:disabled { opacity: 0.4; cursor: default; }
 .dlg-body { padding: 16px 20px; display: flex; flex-direction: column; gap: 14px; overflow-y: auto; min-height: 0; flex: 1; overscroll-behavior: contain; }
 .dlg-foot { display: flex; flex-direction: row-reverse; flex-wrap: wrap; align-items: center; gap: 10px; padding: 12px 20px calc(12px + env(safe-area-inset-bottom)); border-top: 1px solid var(--line); background: var(--panel); flex: none; }
-.dlg-ask { justify-content: flex-end; }
+.dlg-foot.dlg-ask { flex-direction: row; justify-content: flex-end; }
 .dlg-ask b { margin-right: auto; }
+.dlg-ask .btn.danger { align-self: center; color: #fff; }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .dlg-ask .btn.danger { color: #1c0806; } }
+:root[data-theme="dark"] .dlg-ask .btn.danger { color: #1c0806; }
 @media (max-width: 640px) {
   .dlg-overlay { padding: 0; align-items: flex-end; }
   .dlg, .dlg.dlg-media { width: 100%; max-height: 92dvh; border-radius: 16px 16px 0 0; border-bottom: 0; }

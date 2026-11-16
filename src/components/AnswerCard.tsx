@@ -37,7 +37,7 @@ export default function AnswerCard({ rows, linked, kind, anyLevel, onEnter, acti
   const lordPlus = rows.filter((r) => r.effective >= LORD).length;
 
   return (
-    <section className="answer" aria-label="Closest to Lord">
+    <section className={kind === "start" ? "answer start" : "answer"} aria-label="Closest to Lord">
       <div className="answer-main">
         <p className="answer-label">
           {kind === "sample" ? <span className="answer-tag">Sample</span> : null}

@@ -212,12 +212,14 @@ button, input, select { font: inherit; color: inherit; }
 
 /* ---------- controls ---------- */
 .controls { position: sticky; top: env(safe-area-inset-top, 0px); z-index: 5; background: var(--paper); padding-block: 10px; }
+/* A soft edge so rows slide out from under the toolbar instead of being cut off. */
+.controls::after { content: ""; position: absolute; left: 0; right: 0; top: 100%; height: 10px; background: linear-gradient(var(--paper), transparent); pointer-events: none; }
 .row1 { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
 .start-here { margin: 0; padding: 10px 14px; border: 1px dashed color-mix(in srgb, var(--pop) 60%, var(--line-2)); border-radius: 10px; background: color-mix(in srgb, var(--pop) 7%, var(--panel)); font-size: 14.5px; color: var(--ink-2); }
 .start-here strong { color: var(--ink); }
 /* A saved board loads after the first paint; hide what it would remove so the page does not jump (see saved-board-flag.ts). */
-.banner-alt { display: none; }
-html[data-saved-board] .banner-alt, html[data-card-hidden] .banner-alt { display: flex; }
+.banner-alt { visibility: hidden; }
+.banner-alt.on, html[data-saved-board] .banner-alt, html[data-card-hidden] .banner-alt { visibility: visible; }
 html[data-saved-board] .next-panel { min-height: 254px; }
 html[data-saved-board] .start-here, html[data-saved-board] .shot-start.guest, html[data-card-hidden] .shot-start.guest { display: none; }
 .search { flex: 1 1 220px; position: relative; }
@@ -267,7 +269,7 @@ html[data-saved-board] .start-here, html[data-saved-board] .shot-start.guest, ht
 .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(196px, 1fr)); gap: 16px; }
 .card { display: flex; flex-direction: column; overflow: hidden; min-width: 0; }
 .card.lord { border-color: color-mix(in srgb, var(--gold) 55%, var(--line)); }
-.card.champ { border-color: color-mix(in srgb, var(--champ) 65%, var(--line)); box-shadow: 0 0 22px -6px color-mix(in srgb, var(--champ) 70%, transparent); }
+.card.champ { border-color: color-mix(in srgb, var(--champ) 65%, var(--line)); }
 .card-art { position: relative; aspect-ratio: 4 / 3; max-width: 100%; border-bottom: 1px solid var(--line); }
 .card.champ .card-art { border-bottom-color: color-mix(in srgb, var(--champ) 50%, var(--line)); }
 .card-art .portrait { position: absolute; inset: 0; }
@@ -311,14 +313,14 @@ html[data-saved-board] .start-here, html[data-saved-board] .shot-start.guest, ht
 .card.lord .rank-sticker { color: var(--gold-ink); border-color: color-mix(in srgb, var(--gold) 60%, var(--line-2)); }
 .card.champ .rank-sticker { color: #fff; background: linear-gradient(120deg, #6a2bd1, var(--champ), #b267ff); border-color: transparent; }
 .card-body { padding: 12px 12px 14px; display: flex; flex-direction: column; gap: 10px; flex: 1; }
-.card-name { margin: 0; font-family: var(--display); font-weight: 700; font-size: 19px; line-height: 1.1; letter-spacing: 0.02em; text-transform: uppercase; text-wrap: balance; }
+.card-name { margin: 0; font-family: var(--display); font-weight: 700; font-size: 19px; line-height: 1.1; letter-spacing: 0.01em; text-wrap: balance; }
 .card .prog { margin-top: auto; }
 .card .lvl { align-self: flex-start; }
 
 /* ---------- list ---------- */
-.list { display: flex; flex-direction: column; overflow: hidden; }
+.list { display: flex; flex-direction: column; overflow: clip; }
 .head, .hero { display: grid; grid-template-columns: minmax(200px, 1.7fr) minmax(130px, 1fr) 128px minmax(170px, 1.4fr); gap: 16px; align-items: center; padding: 10px 18px; }
-.head { font-size: 11.5px; font-weight: 600; letter-spacing: 0.07em; text-transform: uppercase; color: var(--ink-3); border-bottom: 1px solid var(--line); }
+.head { position: sticky; top: var(--controls-h, 60px); z-index: 4; background: var(--panel); font-size: 11.5px; font-weight: 600; letter-spacing: 0.07em; text-transform: uppercase; color: var(--ink-3); border-bottom: 1px solid var(--line); }
 .head button { all: unset; cursor: pointer; }
 .head button:hover { color: var(--ink); }
 .head button:focus-visible { outline: 2px solid var(--focus); }
@@ -342,7 +344,8 @@ html[data-saved-board] .start-here, html[data-saved-board] .shot-start.guest, ht
 
 @media (max-width: 780px) {
   .head { display: none; }
-  .hero { grid-template-columns: 1fr auto; grid-template-areas: "name lvl" "rank rank" "prog prog"; gap: 8px 12px; padding: 12px 14px; }
+  /* Two lines: portrait, name and stepper, then rank beside the progress bar. */
+  .hero { grid-template-columns: 118px minmax(0, 1fr) auto; grid-template-areas: "name name lvl" "rank prog prog"; gap: 8px 12px; padding: 12px 14px; }
   .hero .name { grid-area: name; }
   .hero .rank { grid-area: rank; font-size: 13px; }
   .hero .lvl { grid-area: lvl; }
@@ -388,7 +391,7 @@ footer.foot .foot-kofi:hover { color: var(--pop-ink); text-decoration: none; }
 }
 
 /* ---------- content pages (privacy, ranks, stats) ---------- */
-.prose { padding: 22px 24px 26px; gap: 10px; max-width: 780px; }
+.prose { padding: 22px 24px 26px; gap: 10px; max-width: calc(68ch + 48px); }
 .prose h2 { font-size: 18px; margin-top: 14px; }
 .prose h2:first-child { margin-top: 0; }
 .prose p, .prose li { margin: 0; color: var(--ink-2); font-size: 15px; line-height: 1.6; max-width: 68ch; }
@@ -399,7 +402,9 @@ footer.foot .foot-kofi:hover { color: var(--pop-ink); text-decoration: none; }
 .prose-page .top { align-items: flex-start; }
 .prose .news-list { list-style: none; padding-left: 0; gap: 18px; }
 .prose .news-list li { display: flex; flex-direction: column; gap: 2px; }
-.news-date { font-family: var(--mono); font-size: 12px; color: var(--ink-3); letter-spacing: 0.04em; }
+.news-day { display: flex; flex-direction: column; gap: 10px; }
+.news-day + .news-day { margin-top: 14px; }
+.news-day h2 { margin: 0; font-family: var(--mono); font-size: 12.5px; font-weight: 500; color: var(--ink-3); letter-spacing: 0.04em; }
 
 .btn.danger { background: var(--bad); border-color: var(--bad); color: #fff; align-self: flex-start; }
 .danger-zone { display: flex; flex-direction: column; gap: 10px; padding: 14px 16px; border: 1px dashed var(--bad); border-radius: 10px; background: color-mix(in srgb, var(--bad) 7%, var(--panel)); }
@@ -648,7 +653,7 @@ footer.foot .foot-kofi:hover { color: var(--pop-ink); text-decoration: none; }
 .fb-kinds label:focus-within { outline: 2px solid var(--focus); outline-offset: 2px; }
 .fb-field { display: flex; flex-direction: column; gap: 6px; font-size: 13.5px; font-weight: 600; }
 .fb-field em { font-style: normal; font-weight: 400; color: var(--ink-3); }
-.fb-field textarea, .fb-field input { color: var(--ink); font-family: var(--body); width: 100%; border: 1px solid var(--line-2); background: var(--paper); border-radius: 8px; padding: 10px 12px; font-weight: 400; font-size: 16px; }
+.fb-field textarea, .fb-field input { color: var(--ink); font-family: var(--body); width: 100%; border: 1px solid var(--line-2); background: var(--panel); border-radius: 8px; padding: 10px 12px; font-weight: 400; font-size: 16px; }
 .fb-field textarea { resize: vertical; min-height: 110px; }
 .fb-field input { height: 44px; padding-top: 0; padding-bottom: 0; }
 .fb-field small { color: var(--ink-3); font-weight: 400; min-height: 1em; }
@@ -829,7 +834,8 @@ html:is([data-saved-board], [data-example-done]):not([data-board-ready]) .board-
 .answer-signin p { margin: 0; font-size: 13.5px; color: var(--ink-3); }
 .banner.guest-line { background: none; border: none; box-shadow: none; padding: 0; font-size: 13.5px; }
 .banner.guest-line p { color: var(--ink-3); }
-.banner.guest-line .btn { height: 36px; }
+.banner.guest-line p { max-width: none; }
+.banner.guest-line .link-btn { font-size: inherit; }
 @media (max-width: 640px) {
   .answer { min-height: 0; padding: 14px 16px; gap: 12px; }
   .answer-name { font-size: 26px; }
@@ -884,3 +890,10 @@ html:is([data-saved-board], [data-example-done]):not([data-board-ready]) .board-
 .banner.browser-levels h2 { margin: 0 0 4px; font-size: 18px; font-weight: 700; color: var(--ink); }
 .banner.browser-levels p { color: var(--ink-2); font-size: 15px; }
 .banner.browser-levels .btn { height: 44px; padding: 0 20px; font-size: 15px; }
+
+/* Sample board, desktop only: the toolbar offers "Enter my levels" once the answer card has scrolled away. */
+.enter-toolbar { display: none; }
+@media (min-width: 641px) { .enter-toolbar { display: inline-flex; margin-left: auto; } }
+/* Phone, first visit with nothing set: the card is taller while it holds the "Enter my levels" button. Keep that
+   height after the first tap so the list under the player's finger does not jump up. */
+@media (max-width: 640px) { .answer.start { min-height: 184px; } }

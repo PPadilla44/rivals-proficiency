@@ -536,6 +536,32 @@ export function Board({ mode, initial, signInSlot, portraits, screenshotImport, 
   // and only then the usual account, sign-in or import cards.
   const oneMessage = !!importCheck || showImport;
 
+  // The sticky column headers sit just under the sticky toolbar, whatever height the toolbar is.
+  useEffect(() => {
+    const bar = document.querySelector<HTMLElement>(".controls");
+    if (!bar) return;
+    const set = () => document.documentElement.style.setProperty("--controls-h", `${bar.offsetHeight}px`);
+    set();
+    const ro = new ResizeObserver(set);
+    ro.observe(bar);
+    return () => ro.disconnect();
+  }, []);
+
+  // Desktop, sample board: once the answer card has scrolled away, its "Enter my levels" button is
+  // offered again in the sticky toolbar (the card's own button is the one gold button while the card shows).
+  const [cardGone, setCardGone] = useState(false);
+  useEffect(() => {
+    if (!example) {
+      setCardGone(false);
+      return;
+    }
+    const el = document.querySelector(".answer");
+    if (!el || typeof IntersectionObserver === "undefined") return;
+    const io = new IntersectionObserver(([e]) => setCardGone(!e.isIntersecting));
+    io.observe(el);
+    return () => io.disconnect();
+  }, [example]);
+
   // A guest with nothing set yet sees the screenshot import first, as a sign-in card.
   // "Untouched" is decided when the board loads and then held for the visit. If the first tap
   // removed the card above the list, every row would jump up under the player's finger.
@@ -546,14 +572,14 @@ export function Board({ mode, initial, signInSlot, portraits, screenshotImport, 
   // found before the first paint), so the slot keeps its height when the card goes away. See saved-board-flag.ts.
   const guestBanner = (extra: string) => (
     <div className={`banner guest-line${extra}`}>
-      <p>
-        <strong>Playing as a guest.</strong> Levels save in this browser only. Sign in to keep them on every device
-        {screenshotImport ? " and import your ranks from Heroes tab screenshots" : ""}.
-      </p>
       {signInSlot ? (
-        <button type="button" className="btn" onClick={openSignIn}>
-          Sign in
-        </button>
+        <p>
+          <strong>Guest board,</strong> saved in this browser only.{" "}
+          <button type="button" className="link-btn" onClick={openSignIn}>
+            Sign in
+          </button>{" "}
+          to keep it on every device.
+        </p>
       ) : (
         <p>Sign-in is not configured on this server yet.</p>
       )}
@@ -628,7 +654,7 @@ export function Board({ mode, initial, signInSlot, portraits, screenshotImport, 
       />
 
       {example || oneMessage ? null : guestCard ? (
-        guestBanner(" banner-alt")
+        guestBanner(rows.some((r) => r.effective > 1) ? " banner-alt on" : " banner-alt")
       ) : mode === "guest" ? (
         guestBanner("")
       ) : syncEnabled && board ? (
@@ -643,7 +669,7 @@ export function Board({ mode, initial, signInSlot, portraits, screenshotImport, 
 
       {mode === "guest" && screenshotImport && !!signInSlot && !example && !oneMessage ? (
         <div className="shot-bar">
-          <button type="button" className="btn primary" onClick={openSignIn}>
+          <button type="button" className="btn" onClick={openSignIn}>
             <CameraIcon />
             Import from screenshots
           </button>
@@ -669,7 +695,7 @@ export function Board({ mode, initial, signInSlot, portraits, screenshotImport, 
       ) : null}
 
       {importCheck ? (
-        <div className="banner accent import-check" role="region" aria-label="Did the import read your heroes right?">
+        <div className="banner import-check" role="region" aria-label="Did the import read your heroes right?">
           {importCheck.answer === "right" ? (
             <p>
               <strong>Glad it worked!</strong> The board is free and fan-made. If it saves you some clicking, a coffee helps keep it going.
@@ -799,6 +825,11 @@ export function Board({ mode, initial, signInSlot, portraits, screenshotImport, 
               List
             </button>
           </div>
+          {example && cardGone ? (
+            <button type="button" className="btn primary enter-toolbar" onClick={() => startOwnBoard("button")}>
+              Enter my levels
+            </button>
+          ) : null}
         </div>
       </section>
       {untouched && !example && !guestCard && !(screenshotImport && mode === "user") ? (

@@ -734,7 +734,8 @@ html:is([data-saved-board], [data-example-done]):not([data-board-ready]) .board-
 .share-preview { aspect-ratio: 1; border-radius: 12px; overflow: hidden; background: #0b0d12; display: flex; align-items: center; justify-content: center; }
 .share-preview img { width: 100%; height: 100%; display: block; -webkit-touch-callout: default; user-select: auto; }
 .share-preview img.stale { opacity: 0.6; }
-.share-wait { color: #b4bac8; font-size: 14px; padding: 20px; text-align: center; }
+.share-wait { color: #b4bac8; font-size: 14px; padding: 20px; text-align: center; display: grid; gap: 12px; justify-items: center; }
+.share-wait p { margin: 0; }
 .share-pick { display: flex; flex-direction: column; min-height: 0; }
 .share-hint { margin: 0 0 8px; font-size: 13.5px; color: var(--ink-2); }
 .share-hint b { color: var(--ink); }

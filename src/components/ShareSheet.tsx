@@ -41,6 +41,8 @@ export default function ShareSheet({ rows, from, onClose }: Props) {
   const [showAll, setShowAll] = useState(false);
   const [ready, setReady] = useState<Ready | null>(null);
   const [failed, setFailed] = useState(false);
+  // Bumped by "Try again" so the card is drawn once more with the same picks.
+  const [attempt, setAttempt] = useState(0);
   const [note, setNote] = useState<string | null>(null);
   const phone = useMemo(() => deviceKind() === "mobile", []);
   const key = [...picks].sort().join(",");
@@ -74,7 +76,7 @@ export default function ShareSheet({ rows, from, onClose }: Props) {
       live = false;
       clearTimeout(t);
     };
-  }, [rows, picks, key]);
+  }, [rows, picks, key, attempt]);
 
   // Free the last picture when the sheet closes.
   const lastUrl = useRef<string | null>(null);
@@ -172,13 +174,32 @@ export default function ShareSheet({ rows, from, onClose }: Props) {
               // eslint-disable-next-line @next/next/no-img-element
               <img src={ready.url} alt="" className="stale" />
             ) : (
-              <div className="share-wait">{failed ? "The picture couldn't be made in this browser." : "Making your card…"}</div>
+              <div className="share-wait">
+                {failed ? (
+                  <>
+                    <p>The picture couldn&apos;t be made in this browser. Try again, or try a different browser.</p>
+                    <button type="button" className="btn" onClick={() => { setFailed(false); setAttempt((n) => n + 1); }}>
+                      Try again
+                    </button>
+                  </>
+                ) : (
+                  "Making your card…"
+                )}
+              </div>
             )}
           </div>
 
           <div className="share-pick">
             <p className="share-hint">
-              Pick {PICK_MIN} to {PICK_MAX} heroes · <b>{picks.length}</b> picked
+              {picks.length >= PICK_MAX ? (
+                <>
+                  <b>{picks.length} of {PICK_MAX}</b> picked. Untick one to swap.
+                </>
+              ) : (
+                <>
+                  Pick {PICK_MIN} to {PICK_MAX} heroes · <b>{picks.length}</b> picked
+                </>
+              )}
             </p>
             <ul className="share-list">
               {shown.map((r) => {

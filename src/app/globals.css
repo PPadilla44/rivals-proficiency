@@ -598,7 +598,7 @@ footer.foot .foot-kofi:hover { color: var(--pop-ink); text-decoration: none; }
 .home-about { max-width: 820px; }
 
 /* ---------- phones: heroes on the first screen ---------- */
-.filter-toggle { display: none; }
+.filter-toggle { display: inline-flex; align-items: center; gap: 8px; flex: none; }
 @media (max-width: 640px) {
   .page-title { font-size: 23px; }
   .sub-more { display: none; }
@@ -806,3 +806,39 @@ html:is([data-saved-board], [data-example-done]):not([data-board-ready]) .board-
 .filter-label { margin: 4px 0 -4px; font-size: 13px; font-weight: 600; color: var(--ink-3); }
 .filter-sheet .lbl { align-items: stretch; text-align: left; }
 .filter-sheet .lbl-text { text-align: left; }
+
+/* ---------- PR B: one answer, one main action ---------- */
+.board-layout, .board-layout > .board-main { display: flex; flex-direction: column; gap: 14px; }
+.board-layout { gap: 20px; align-items: stretch; }
+.answer { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 16px 24px; min-height: 148px; padding: 18px 20px; background: var(--panel); border: 1px solid var(--line); border-radius: 16px; }
+.answer-main { flex: 1 1 320px; min-width: 0; display: flex; flex-direction: column; gap: 10px; }
+.answer-label { margin: 0; display: flex; align-items: center; gap: 10px; font-size: 12.5px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: var(--ink-3); }
+.answer-tag { font-size: 11px; padding: 3px 8px; border-radius: 6px; background: var(--ink); color: var(--panel); letter-spacing: 0.08em; }
+.answer-hero { display: flex; align-items: center; gap: 14px; }
+.answer-text { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 4px; }
+.answer-name { margin: 0; font-family: var(--display); font-weight: 700; font-size: 30px; line-height: 1.05; letter-spacing: 0.01em; text-transform: uppercase; color: var(--ink); }
+.answer-name span { font-family: var(--body); font-size: 15px; font-weight: 600; letter-spacing: 0; text-transform: none; color: var(--ink-3); margin-left: 6px; }
+.answer-name.muted { color: var(--ink-3); }
+.answer-sub { margin: 0; font-size: 15px; color: var(--ink-2); }
+.answer-bar { height: 6px; border-radius: 3px; background: var(--line); overflow: hidden; margin-top: 6px; max-width: 420px; }
+.answer-bar span { display: block; height: 100%; border-radius: 3px; }
+.answer-side { flex: 0 1 auto; display: flex; flex-direction: column; align-items: flex-start; gap: 10px; }
+.answer-side .btn.primary { height: 48px; padding: 0 24px; font-size: 16px; }
+.answer-note { margin: 0; font-size: 14px; color: var(--ink-2); }
+.answer-signin { display: flex; flex-direction: column; gap: 8px; }
+.answer-signin p { margin: 0; font-size: 13.5px; color: var(--ink-3); }
+.banner.guest-line { background: none; border: none; box-shadow: none; padding: 0; font-size: 13.5px; }
+.banner.guest-line p { color: var(--ink-3); }
+.banner.guest-line .btn { height: 36px; }
+@media (max-width: 640px) {
+  .answer { min-height: 0; padding: 14px 16px; gap: 12px; }
+  .answer-name { font-size: 26px; }
+  .answer-side { width: 100%; }
+  .answer-side .btn { width: 100%; justify-content: center; }
+}
+@media (min-width: 641px) { .filter-sheet .phone-only { display: none; } }
+
+/* Sign-in sits quietly beside the one gold button. */
+.answer-signin .btn, .answer-signin button { background: var(--panel); border-color: var(--line-2); color: var(--ink); }
+.answer-signin form, .answer-signin > div { display: flex; flex-wrap: wrap; gap: 8px; }
+.answer-signin .btn.primary:hover:not(:disabled) { background: var(--panel-2); border-color: var(--ink-3); }

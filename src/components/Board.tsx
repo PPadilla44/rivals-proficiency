@@ -13,7 +13,7 @@ import type { BoardData } from "@/server/board";
 import { buildRows, GOALS, SORTS, type Goal, type HeroRow, type Sort } from "@/lib/board-model";
 import { ROLE_SORT, type Role } from "@/lib/heroes";
 import { CHAMPION, LORD, RANKS, clampLevel, tierOf } from "@/lib/proficiency";
-import { StatTiles, Summary } from "./Summary";
+import AnswerCard from "./AnswerCard";
 import { HeroCard, HeroLine } from "./HeroViews";
 import { Account } from "./Account";
 import { LS_CARD, ScreenshotImport } from "./ScreenshotImport";
@@ -70,7 +70,7 @@ function readLocal(): Record<string, number> {
 export function Board({ mode, initial, signInSlot, portraits, screenshotImport, importSignIn, syncEnabled, exampleMode = "off" }: Props) {
   const [board, setBoard] = useState<BoardData>(initial ?? EMPTY);
   const [q, setQ] = useState("");
-  const [sort, setSort] = useState<Sort>("level-desc");
+  const [sort, setSort] = useState<Sort>(mode === "guest" && exampleMode === "on" ? "lord" : "level-desc");
   const [view, setView] = useState<View>("list");
   const [role, setRole] = useState<Role | "all">("all");
   const [goal, setGoal] = useState<Goal>("all");
@@ -503,7 +503,7 @@ export function Board({ mode, initial, signInSlot, portraits, screenshotImport, 
   // The guest banner, as a function because the card branch also draws one (hidden unless a saved board is
   // found before the first paint), so the slot keeps its height when the card goes away. See saved-board-flag.ts.
   const guestBanner = (extra: string) => (
-    <div className={`banner accent${extra}`}>
+    <div className={`banner guest-line${extra}`}>
       <p>
         <strong>Playing as a guest.</strong> Levels save in this browser only. Sign in to keep them on every device
         {screenshotImport ? " and import your ranks from Heroes tab screenshots" : ""}.
@@ -554,78 +554,44 @@ export function Board({ mode, initial, signInSlot, portraits, screenshotImport, 
 
   return (
     <div className={exampleForAll ? "board-zone hold" : "board-zone"}>
-      {example ? (
-        <>
-          <section className="example-bar" aria-label="Sample board">
-            <p>
-              <span className="example-tag">Sample</span>
-              <span>
-                <strong>This is a sample board.</strong> Add your levels to see your hours to Lord.
-              </span>
-            </p>
-            <button type="button" className="btn primary" onClick={() => startOwnBoard("button")}>
-              Enter my levels
+      <AnswerCard
+        rows={rows}
+        linked={syncEnabled && !!board?.link}
+        kind={example ? "sample" : guestCard ? "start" : "own"}
+        anyLevel={rows.some((r) => r.effective > 1)}
+        onEnter={
+          example
+            ? () => startOwnBoard("button")
+            : guestCard
+              ? () => {
+                  document.getElementById("q")?.scrollIntoView({ block: "center" });
+                  document.getElementById("q")?.focus();
+                }
+              : undefined
+        }
+        actions={
+          canShare ? (
+            <button type="button" className="btn" onClick={() => openShare("button")}>
+              <ShareIcon />
+              Share my board
             </button>
-          </section>
-          {/* Phones: the bar above is hidden, so say what this is at the top, where the eye lands first. */}
-          <div className="example-note">
-            <p>
-              <span className="example-tag">Sample</span>
-              <span>
-                <strong>This is a sample board, not yours.</strong>
-              </span>
-            </p>
-            {screenshotImport && signInSlot ? (
-              <p className="example-note-import">
-                Skip the typing: sign in to import your ranks from screenshots.
-              </p>
-            ) : null}
-          </div>
-          <div className="example-sticky" role="region" aria-label="Sample board">
-            <span>Sample board</span>
-            <button type="button" className="btn primary" onClick={() => startOwnBoard("button")}>
-              Enter my levels
-            </button>
-          </div>
-        </>
-      ) : guestCard ? (
-        <>
-          <section className="panel shot-start guest" aria-label="Fill in your board">
-            <button
-              type="button"
-              className="shot-start-x"
-              aria-label="Hide this"
-              title="Hide this"
-              onClick={() => {
-                setGuestCardHidden(true);
-                try {
-                  localStorage.setItem(LS_CARD, "1");
-                } catch {}
-              }}
-            >
-              <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden="true">
-                <path d="M6 6l12 12M18 6L6 18" />
-              </svg>
-            </button>
-            <div>
-              <h2>Fill in your whole board from screenshots</h2>
-              {/* 17 of the new accounts from Oct 7 to 20 signed in, saw an empty board and left: say it up front. */}
-              <p className="levels-note">Levels don&apos;t load on their own: the game doesn&apos;t share them. You add them once.</p>
-              <p>
-                Sign in, then add screenshots or photos of the in-game <strong>Heroes</strong> tab. Every hero&apos;s rank fills in
-                at once, no typing.
-              </p>
-            </div>
-            <div className="shot-start-actions">
+          ) : null
+        }
+        below={
+          guestCard ? (
+            <div className="answer-signin">
+              <p>Sign in to import every rank from screenshots.</p>
               {signInSlot}
-              <span>or tap any level below to type it in. Levels save in this browser.</span>
             </div>
-          </section>
-          {guestBanner(" banner-alt")}
-        </>
+          ) : null
+        }
+      />
+
+      {example ? null : guestCard ? (
+        guestBanner(" banner-alt")
       ) : mode === "guest" ? (
         guestBanner("")
-      ) : syncEnabled ? (
+      ) : syncEnabled && board ? (
         <Account
           link={board.link}
           busy={busy}
@@ -729,36 +695,7 @@ export function Board({ mode, initial, signInSlot, portraits, screenshotImport, 
         </div>
       ) : null}
 
-      {canShare ? (
-        <div className="share-cta">
-          <span>
-            <b>{lordNow}</b> heroes at Lord or higher. Worth showing off.
-          </span>
-          <button type="button" className="btn" onClick={() => openShare("button")}>
-            <ShareIcon />
-            Share my board
-          </button>
-        </div>
-      ) : null}
-
-      <StatTiles rows={rows} />
-
       <div className="board-layout">
-      <Summary
-        rows={rows}
-        activeRank={rank}
-        onRank={(t) => setRank((r) => (r === t ? null : t))}
-        linked={syncEnabled && !!board.link}
-        share={
-          canShare ? (
-            <button type="button" className="btn small" onClick={() => openShare("button")} aria-label="Share my board">
-              <ShareIcon />
-              <span className="share-word">Share</span>
-            </button>
-          ) : null
-        }
-      />
-
       <div className="board-main">
       <section className="controls" aria-label="Search and sort">
         <div className="row1">
@@ -773,7 +710,6 @@ export function Board({ mode, initial, signInSlot, portraits, screenshotImport, 
             type="button"
             className="btn filter-toggle"
             aria-expanded={filtersOpen}
-            aria-controls="board-filters"
             onClick={() => setFiltersOpen((o) => !o)}
           >
             <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" aria-hidden="true">
@@ -815,14 +751,6 @@ export function Board({ mode, initial, signInSlot, portraits, screenshotImport, 
           </div>
         </div>
       </section>
-      <section className="filters" id="board-filters" aria-label="Filters">
-        <div className="row1">
-          {roleChips}
-          <span className="sep" aria-hidden="true" />
-          {goalChips}
-        </div>
-      </section>
-
       {untouched && !example && !guestCard && !(screenshotImport && mode === "user") ? (
         <p className="start-here">
           <strong>Start here:</strong>{" "}
@@ -870,7 +798,7 @@ export function Board({ mode, initial, signInSlot, portraits, screenshotImport, 
       {filtersOpen ? (
         <Dialog title="Filter" onClose={() => setFiltersOpen(false)} footer={<button type="button" className="btn primary" onClick={() => setFiltersOpen(false)}>Show {shown.length} heroes</button>}>
           <div className="filter-sheet">
-            <label className="lbl" htmlFor="m-sort">
+            <label className="lbl phone-only" htmlFor="m-sort">
               <span className="lbl-text">Sort</span>
               <select id="m-sort" value={sort} onChange={(e) => changeSort(e.target.value as Sort)}>
                 {Object.entries(SORTS).map(([k, v]) => (
@@ -880,7 +808,7 @@ export function Board({ mode, initial, signInSlot, portraits, screenshotImport, 
                 ))}
               </select>
             </label>
-            <label className="lbl" htmlFor="m-rank">
+            <label className="lbl phone-only" htmlFor="m-rank">
               <span className="lbl-text">Rank</span>
               <select id="m-rank" value={rank ?? ""} onChange={(e) => setRank(e.target.value === "" ? null : Number(e.target.value))}>
                 <option value="">All ranks</option>
@@ -891,7 +819,7 @@ export function Board({ mode, initial, signInSlot, portraits, screenshotImport, 
                 ))}
               </select>
             </label>
-            <div className="view-toggle" role="group" aria-label="Layout">
+            <div className="view-toggle phone-only" role="group" aria-label="Layout">
               <button type="button" aria-pressed={view === "cards"} onClick={() => changeView("cards")}>
                 Cards
               </button>

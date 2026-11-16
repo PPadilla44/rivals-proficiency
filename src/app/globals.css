@@ -738,6 +738,9 @@ html:is([data-saved-board], [data-example-done]):not([data-board-ready]) .board-
 .dlg-foot { display: flex; flex-direction: row-reverse; flex-wrap: wrap; align-items: center; gap: 10px; padding: 12px 20px calc(12px + env(safe-area-inset-bottom)); border-top: 1px solid var(--line); background: var(--panel); flex: none; }
 .dlg-foot.dlg-ask { flex-direction: row; justify-content: flex-end; }
 .dlg-ask b { margin-right: auto; }
+.dlg-ask .btn.danger { align-self: center; color: #fff; }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .dlg-ask .btn.danger { color: #1c0806; } }
+:root[data-theme="dark"] .dlg-ask .btn.danger { color: #1c0806; }
 @media (max-width: 640px) {
   .dlg-overlay { padding: 0; align-items: flex-end; }
   .dlg, .dlg.dlg-media { width: 100%; max-height: 92dvh; border-radius: 16px 16px 0 0; border-bottom: 0; }

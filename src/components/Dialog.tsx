@@ -118,7 +118,7 @@ export default function Dialog({ title, badge, width = "form", onClose, dirty, b
             <button ref={keepRef} type="button" className="btn" onClick={() => setAsking(false)}>
               Keep editing
             </button>
-            <button type="button" className="btn" onClick={() => latest.current.onClose()}>
+            <button type="button" className="btn danger" onClick={() => latest.current.onClose()}>
               Discard
             </button>
           </div>

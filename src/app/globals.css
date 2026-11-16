@@ -641,15 +641,15 @@ footer.foot .foot-kofi:hover { color: var(--pop-ink); text-decoration: none; }
 .link-btn:hover { color: var(--ink); }
 .fb-form { display: flex; flex-direction: column; gap: 14px; }
 .fb-kinds { display: flex; gap: 8px; }
-.fb-kinds label { flex: 1; text-align: center; padding: 9px 0; border: 1px solid var(--line-2); border-radius: 8px; background: var(--panel-2); font-weight: 600; font-size: 14px; cursor: pointer; }
-.fb-kinds label.on { background: var(--pop); border-color: var(--pop); color: var(--pop-ink); }
+.fb-kinds label { flex: 1; text-align: center; padding: 12px 0; min-height: 44px; border: 1px solid var(--line-2); border-radius: 8px; background: var(--panel-2); font-weight: 600; font-size: 14px; cursor: pointer; }
+.fb-kinds label.on { background: var(--ink); border-color: var(--ink); color: var(--panel); }
 .fb-kinds input { position: absolute; opacity: 0; pointer-events: none; }
 .fb-kinds label:focus-within { outline: 2px solid var(--focus); outline-offset: 2px; }
 .fb-field { display: flex; flex-direction: column; gap: 6px; font-size: 13.5px; font-weight: 600; }
 .fb-field em { font-style: normal; font-weight: 400; color: var(--ink-3); }
 .fb-field textarea, .fb-field input { color: var(--ink); font-family: var(--body); width: 100%; border: 1px solid var(--line-2); background: var(--paper); border-radius: 8px; padding: 10px 12px; font-weight: 400; font-size: 16px; }
 .fb-field textarea { resize: vertical; min-height: 110px; }
-.fb-field input { height: 42px; padding-top: 0; padding-bottom: 0; }
+.fb-field input { height: 44px; padding-top: 0; padding-bottom: 0; }
 .fb-field small { color: var(--ink-3); font-weight: 400; min-height: 1em; }
 .fb-field small.bad { color: var(--bad); }
 .fb-trap { position: absolute; left: -9999px; width: 1px; height: 1px; overflow: hidden; }
@@ -735,9 +735,9 @@ html:is([data-saved-board], [data-example-done]):not([data-board-ready]) .board-
 .share-list { list-style: none; margin: 0; padding: 0; overflow-y: auto; max-height: 320px; border: 1px solid var(--line); border-radius: 10px; }
 .share-list li + li { border-top: 1px solid var(--line); }
 .share-list label { display: flex; align-items: center; gap: 10px; padding: 8px 12px; cursor: pointer; font-size: 14.5px; min-height: 44px; }
-.share-list label.on { background: color-mix(in srgb, var(--pop) 10%, var(--panel)); }
+.share-list label.on { background: var(--panel-2); }
 .share-list label.locked:not(.on) { opacity: 0.5; cursor: default; }
-.share-list input { width: 18px; height: 18px; accent-color: var(--pop); flex: none; }
+.share-list input { width: 20px; height: 20px; accent-color: var(--ink); flex: none; }
 .share-list .nm { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: 600; }
 .share-list .lv { color: var(--ink-3); font-size: 13px; flex: none; }
 .share-more { align-self: flex-start; margin-top: 8px; }
@@ -787,3 +787,10 @@ html:is([data-saved-board], [data-example-done]):not([data-board-ready]) .board-
 
 .shot-fails { padding-left: 18px; }
 .drop:not(.clickable) { display: none; }
+
+/* One toast: text, an optional action, and a 44px close button. */
+.toast.with-x { display: flex; align-items: center; gap: 8px; padding: 2px 4px 2px 16px; min-height: 48px; width: auto; }
+.toast.with-x.with-action { width: min(92vw, 460px); }
+.toast.with-x span { flex: 1; padding: 8px 0; }
+.toast-x { width: 44px; height: 44px; flex: none; border: none; background: transparent; color: inherit; font-size: 24px; line-height: 1; cursor: pointer; border-radius: 10px; opacity: 0.8; }
+.toast-x:hover { opacity: 1; background: rgb(255 255 255 / 0.12); }

@@ -231,11 +231,13 @@ export function Board({ mode, initial, signInSlot, portraits, screenshotImport, 
     setToast({ text: "Tip: tap the number to type a level, or hold + to count up fast.", long: true });
   }, []);
 
+  // Hovering or focusing a toast holds it, so a button can be reached. Errors stay until dismissed.
+  const [toastHeld, setToastHeld] = useState(false);
   useEffect(() => {
-    if (!toast || toast.sticky) return;
-    const t = setTimeout(() => setToast(null), toast.action ? 9000 : toast.error || toast.long ? 6000 : 3500);
+    if (!toast || toast.sticky || toast.error || toastHeld) return;
+    const t = setTimeout(() => setToast(null), toast.action ? 15000 : toast.long ? 6000 : 4000);
     return () => clearTimeout(t);
-  }, [toast]);
+  }, [toast, toastHeld]);
 
   const apply = useCallback((res: ActionResult, reorder = false) => {
     if (!res.ok) {
@@ -858,18 +860,23 @@ export function Board({ mode, initial, signInSlot, portraits, screenshotImport, 
       </div>
 
       {toast ? (
-        <div className={`toast${toast.error ? " error" : ""}${toast.action ? " with-action" : ""}`} role={toast.error ? "alert" : "status"}>
+        <div
+          className={`toast with-x${toast.error ? " error" : ""}${toast.action ? " with-action" : ""}`}
+          role={toast.error ? "alert" : "status"}
+          onMouseEnter={() => setToastHeld(true)}
+          onMouseLeave={() => setToastHeld(false)}
+          onFocus={() => setToastHeld(true)}
+          onBlur={() => setToastHeld(false)}
+        >
           <span>{toast.text}</span>
           {toast.action ? (
             <button type="button" className="btn small primary" onClick={toast.action.run}>
               {toast.action.label}
             </button>
           ) : null}
-          {toast.sticky ? (
-            <button type="button" className="btn small" onClick={() => setToast(null)}>
-              Dismiss
-            </button>
-          ) : null}
+          <button type="button" className="toast-x" aria-label="Dismiss" onClick={() => setToast(null)}>
+            ×
+          </button>
         </div>
       ) : null}
 

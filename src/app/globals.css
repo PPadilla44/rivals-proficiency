@@ -804,3 +804,5 @@ html:is([data-saved-board], [data-example-done]):not([data-board-ready]) .board-
 .filter-sheet .chip { height: 44px; padding: 0 16px; }
 .filter-sheet .view-toggle button { min-height: 44px; flex: 1; }
 .filter-label { margin: 4px 0 -4px; font-size: 13px; font-weight: 600; color: var(--ink-3); }
+.filter-sheet .lbl { align-items: stretch; text-align: left; }
+.filter-sheet .lbl-text { text-align: left; }

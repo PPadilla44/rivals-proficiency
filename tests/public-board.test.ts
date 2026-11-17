@@ -14,6 +14,7 @@ import {
   setBoardLinkEnabled,
   setBoardName,
 } from "@/server/public-board";
+import { recordEvent } from "@/server/events";
 import { BOARD_NAME_MAX, cleanBoardName } from "@/lib/board-name";
 
 let db: AnyDb;
@@ -134,5 +135,13 @@ describe("board name rules", () => {
   });
   it("rejects non-strings", () => {
     expect(cleanBoardName(42).ok).toBe(false);
+  });
+});
+
+describe("public page events", () => {
+  it("records board_view and board_cta without a user", async () => {
+    expect(await recordEvent(db, { name: "board_view", visitorId: "visitor-12345" })).toBe(true);
+    expect(await recordEvent(db, { name: "board_cta", visitorId: "visitor-12345" })).toBe(true);
+    expect(await db.select().from(schema.events)).toHaveLength(2);
   });
 });

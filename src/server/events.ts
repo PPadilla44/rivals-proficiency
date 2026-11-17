@@ -3,7 +3,7 @@ import { events } from "@/db/schema";
 import type { AnyDb } from "./board";
 
 /** Events the site records. Anything else is dropped. */
-export const EVENT_NAMES = ["visit", "level_set", "import_open", "import_read", "import_save", "sign_in", "identify", "ab", "example_start", "calc", "share", "engaged", "problem", "alert_sent", "digest_sent", "indexnow", "feedback_open", "import_check", "kofi_click"] as const;
+export const EVENT_NAMES = ["visit", "level_set", "import_open", "import_read", "import_save", "sign_in", "identify", "ab", "example_start", "calc", "share", "engaged", "problem", "alert_sent", "digest_sent", "indexnow", "feedback_open", "import_check", "kofi_click", "board_view", "board_cta"] as const;
 export type EventName = (typeof EVENT_NAMES)[number];
 
 export type EventProps = Record<string, string | number | boolean | null>;

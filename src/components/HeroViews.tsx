@@ -123,3 +123,28 @@ export const HeroLine = memo(function HeroLine({ row, portrait, onLevel }: Props
     </div>
   );
 });
+
+/** Compact row for a public board: the same look as the board's rows, with the level as plain text. */
+export const HeroLineStatic = memo(function HeroLineStatic({ row, portrait }: { row: HeroRow; portrait?: string }) {
+  const t = tierOf(row.effective);
+  return (
+    <div className="hero">
+      <div className="name">
+        <Portrait heroId={row.id} name={row.name} role={row.role} tier={portraitTier(t)} fallbackSrc={portrait} variant="thumb" />
+        <span className="name-text">
+          <span>{row.name}</span>
+          <span className={`role role-${row.role}`}>{ROLE_LABEL[row.role]}</span>
+          <RankOnly row={row} />
+        </span>
+      </div>
+      <div className={`rank${t >= 10 ? " champ" : t >= 4 ? " lord" : ""}`}>
+        <RankBadge tier={t} size={28} />
+        <span>{RANKS[t]}</span>
+      </div>
+      <span className="lvl-static" aria-label={`${row.name} level ${row.level}`}>
+        Lv <b>{row.level}</b>
+      </span>
+      <Progress row={row} />
+    </div>
+  );
+});

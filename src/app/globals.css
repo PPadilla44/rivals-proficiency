@@ -331,7 +331,7 @@ html[data-saved-board] .start-here, html[data-saved-board] .shot-start.guest, ht
   .hero { grid-template-columns: 118px minmax(0, 1fr) auto; grid-template-areas: "name name lvl" "rank prog prog"; gap: 8px 12px; padding: 12px 14px; }
   .hero .name { grid-area: name; }
   .hero .rank { grid-area: rank; font-size: 13px; }
-  .hero .lvl { grid-area: lvl; }
+  .hero .lvl, .hero .lvl-static { grid-area: lvl; }
   .hero .prog { grid-area: prog; }
   .hero .lvl button { width: 44px; height: 44px; }
   .hero .lvl input { height: 44px; width: 46px; font-size: 16px; }
@@ -876,3 +876,14 @@ body > footer.foot { margin-top: auto; }
   .share-more { min-height: 44px; }
   .nav-text, .nav-links a { min-height: 44px; }
 }
+
+/* Public board page: read-only rows and a short intro. */
+.lvl-static { font-family: var(--mono); font-size: 14px; color: var(--ink-3); font-variant-numeric: tabular-nums; }
+.lvl-static b { font-size: 20px; color: var(--ink); font-weight: 600; margin-left: 2px; }
+.pub-sub { margin: 4px 0 0; color: var(--ink-2); }
+.pub-note { margin: 14px 2px 32px; font-size: 14px; color: var(--ink-3); }
+.pub-note .link-btn { font: inherit; }
+.pub-cta { display: flex; flex-direction: row; flex-wrap: wrap; align-items: center; gap: 12px 16px; margin: 18px 0 6px; padding: 16px 18px; }
+.pub-cta p { margin: 0; flex: 1 1 260px; color: var(--ink-2); }
+.pub-cta p b { color: var(--ink); }
+.pub-more { padding: 14px 18px; color: var(--ink-3); font-size: 14px; border-top: 1px solid var(--line); }

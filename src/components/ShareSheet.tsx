@@ -8,13 +8,15 @@ import {
   PICK_MIN,
   SHARE_FILE_NAME,
   cardData,
+  shareMessage,
   defaultPicks,
   lordCount,
   pickLocked,
   shareCandidates,
   togglePick,
 } from "@/lib/share-card";
-import { openBoardLink } from "@/lib/board-link-open";
+import { boardLinkAction } from "@/app/actions";
+import { boardLinkUrl, openBoardLink } from "@/lib/board-link-open";
 import { renderCard } from "@/lib/share-draw";
 import { deviceKind, track } from "@/lib/track";
 import { RankBadge } from "./bits";
@@ -47,11 +49,30 @@ export default function ShareSheet({ rows, from, onClose }: Props) {
   const [note, setNote] = useState<string | null>(null);
   const phone = useMemo(() => deviceKind() === "mobile", []);
   const key = [...picks].sort().join(",");
+  // The player's board link, only when it is on. Guests have none, so they skip the lookup.
+  const [liveUrl, setLiveUrl] = useState<string | null>(null);
 
   useEffect(() => {
     track("share", { action: "open", from, lord: lordCount(rows) });
     // Opened once per sheet; the rows can't change while it is open.
     // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  useEffect(() => {
+    let live = true;
+    try {
+      if (!localStorage.getItem("pb-who")) return;
+    } catch {
+      return;
+    }
+    boardLinkAction()
+      .then((res) => {
+        if (live && res.ok && res.link?.enabled) setLiveUrl(boardLinkUrl(window.location.origin, res.link.token));
+      })
+      .catch(() => {});
+    return () => {
+      live = false;
+    };
   }, []);
 
   // Draw the card whenever the picks change. Only the latest drawing is kept.
@@ -98,12 +119,12 @@ export default function ShareSheet({ rows, from, onClose }: Props) {
     }
   }, [current]);
   const canCopy = typeof window !== "undefined" && "ClipboardItem" in window && !!navigator.clipboard?.write;
-  const done = (how: "share" | "save" | "copy") => track("share", { action: "done", how, heroes: picks.length });
+  const done = (how: "share" | "save" | "copy") => track("share", { action: "done", how, heroes: picks.length, link: !!liveUrl });
 
   const share = async () => {
     if (!current) return;
     try {
-      await navigator.share({ files: [current.file], title: "My Marvel Rivals proficiency", text: "rivalsproficiency.com" });
+      await navigator.share({ files: [current.file], title: "My Marvel Rivals proficiency", text: shareMessage(liveUrl) });
       done("share");
     } catch (e) {
       // Closing the share sheet is not a failure; anything else falls back to saving.
@@ -226,11 +247,22 @@ export default function ShareSheet({ rows, from, onClose }: Props) {
           </div>
         </div>
         <p className="share-live">
-          Or{" "}
-          <button type="button" className="linkish" onClick={() => { onClose(); openBoardLink("share"); }}>
-            share a live link to your board
-          </button>
-          , which friends can open without signing in.
+          {liveUrl ? (
+            <>
+              Your board link is on{phone ? " and goes with the picture when you press Share" : ""}.{" "}
+              <button type="button" className="linkish" onClick={() => { void navigator.clipboard?.writeText(liveUrl).then(() => { track("board_link", { action: "copy", from: "share" }); setNote("Link copied."); }).catch(() => setNote("Your browser wouldn't copy the link.")); }}>
+                Copy link
+              </button>
+            </>
+          ) : (
+            <>
+              Or{" "}
+              <button type="button" className="linkish" onClick={() => { onClose(); openBoardLink("share"); }}>
+                share a live link to your board
+              </button>
+              , which friends can open without signing in.
+            </>
+          )}
         </p>
     </Dialog>
   );

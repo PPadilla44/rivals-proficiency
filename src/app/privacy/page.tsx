@@ -20,7 +20,7 @@ export default async function PrivacyPage() {
         <div>
           <h1 className="page-title">Privacy</h1>
           <p className="sub">
-            Updated September 30, 2026. Short version: only what the board
+            Updated November 17, 2026. Short version: only what the board
             needs, never sold.
           </p>
         </div>
@@ -67,6 +67,17 @@ export default async function PrivacyPage() {
           images. Anthropic processes the images under its commercial terms,
           which do not allow using them to train its models. Avoid including
           anything else personal in the screenshots you upload.
+        </p>
+
+        <h2>Board link</h2>
+        <p>
+          If you are signed in, you can turn on a read-only link to your board
+          from the account menu. It is off until you turn it on. While it is
+          on, anyone who has the link can see your hero levels and an optional
+          board name you type yourself (never your sign-in name, email or
+          avatar). The address is a random code, the page asks search engines
+          not to list it, and turning the link off or making a new one stops
+          the old address at once. Deleting your account removes the link too.
         </p>
 
         <h2>Guest mode</h2>

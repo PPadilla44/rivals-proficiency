@@ -6,6 +6,7 @@ import { DATA_SEASON, FEEDBACK_URL } from "@/lib/site";
 import { KofiLink } from "@/components/KofiLink";
 import FeedbackLauncher from "@/components/FeedbackLauncher";
 import FeedbackHost from "@/components/FeedbackHost";
+import BoardLinkHost from "@/components/BoardLinkHost";
 import { SITE_URL } from "@/lib/site-url";
 import { SiteNav } from "@/components/SiteNav";
 import { EngagementTracker } from "@/components/EngagementTracker";
@@ -109,6 +110,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
           </p>
         </footer>
         <FeedbackHost />
+        <BoardLinkHost />
         <EngagementTracker />
         <Analytics />
         <SpeedInsights />

@@ -4,6 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import { KofiLink } from "./KofiLink";
+import { openBoardLink } from "@/lib/board-link-open";
 import { openFeedback } from "@/lib/feedback-open";
 import { openSignIn } from "@/lib/signin-open";
 
@@ -119,6 +120,9 @@ function AccountMenu({ who }: { who: Who }) {
       {open ? (
         <div className="acct-menu" role="menu">
           <p>{who.name ?? "Signed in"}</p>
+          <button type="button" role="menuitem" className="btn" onClick={() => { setOpen(false); openBoardLink("menu"); }}>
+            Board link
+          </button>
           <button type="button" role="menuitem" className="btn" onClick={signOutNow}>
             Sign out
           </button>

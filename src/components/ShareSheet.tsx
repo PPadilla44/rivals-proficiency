@@ -14,6 +14,7 @@ import {
   shareCandidates,
   togglePick,
 } from "@/lib/share-card";
+import { openBoardLink } from "@/lib/board-link-open";
 import { renderCard } from "@/lib/share-draw";
 import { deviceKind, track } from "@/lib/track";
 import { RankBadge } from "./bits";
@@ -224,6 +225,13 @@ export default function ShareSheet({ rows, from, onClose }: Props) {
             ) : null}
           </div>
         </div>
+        <p className="share-live">
+          Or{" "}
+          <button type="button" className="linkish" onClick={() => { onClose(); openBoardLink("share"); }}>
+            share a live link to your board
+          </button>
+          , which friends can open without signing in.
+        </p>
     </Dialog>
   );
 }

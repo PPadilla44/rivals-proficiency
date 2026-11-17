@@ -111,6 +111,47 @@ export default function BoardLinkSheet({ from, onClose }: { from: BoardLinkSourc
     return ok;
   }
 
+  /**
+   * From the Share sheet the player has already said they want to share: one tap turns the link on and
+   * copies it (or opens the phone share sheet). If the browser refuses the copy because the tap is too
+   * old, the link is on and shown, and the buttons are right there.
+   */
+  async function turnOnAndSend() {
+    if (busy) return;
+    setBusy(true);
+    setError(null);
+    setNote(null);
+    try {
+      const res = await setBoardLinkEnabledAction(true);
+      if (!res.ok || !res.link) {
+        setError(res.ok ? "That didn't work. Try again." : res.error);
+        setBusy(false);
+        return;
+      }
+      setLink(res.link);
+      setName(res.link.boardName ?? "");
+      track("board_link", { action: "on", from });
+      const fresh = boardLinkUrl(window.location.origin, res.link.token);
+      try {
+        if (canShare) {
+          await navigator.share({ url: fresh, title: "My Marvel Rivals board" });
+          track("board_link", { action: "share", from });
+        } else {
+          await navigator.clipboard.writeText(fresh);
+          track("board_link", { action: "copy", from });
+          setCopied(true);
+          if (copiedTimer.current) clearTimeout(copiedTimer.current);
+          copiedTimer.current = setTimeout(() => setCopied(false), 2000);
+        }
+      } catch (e) {
+        if ((e as Error)?.name !== "AbortError") setNote(`Your link is on. Press ${canShare ? "Share link" : "Copy link"} to send it.`);
+      }
+    } catch {
+      setError("That didn't work. Check your connection and try again.");
+    }
+    setBusy(false);
+  }
+
   async function saveAndClose() {
     if (await saveName()) onClose();
   }
@@ -143,6 +184,7 @@ export default function BoardLinkSheet({ from, onClose }: { from: BoardLinkSourc
 
   const on = !!link?.enabled;
   const ready = load.kind === "ready";
+  const quick = ready && from === "share" && !on;
   const copyBtn = (
     <button type="button" className={canShare ? "btn" : "btn primary"} disabled={!on || busy} onClick={() => void copy()}>
       {copied ? "Copied" : "Copy link"}
@@ -180,6 +222,14 @@ export default function BoardLinkSheet({ from, onClose }: { from: BoardLinkSourc
         <p className="fb-error" role="alert">{load.error}</p>
       ) : (
         <div className="bl-body">
+          {quick ? (
+            <div className="bl-quick">
+              <p>Anyone with the link sees your hero levels and board name. Nothing else. You can turn it off any time.</p>
+              <button type="button" className="btn primary" disabled={busy} onClick={() => void turnOnAndSend()}>
+                {canShare ? "Turn on and share link" : "Turn on and copy link"}
+              </button>
+            </div>
+          ) : null}
           <label className="bl-switch">
             <input type="checkbox" role="switch" checked={on} disabled={busy} aria-describedby={noteId} onChange={(e) => void toggle(e.target.checked)} />
             <span className="bl-track" aria-hidden="true"><span /></span>

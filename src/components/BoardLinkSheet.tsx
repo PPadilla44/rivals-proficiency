@@ -24,8 +24,14 @@ export default function BoardLinkSheet({ from, onClose }: { from: BoardLinkSourc
   const [note, setNote] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [askNew, setAskNew] = useState(false);
+  const [copied, setCopied] = useState(false);
+  const [nameSaved, setNameSaved] = useState(false);
+  const keepBtn = useRef<HTMLButtonElement>(null);
+  const newBtn = useRef<HTMLButtonElement>(null);
+  const copiedTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const field = useRef<HTMLInputElement>(null);
   const nameId = useId();
+  const noteId = useId();
 
   useEffect(() => {
     let live = true;
@@ -53,15 +59,32 @@ export default function BoardLinkSheet({ from, onClose }: { from: BoardLinkSourc
   const savedName = link?.boardName ?? "";
   const nameDirty = name.trim() !== savedName;
   const canShare = typeof navigator !== "undefined" && typeof navigator.share === "function" && /Mobi|Android|iPhone|iPad/i.test(navigator.userAgent);
+  const nameLen = [...name].length;
 
-  async function run(fn: () => ReturnType<typeof boardLinkAction>, action: string, after?: (l: BoardLink | null) => string | null) {
-    if (busy) return;
+  useEffect(() => () => {
+    if (copiedTimer.current) clearTimeout(copiedTimer.current);
+  }, []);
+
+  // The confirm opens with focus on the safe choice; closing it puts focus back on what opened it.
+  const askedBefore = useRef(false);
+  useEffect(() => {
+    if (askNew) {
+      askedBefore.current = true;
+      keepBtn.current?.focus();
+    } else if (askedBefore.current) newBtn.current?.focus();
+  }, [askNew]);
+
+  /** Runs a change on the server. Returns true when it was saved. */
+  async function run(fn: () => ReturnType<typeof boardLinkAction>, action: string, after?: (l: BoardLink | null) => string | null): Promise<boolean> {
+    if (busy) return false;
     setBusy(true);
     setError(null);
     setNote(null);
+    let ok = false;
     try {
       const res = await fn();
       if (res.ok) {
+        ok = true;
         setLink(res.link);
         setName(res.link?.boardName ?? "");
         track("board_link", { action, from });
@@ -71,18 +94,25 @@ export default function BoardLinkSheet({ from, onClose }: { from: BoardLinkSourc
       setError("That didn't work. Check your connection and try again.");
     }
     setBusy(false);
+    return ok;
   }
 
-  const toggle = (on: boolean) => run(() => setBoardLinkEnabledAction(on), on ? "on" : "off", (l) => (on ? null : l ? "Link is off. Nobody can open it." : null));
+  const toggle = (next: boolean) => run(() => setBoardLinkEnabledAction(next), next ? "on" : "off", () => (next ? null : "Link is off. Nobody can open it."));
 
-  async function saveName() {
+  async function saveName(): Promise<boolean> {
     const cleaned = cleanBoardName(name);
     if (!cleaned.ok) {
       setNameError(cleaned.error);
-      return;
+      return false;
     }
     setNameError(null);
-    await run(() => setBoardNameAction(cleaned.name), "name", () => "Name saved.");
+    const ok = await run(() => setBoardNameAction(cleaned.name), "name");
+    if (ok) setNameSaved(true);
+    return ok;
+  }
+
+  async function saveAndClose() {
+    if (await saveName()) onClose();
   }
 
   async function copy() {
@@ -90,7 +120,10 @@ export default function BoardLinkSheet({ from, onClose }: { from: BoardLinkSourc
     try {
       await navigator.clipboard.writeText(url);
       track("board_link", { action: "copy", from });
-      setNote("Link copied.");
+      setNote(null);
+      setCopied(true);
+      if (copiedTimer.current) clearTimeout(copiedTimer.current);
+      copiedTimer.current = setTimeout(() => setCopied(false), 2000);
     } catch {
       // No clipboard permission: select the text so Ctrl or long-press copies it.
       field.current?.focus();
@@ -110,6 +143,11 @@ export default function BoardLinkSheet({ from, onClose }: { from: BoardLinkSourc
 
   const on = !!link?.enabled;
   const ready = load.kind === "ready";
+  const copyBtn = (
+    <button type="button" className={canShare ? "btn" : "btn primary"} disabled={!on || busy} onClick={() => void copy()}>
+      {copied ? "Copied" : "Copy link"}
+    </button>
+  );
 
   return (
     <Dialog
@@ -118,16 +156,22 @@ export default function BoardLinkSheet({ from, onClose }: { from: BoardLinkSourc
       dirty={ready && nameDirty}
       busy={busy}
       footer={
-        <button type="button" className={load.kind === "guest" ? "btn" : "btn primary"} onClick={onClose}>
-          Done
-        </button>
+        ready && nameDirty ? (
+          <button type="button" className="btn primary" disabled={busy} onClick={() => void saveAndClose()}>
+            Save and close
+          </button>
+        ) : (
+          <button type="button" className="btn" onClick={onClose}>
+            Done
+          </button>
+        )
       }
     >
       {load.kind === "loading" ? (
         <p className="bl-note">Loading…</p>
       ) : load.kind === "guest" ? (
         <div className="bl-body">
-          <p>A board link lets friends see your hero levels without signing in. You need an account first, so it stays yours.</p>
+          <p>A board link lets friends see your hero levels without signing in. Sign in so only you can turn it on, off or change it.</p>
           <button type="button" className="btn primary" onClick={() => { onClose(); openSignIn(); }}>
             Sign in to get a link
           </button>
@@ -137,37 +181,53 @@ export default function BoardLinkSheet({ from, onClose }: { from: BoardLinkSourc
       ) : (
         <div className="bl-body">
           <label className="bl-switch">
-            <input type="checkbox" role="switch" checked={on} disabled={busy} onChange={(e) => void toggle(e.target.checked)} />
+            <input type="checkbox" role="switch" checked={on} disabled={busy} aria-describedby={noteId} onChange={(e) => void toggle(e.target.checked)} />
             <span className="bl-track" aria-hidden="true"><span /></span>
-            <span>Share a read-only link to my board</span>
+            <span className="bl-label">Share a read-only link to my board</span>
+            <span className={`bl-state${on ? " on" : ""}`} aria-hidden="true">{on ? "On" : "Off"}</span>
           </label>
-          <p className="bl-note">
+          <p className="bl-note" id={noteId}>
             {on
-              ? "Anyone with the link can see your hero levels and the name below. Nothing else. Turn this off and it stops working at once."
-              : "Off. Nobody can see your board. Turn it on to get a link you can send to friends."}
+              ? "Anyone with this link sees your hero levels and board name. Nothing else. Turn it off and the link stops working right away."
+              : "Off. Your board is private. Turn it on to get a link you can send to friends."}
           </p>
 
           {link?.token ? (
             <div className={`bl-link${on ? "" : " off"}`}>
               <label className="fb-field">
-                <span>Your link{on ? "" : " (off)"}</span>
+                <span>Your board link{on ? "" : " (off)"}</span>
                 <input ref={field} readOnly value={url} onFocus={(e) => e.currentTarget.select()} />
               </label>
               <div className="bl-row">
-                <button type="button" className="btn primary" disabled={!on || busy} onClick={() => void copy()}>
-                  Copy link
-                </button>
                 {canShare ? (
-                  <button type="button" className="btn" disabled={!on || busy} onClick={() => void shareLink()}>
+                  <button type="button" className="btn primary" disabled={!on || busy} onClick={() => void shareLink()}>
                     Share link
                   </button>
                 ) : null}
+                {copyBtn}
                 {on ? (
                   <a className="btn" href={url} target="_blank" rel="noreferrer">
                     Open your page
                   </a>
                 ) : null}
               </div>
+              {askNew ? (
+                <div className="bl-ask" role="group" aria-label="Make a new link">
+                  <p>The old link stops working. Anyone who has it will see a not found page.</p>
+                  <div className="bl-row">
+                    <button type="button" className="btn danger" disabled={busy} onClick={() => { setAskNew(false); void run(() => regenerateBoardLinkAction(), "new", () => "New link ready. The old one no longer works."); }}>
+                      Make a new link
+                    </button>
+                    <button type="button" className="btn" ref={keepBtn} onClick={() => setAskNew(false)}>
+                      Keep the old one
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                <button type="button" className="linkish bl-new" ref={newBtn} disabled={busy} onClick={() => setAskNew(true)}>
+                  Make a new link…
+                </button>
+              )}
             </div>
           ) : null}
 
@@ -179,9 +239,9 @@ export default function BoardLinkSheet({ from, onClose }: { from: BoardLinkSourc
               <input
                 id={nameId}
                 value={name}
-                maxLength={BOARD_NAME_MAX + 10}
+                maxLength={BOARD_NAME_MAX}
                 placeholder={DEFAULT_BOARD_NAME}
-                onChange={(e) => { setName(e.target.value); if (nameError) setNameError(null); }}
+                onChange={(e) => { setName(e.target.value); setNameSaved(false); if (nameError) setNameError(null); }}
                 onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); void saveName(); } }}
                 autoComplete="off"
               />
@@ -189,31 +249,15 @@ export default function BoardLinkSheet({ from, onClose }: { from: BoardLinkSourc
                 Save
               </button>
             </div>
-            <small className={nameError ? "bad" : ""}>{nameError ?? "Never your sign-in name. Empty shows “A player”."}</small>
+            <small className={`bl-hint${nameError ? " bad" : ""}`}>
+              <span>
+                {nameError ?? (nameSaved && !nameDirty ? "Saved. Shown on your page." : "Your sign-in name is never shown. Leave blank to show “A player”.")}
+              </span>
+              <span className="bl-count" aria-hidden="true">{nameLen}/{BOARD_NAME_MAX}</span>
+            </small>
           </div>
 
-          {link?.token ? (
-            askNew ? (
-              <div className="bl-ask" role="group" aria-label="Make a new link">
-                <p>The old link stops working. Anyone who has it will see a not found page.</p>
-                <div className="bl-row">
-                  <button type="button" className="btn danger" disabled={busy} onClick={() => { setAskNew(false); void run(() => regenerateBoardLinkAction(), "new", () => "New link ready. The old one no longer works."); }}>
-                    Make a new link
-                  </button>
-                  <button type="button" className="btn" onClick={() => setAskNew(false)}>
-                    Keep the old one
-                  </button>
-                </div>
-              </div>
-            ) : (
-              <button type="button" className="btn small bl-new" disabled={busy} onClick={() => setAskNew(true)}>
-                New link
-              </button>
-            )
-          ) : null}
-
-          {error ? <p className="fb-error" role="alert">{error}</p> : null}
-          <p className="bl-status" role="status">{note}</p>
+          <p className={`bl-status${error ? " bad" : ""}`} role="status">{error ?? note}</p>
         </div>
       )}
     </Dialog>

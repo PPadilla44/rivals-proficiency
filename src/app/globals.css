@@ -894,9 +894,12 @@ body > footer.foot { margin-top: auto; }
 .bl-note { margin: 0; font-size: 13.5px; color: var(--ink-2); }
 .bl-switch { display: flex; align-items: center; gap: 12px; min-height: 44px; font-weight: 600; cursor: pointer; position: relative; }
 .bl-switch input { position: absolute; opacity: 0; width: 44px; height: 44px; margin: 0; cursor: pointer; }
-.bl-track { flex: none; width: 44px; height: 26px; border-radius: 13px; background: var(--line-2); position: relative; transition: background 0.15s; }
-.bl-track span { position: absolute; top: 3px; left: 3px; width: 20px; height: 20px; border-radius: 50%; background: var(--panel); box-shadow: 0 1px 3px rgb(0 0 0 / 0.3); transition: transform 0.15s; }
-.bl-switch input:checked + .bl-track { background: var(--pop); }
+.bl-track { flex: none; width: 44px; height: 26px; border-radius: 13px; background: var(--line-2); box-shadow: inset 0 0 0 1px var(--ink-3); position: relative; transition: background 0.15s; }
+.bl-track span { position: absolute; top: 3px; left: 3px; width: 20px; height: 20px; border-radius: 50%; background: #fff; box-shadow: 0 1px 3px rgb(0 0 0 / 0.4); transition: transform 0.15s; }
+.bl-switch input:checked + .bl-track { background: var(--pop); box-shadow: none; }
+.bl-label { flex: 1; }
+.bl-state { font-size: 13px; font-weight: 600; color: var(--ink-3); }
+.bl-state.on { color: var(--ink); }
 .bl-switch input:checked + .bl-track span { transform: translateX(18px); }
 .bl-switch input:focus-visible + .bl-track { outline: 2px solid var(--focus); outline-offset: 2px; }
 .bl-link { display: flex; flex-direction: column; gap: 10px; }
@@ -905,7 +908,12 @@ body > footer.foot { margin-top: auto; }
 .bl-row .btn { min-height: 44px; justify-content: center; }
 .bl-row input { flex: 1 1 160px; min-width: 0; }
 .bl-ask { display: flex; flex-direction: column; gap: 10px; padding: 12px; border: 1px solid var(--line-2); border-radius: 8px; background: var(--panel-2); }
-.bl-new { align-self: flex-start; }
+.bl-new { align-self: flex-start; min-height: 44px; display: inline-flex; align-items: center; font-size: 14px; }
+.bl-new:disabled { opacity: 0.55; cursor: default; }
+.bl-hint { display: flex; justify-content: space-between; gap: 12px; }
+.bl-count { flex: none; font-variant-numeric: tabular-nums; }
 .bl-status { min-height: 1.3em; font-size: 13.5px; color: var(--ink-2); }
+.bl-status.bad { color: var(--bad); }
 .share-live { margin: 14px 0 0; font-size: 13.5px; color: var(--ink-2); }
 .linkish { background: none; border: 0; padding: 0; font: inherit; color: var(--ink); text-decoration: underline; cursor: pointer; }
+.share-live .linkish { padding: 10px 2px; }

@@ -253,12 +253,16 @@ export default function ShareSheet({ rows, from, onClose }: Props) {
               <button type="button" className="linkish" onClick={() => { void navigator.clipboard?.writeText(liveUrl).then(() => { track("board_link", { action: "copy", from: "share" }); setNote("Link copied."); }).catch(() => setNote("Your browser wouldn't copy the link.")); }}>
                 Copy link
               </button>
+              {" · "}
+              <button type="button" className="linkish" onClick={() => { onClose(); openBoardLink("share"); }}>
+                Change or turn off
+              </button>
             </>
           ) : (
             <>
               Or{" "}
               <button type="button" className="linkish" onClick={() => { onClose(); openBoardLink("share"); }}>
-                share a live link to your board
+                share a board link
               </button>
               , which friends can open without signing in.
             </>

@@ -22,10 +22,14 @@ export async function generateMetadata({ params }: PageProps<"/b/[token]">): Pro
   const { token } = await params;
   const board = await load(token);
   if (!board) return { title: "Board not found", robots: NOT_INDEXED };
+  const title = board.boardName ? `${board.boardName}'s Marvel Rivals board` : "A Marvel Rivals proficiency board";
+  const description = "A read-only copy of a Marvel Rivals hero proficiency board, made with Proficiency Board.";
   return {
-    title: board.boardName ? `${board.boardName}'s Marvel Rivals board` : "A Marvel Rivals proficiency board",
-    description: "A read-only copy of a Marvel Rivals hero proficiency board, made with Proficiency Board.",
+    title,
+    description,
     robots: NOT_INDEXED,
+    openGraph: { title, description, type: "website" },
+    twitter: { card: "summary_large_image", title, description },
   };
 }
 

@@ -123,3 +123,8 @@ export function rowBoxes(n: number): RowBox[] {
 }
 
 export const SHARE_FILE_NAME = "proficiency-board.png";
+
+/** The words that go with the picture when it is shared. The player's board link is added only when it is on. */
+export function shareMessage(liveUrl: string | null): string {
+  return liveUrl ? `My Marvel Rivals board: ${liveUrl}` : "rivalsproficiency.com";
+}

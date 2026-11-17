@@ -28,6 +28,7 @@ import {
   requestPlayerUpdate,
   resolvePlayer,
 } from "@/lib/rivals-api";
+import { getBoardLink, regenerateBoardLink, setBoardLinkEnabled, setBoardName, type BoardLink } from "@/server/public-board";
 import { VisionError, readScreenshot } from "@/lib/vision";
 import type { Detection } from "@/lib/screenshot-import";
 
@@ -296,4 +297,46 @@ export async function sendFeedbackAction(input: unknown, visitorId: unknown, tra
     await reportServerError(e);
     return { ok: false, error: "That didn't send. Try again in a moment." };
   }
+}
+
+/* ---------- Public board link ---------- */
+
+export type BoardLinkResult = { ok: true; link: BoardLink | null } | { ok: false; error: string };
+
+async function runBoardLink(fn: (userId: string) => Promise<BoardLinkResult>): Promise<BoardLinkResult> {
+  let userId: string;
+  try {
+    userId = await requireUserId();
+  } catch (e) {
+    return { ok: false, error: e instanceof Error ? e.message : "Sign in first." };
+  }
+  try {
+    return await fn(userId);
+  } catch (e) {
+    console.error(e);
+    await reportServerError(e);
+    return { ok: false, error: "Something went wrong with your board link. Try again." };
+  }
+}
+
+/** The signed-in player's link settings, or null when they never made one. */
+export async function boardLinkAction(): Promise<BoardLinkResult> {
+  return runBoardLink(async (userId) => ({ ok: true, link: await getBoardLink(getDb(), userId) }));
+}
+
+export async function setBoardLinkEnabledAction(enabled: unknown): Promise<BoardLinkResult> {
+  if (typeof enabled !== "boolean") return { ok: false, error: "That setting is not valid." };
+  return runBoardLink(async (userId) => ({ ok: true, link: await setBoardLinkEnabled(getDb(), userId, enabled) }));
+}
+
+/** A new token: the old link stops working at once. */
+export async function regenerateBoardLinkAction(): Promise<BoardLinkResult> {
+  return runBoardLink(async (userId) => ({ ok: true, link: await regenerateBoardLink(getDb(), userId) }));
+}
+
+export async function setBoardNameAction(name: unknown): Promise<BoardLinkResult> {
+  return runBoardLink(async (userId) => {
+    const saved = await setBoardName(getDb(), userId, name);
+    return saved.ok ? { ok: true, link: saved.link } : saved;
+  });
 }

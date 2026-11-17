@@ -162,3 +162,20 @@ export const feedback = pgTable(
   },
   (t) => [index("feedback_time").on(t.createdAt), index("feedback_visitor").on(t.visitorId, t.createdAt)],
 );
+
+/**
+ * A read-only public link to a player's board. The link is an unguessable token, not a
+ * handle, so there is nothing to claim or impersonate. `boardName` is optional text the
+ * player typed; it is never taken from their sign-in profile. Turning the link off keeps
+ * the row (and token) but the page stops working; making a new token replaces the old one.
+ */
+export const publicBoards = pgTable("public_board", {
+  userId: text("user_id")
+    .primaryKey()
+    .references(() => users.id, { onDelete: "cascade" }),
+  token: text("token").notNull().unique(),
+  boardName: text("board_name"),
+  enabled: boolean("enabled").notNull().default(false),
+  createdAt: timestamp("created_at", { mode: "date", withTimezone: true }).notNull().defaultNow(),
+  updatedAt: timestamp("updated_at", { mode: "date", withTimezone: true }).notNull().defaultNow(),
+});

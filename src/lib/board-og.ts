@@ -8,14 +8,14 @@ export type BoardOg = {
   title: string;
   /** "12 heroes set · 5 at Lord or higher" */
   summary: string;
-  heroes: { id: string; name: string; level: number; tier: number; rank: string }[];
+  heroes: { id: string; name: string; level: number; approx: boolean; tier: number; rank: string }[];
 };
 
 export const OG_HEROES = 4;
 
-export function boardOg(boardName: string | null, levels: Record<string, number>): BoardOg {
+export function boardOg(boardName: string | null, levels: Record<string, number>, approx: string[] = []): BoardOg {
   const rows = buildRows(
-    Object.fromEntries(Object.entries(levels).map(([id, level]) => [id, { level, baselinePlaytimeSec: null }])),
+    Object.fromEntries(Object.entries(levels).map(([id, level]) => [id, { level, baselinePlaytimeSec: null, approx: approx.includes(id) }])),
     {},
     { linked: false, pointsPerHour: null },
   );
@@ -31,7 +31,7 @@ export function boardOg(boardName: string | null, levels: Record<string, number>
     summary,
     heroes: started.slice(0, OG_HEROES).map((r) => {
       const tier = tierOf(r.effective);
-      return { id: r.id, name: r.name, level: r.effective, tier, rank: RANKS[tier] };
+      return { id: r.id, name: r.name, level: r.effective, approx: r.approx, tier, rank: RANKS[tier] };
     }),
   };
 }

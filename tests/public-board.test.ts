@@ -89,11 +89,19 @@ describe("what a public page may read", () => {
     await setBoardName(db, USER, "Thor main");
     const { token } = await setBoardLinkEnabled(db, USER, true);
     const board = await getPublicBoard(db, token);
-    expect(board).toEqual({ boardName: "Thor main", levels: { thor: 22, hulk: 9 } });
+    expect(board).toEqual({ boardName: "Thor main", levels: { thor: 22, hulk: 9 }, approx: [] });
     const text = JSON.stringify(board);
     expect(text).not.toContain("Real Name");
     expect(text).not.toContain("me@example.com");
     expect(text).not.toContain(USER);
+  });
+
+  it("says which levels are only known to the rank, until the player sets them exactly", async () => {
+    await setLevels(db, USER, [{ heroId: "thor", level: 15, approx: true }, { heroId: "hulk", level: 9 }]);
+    const { token } = await setBoardLinkEnabled(db, USER, true);
+    expect((await getPublicBoard(db, token))?.approx).toEqual(["thor"]);
+    await setLevels(db, USER, [{ heroId: "thor", level: 15 }]);
+    expect((await getPublicBoard(db, token))?.approx).toEqual([]);
   });
 
   it("looks the same for off, unknown and malformed tokens", async () => {

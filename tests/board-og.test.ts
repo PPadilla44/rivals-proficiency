@@ -21,6 +21,11 @@ describe("board preview data", () => {
     expect(og.heroes[0]).toMatchObject({ level: 55, rank: "Champion", tier: 10 });
     expect(og.summary).toBe("6 heroes set · 5 at Lord or higher · 1 at Champion");
   });
+  it("marks rank-only heroes so the preview can show 15+", () => {
+    const og = boardOg("X", { thor: 15, hulk: 9 }, ["thor"]);
+    expect(og.heroes.map((h) => [h.id, h.approx])).toEqual([["thor", true], ["hulk", false]]);
+    expect(boardOg("X", { thor: 15 }).heroes[0].approx).toBe(false);
+  });
   it("has a picture for every hero and rank", () => {
     for (const h of HEROES) expect(existsSync(`src/og/heroes/${h.id}.png`), h.id).toBe(true);
     for (const r of RANKS) expect(existsSync(`src/og/ranks/${r.toLowerCase()}.png`), r).toBe(true);

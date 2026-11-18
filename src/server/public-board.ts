@@ -75,6 +75,8 @@ export type PublicBoard = {
   boardName: string | null;
   /** Level per hero id, only for heroes the player has set. Nothing else about the player. */
   levels: Record<string, number>;
+  /** Hero ids whose level is only known to the rank (from a screenshot), so the page shows "15+". */
+  approx: string[];
 };
 
 /**
@@ -86,8 +88,12 @@ export async function getPublicBoard(db: AnyDb, token: string): Promise<PublicBo
   if (!TOKEN_PATTERN.test(token)) return null;
   const [row] = await db.select().from(publicBoards).where(eq(publicBoards.token, token));
   if (!row || !row.enabled) return null;
-  const rows = await db.select({ heroId: heroLevels.heroId, level: heroLevels.level }).from(heroLevels).where(eq(heroLevels.userId, row.userId));
-  return { boardName: row.boardName, levels: Object.fromEntries(rows.map((r) => [r.heroId, r.level])) };
+  const rows = await db.select({ heroId: heroLevels.heroId, level: heroLevels.level, approx: heroLevels.approx }).from(heroLevels).where(eq(heroLevels.userId, row.userId));
+  return {
+    boardName: row.boardName,
+    levels: Object.fromEntries(rows.map((r) => [r.heroId, r.level])),
+    approx: rows.filter((r) => r.approx).map((r) => r.heroId),
+  };
 }
 
 /** True when the signed-in viewer owns the board at this address. Says nothing else about the owner. */

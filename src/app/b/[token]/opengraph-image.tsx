@@ -33,7 +33,7 @@ export default async function Image({ params }: { params: Promise<{ token: strin
   let og = GENERIC;
   try {
     const board = await getPublicBoard(getDb(), token);
-    if (board) og = boardOg(board.boardName, board.levels);
+    if (board) og = boardOg(board.boardName, board.levels, board.approx);
   } catch {
     // No database or a slow one: the generic picture is better than a broken preview.
   }
@@ -78,7 +78,7 @@ export default async function Image({ params }: { params: Promise<{ token: strin
                     <span>{h.rank}</span>
                   </div>
                 </div>
-                <span style={{ fontFamily: "Saira", fontSize: 44 }}>{h.level}</span>
+                <span style={{ fontFamily: "Saira", fontSize: 44 }}>{h.level}{h.approx ? "+" : ""}</span>
               </div>
             ))
           )}

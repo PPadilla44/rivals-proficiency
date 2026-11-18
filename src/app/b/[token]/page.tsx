@@ -46,7 +46,7 @@ export default async function PublicBoardPage({ params }: PageProps<"/b/[token]"
 
   const portraits = await getHeroPortraits();
   const rows = buildRows(
-    Object.fromEntries(Object.entries(board.levels).map(([id, level]) => [id, { level, baselinePlaytimeSec: null }])),
+    Object.fromEntries(Object.entries(board.levels).map(([id, level]) => [id, { level, baselinePlaytimeSec: null, approx: board.approx.includes(id) }])),
     {},
     { linked: false, pointsPerHour: null },
   );

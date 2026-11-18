@@ -993,3 +993,6 @@ body > footer.foot { margin-top: auto; }
 .dash-table { min-width: 0; }
 .dash-table th:first-child { min-width: 0; }
 @media (max-width: 640px) { .dash-table th, .dash-table td { padding: 8px 6px; } .dash-table { font-size: 14px; } }
+.stats-nav { display: flex; flex-direction: column; gap: 12px; }
+.stats-nav .page-title { margin: 0; }
+.stats-nav-row { display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; }

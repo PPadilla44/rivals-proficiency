@@ -204,7 +204,7 @@ export function Board({ mode, initial, signInSlot, portraits, screenshotImport, 
   }, [ready]);
 
   /** Leave the example for the visitor's own empty board. `via` is how they did it. */
-  const startOwnBoard = useCallback((via: "button" | "tap", applied = false) => {
+  const startOwnBoard = useCallback((via: "button" | "tap" | "import", applied = false) => {
     if (!exampleRef.current) return;
     exampleRef.current = false;
     exampleEndedAt.current = Date.now();
@@ -215,7 +215,7 @@ export function Board({ mode, initial, signInSlot, portraits, screenshotImport, 
     } catch {}
     track("example_start", { via });
     if (via === "tap" && !applied) setToast({ text: "This is your board now. Set your first level." });
-    window.scrollTo({ top: 0, behavior: "smooth" });
+    if (via !== "import") window.scrollTo({ top: 0, behavior: "smooth" });
   }, []);
 
   // One "visit" per browser session.
@@ -714,6 +714,8 @@ export function Board({ mode, initial, signInSlot, portraits, screenshotImport, 
             if (ok) {
               userChanged.current = true;
               lastChange.current = null;
+              // An import from the sample board makes the board the player's own.
+              startOwnBoard("import", true);
               setEmptyAtLoad(false);
               setImportCheck({ count: updates.length, answer: null });
               setExactSkipped(false);

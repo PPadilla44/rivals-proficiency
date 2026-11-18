@@ -996,3 +996,13 @@ body > footer.foot { margin-top: auto; }
 .stats-nav { display: flex; flex-direction: column; gap: 12px; }
 .stats-nav .page-title { margin: 0; }
 .stats-nav-row { display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; }
+.dash-headline { margin: 0; font-size: 14px; color: var(--ink-2); line-height: 1.35; }
+.dash-headline b { font-family: var(--mono); font-size: 26px; font-weight: 600; color: var(--ink); margin-right: 4px; }
+.dash-headline.muted { color: var(--ink-3); }
+.dash-weekstrip { display: flex; flex-direction: column; gap: 6px; padding-top: 4px; }
+.dash-weekbars { display: flex; align-items: flex-end; gap: 6px; height: 78px; }
+.dash-weekcol { flex: 1 1 0; display: flex; flex-direction: column; align-items: center; justify-content: flex-end; gap: 3px; min-width: 0; }
+.dash-weeknum { font-family: var(--mono); font-size: 11px; color: var(--ink-3); }
+.dash-weekbar { width: 100%; max-width: 34px; border-radius: 3px 3px 0 0; background: var(--gold-ink); }
+.dash-weekcol.open .dash-weekbar { background: transparent; border: 2px dashed var(--gold-ink); border-bottom: 0; }
+.dash-weekaxis { display: flex; justify-content: space-between; font-size: 11.5px; color: var(--ink-3); font-family: var(--mono); }

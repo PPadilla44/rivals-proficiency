@@ -1,11 +1,12 @@
 import Link from "next/link";
 import type { DashRange } from "@/server/dashboard";
 
-export type StatsTab = "overview" | "visitors" | "details";
+export type StatsTab = "overview" | "visitors" | "features" | "details";
 
 const TABS: [StatsTab, string, string][] = [
   ["overview", "Overview", "/stats"],
   ["visitors", "Visitors", "/stats/visitors"],
+  ["features", "Features", "/stats/features"],
   ["details", "Details", "/stats/details"],
 ];
 const RANGES: [DashRange, string][] = [

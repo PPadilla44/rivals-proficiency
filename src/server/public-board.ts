@@ -89,3 +89,10 @@ export async function getPublicBoard(db: AnyDb, token: string): Promise<PublicBo
   const rows = await db.select({ heroId: heroLevels.heroId, level: heroLevels.level }).from(heroLevels).where(eq(heroLevels.userId, row.userId));
   return { boardName: row.boardName, levels: Object.fromEntries(rows.map((r) => [r.heroId, r.level])) };
 }
+
+/** True when the signed-in viewer owns the board at this address. Says nothing else about the owner. */
+export async function isBoardOwner(db: AnyDb, token: string, userId: string | null | undefined): Promise<boolean> {
+  if (!userId || !TOKEN_PATTERN.test(token)) return false;
+  const [row] = await db.select({ userId: publicBoards.userId }).from(publicBoards).where(eq(publicBoards.token, token));
+  return row?.userId === userId;
+}

@@ -5,6 +5,8 @@ import { auth, authConfigured } from "@/auth";
 import { getDb } from "@/db";
 import { getRecentReferrers, getStats, type Stats } from "@/server/events";
 import { sendDailyDigest } from "@/server/digest";
+import { getBoardLinkStats } from "@/server/board-link-stats";
+import { BoardLinkPanel } from "./BoardLinkPanel";
 import { searchConsoleConfigured } from "@/server/search-console";
 import { isAdminEmail as isAdmin, playtimeSyncEnabled } from "@/lib/flags";
 import { playtimeSyncFlag, screenshotDailyCap } from "@/flags";
@@ -88,7 +90,8 @@ export default async function StatsPage({ searchParams }: PageProps<"/stats">) {
   const alertResult = (await searchParams).alert;
 
   const db = getDb();
-  const [week, month, syncForYou, problems, readsToday, cap, referrers, notes] = await Promise.all([
+  const now = new Date();
+  const [week, month, syncForYou, problems, readsToday, cap, referrers, notes, linkDay, linkWeek, linkMonth] = await Promise.all([
     getStats(db, 7),
     getStats(db, 30),
     playtimeSyncEnabled(session?.user, () => playtimeSyncFlag()),
@@ -97,6 +100,9 @@ export default async function StatsPage({ searchParams }: PageProps<"/stats">) {
     screenshotDailyCap(),
     getRecentReferrers(db, 7, 12),
     listFeedback(db, 30),
+    getBoardLinkStats(db, new Date(now.getTime() - 86_400_000), now),
+    getBoardLinkStats(db, new Date(now.getTime() - 7 * 86_400_000), now),
+    getBoardLinkStats(db, new Date(now.getTime() - 30 * 86_400_000), now),
   ]);
   const syncNote = !process.env.MARVEL_RIVALS_API_KEY
     ? "off for everyone (no MARVEL_RIVALS_API_KEY yet)"
@@ -137,6 +143,7 @@ export default async function StatsPage({ searchParams }: PageProps<"/stats">) {
           ) : null}
         </div>
       </header>
+      <BoardLinkPanel day={linkDay} week={linkWeek} month={linkMonth} />
       <section className="panel rank-table-wrap">
         <h2>Problems, last 7 days</h2>
         {problems.length ? (

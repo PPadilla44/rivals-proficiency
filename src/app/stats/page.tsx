@@ -3,11 +3,13 @@ import { notFound } from "next/navigation";
 import { connection } from "next/server";
 import { auth, authConfigured } from "@/auth";
 import { getDb } from "@/db";
+import { Dashboard } from "./Dashboard";
+import { getDashboard, parseRange } from "@/server/dashboard";
 import { getRecentReferrers, getStats, type Stats } from "@/server/events";
 import { sendDailyDigest } from "@/server/digest";
 import { getBoardLinkStats } from "@/server/board-link-stats";
 import { BoardLinkPanel } from "./BoardLinkPanel";
-import { searchConsoleConfigured } from "@/server/search-console";
+import { getSearchReport, searchConsoleConfigured, type SearchReport } from "@/server/search-console";
 import { isAdminEmail as isAdmin, playtimeSyncEnabled } from "@/lib/flags";
 import { playtimeSyncFlag, screenshotDailyCap } from "@/flags";
 import { getProblems, sendTestAlert } from "@/server/alerts";
@@ -87,11 +89,16 @@ export default async function StatsPage({ searchParams }: PageProps<"/stats">) {
   await connection(); // always per request, never prerendered
   const session = authConfigured ? await auth() : null;
   if (!isAdmin(session?.user?.email)) notFound();
-  const alertResult = (await searchParams).alert;
+  const params = await searchParams;
+  const alertResult = params.alert;
+  const range = parseRange(params.range);
 
   const db = getDb();
   const now = new Date();
-  const [week, month, syncForYou, problems, readsToday, cap, referrers, notes, linkDay, linkWeek, linkMonth] = await Promise.all([
+  const searchState = searchConsoleConfigured() ? "ok" : "off";
+  const [dash, search, week, month, syncForYou, problems, readsToday, cap, referrers, notes, linkDay, linkWeek, linkMonth] = await Promise.all([
+    getDashboard(db, range, now),
+    searchState === "ok" ? getSearchReport({ now }).catch((e): null => (console.error("dashboard search failed", e), null)) : Promise.resolve<SearchReport | null>(null),
     getStats(db, 7),
     getStats(db, 30),
     playtimeSyncEnabled(session?.user, () => playtimeSyncFlag()),
@@ -113,7 +120,7 @@ export default async function StatsPage({ searchParams }: PageProps<"/stats">) {
       <header className="top">
         <div>
           <h1 className="page-title">Stats</h1>
-          <p className="sub">Anonymous events from the board. Only accounts in ADMIN_EMAILS can see this page. Times are UTC.</p>
+          <p className="sub">Anonymous events from the board. Only accounts in ADMIN_EMAILS can see this page. The charts count Pacific days; the tables below count UTC days.</p>
           <p className="sub">
             Playtime sync: <b>{syncNote}</b>
           </p>
@@ -143,6 +150,15 @@ export default async function StatsPage({ searchParams }: PageProps<"/stats">) {
           ) : null}
         </div>
       </header>
+      <Dashboard data={dash} problems={problems} search={search} searchState={search ? "ok" : searchState === "off" ? "off" : "failed"} />
+      {notes.length ? (
+        <p className="muted-note">
+          <b>{notes.length}</b> feedback message{notes.length === 1 ? "" : "s"} in the last 30 days, under Details below.
+        </p>
+      ) : null}
+      <details className="dash-fold">
+      <summary>Details: every table and total</summary>
+      <div className="dash-fold-body">
       <BoardLinkPanel day={linkDay} week={linkWeek} month={linkMonth} />
       <section className="panel rank-table-wrap">
         <h2>Problems, last 7 days</h2>
@@ -297,6 +313,8 @@ export default async function StatsPage({ searchParams }: PageProps<"/stats">) {
           </table>
         </div>
       </section>
+      </div>
+      </details>
     </div>
   );
 }

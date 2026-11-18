@@ -781,11 +781,13 @@ html:is([data-saved-board], [data-example-done]):not([data-board-ready]) .board-
 .answer-label { margin: 0; display: flex; align-items: center; gap: 10px; font-size: 12.5px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: var(--ink-3); }
 .answer-tag { font-size: 11px; padding: 3px 8px; border-radius: 6px; background: var(--ink); color: var(--panel); letter-spacing: 0.08em; }
 .answer-hero { display: flex; align-items: center; gap: 14px; }
+.answer-hero .thumb { width: 84px; }
 .answer-text { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 4px; }
 .answer-name { margin: 0; font-family: var(--display); font-weight: 700; font-size: 30px; line-height: 1.05; letter-spacing: 0.01em; text-transform: uppercase; color: var(--ink); }
 .answer-name span { font-family: var(--body); font-size: 15px; font-weight: 600; letter-spacing: 0; text-transform: none; color: var(--ink-3); margin-left: 6px; }
 .answer-name.muted { color: var(--ink-3); }
-.answer-sub { margin: 0; font-size: 15px; color: var(--ink-2); }
+.answer-sub { margin: 0; font-size: 15px; color: var(--ink-2); display: flex; align-items: center; gap: 6px; }
+.answer-sub img { flex: none; }
 .answer-bar { height: 6px; border-radius: 3px; background: var(--line); overflow: hidden; margin-top: 6px; max-width: 420px; }
 .answer-bar span { display: block; height: 100%; border-radius: 3px; }
 .answer-side { flex: 0 1 auto; display: flex; flex-direction: column; align-items: flex-start; gap: 10px; }
@@ -798,6 +800,8 @@ html:is([data-saved-board], [data-example-done]):not([data-board-ready]) .board-
 @media (max-width: 640px) {
   .answer { min-height: 0; padding: 14px 16px; gap: 12px; }
   .answer-name { font-size: 26px; }
+  .answer-hero { gap: 10px; }
+  .answer-hero .thumb { width: 52px; }
   .answer-side { width: 100%; }
   .answer-side .btn { width: 100%; justify-content: center; }
 }

@@ -3,7 +3,7 @@
 import type { ReactNode } from "react";
 import { CHAMPION, LORD, formatHours, tierOf } from "@/lib/proficiency";
 import type { HeroRow } from "@/lib/board-model";
-import { RankBadge, tierColor } from "./bits";
+import { Portrait, RankBadge, portraitTier, tierColor } from "./bits";
 
 type Props = {
   rows: HeroRow[];
@@ -21,6 +21,8 @@ type Props = {
   onSignIn?: () => void;
   /** Extra buttons on the right, such as Share. */
   actions?: ReactNode;
+  /** Fallback art by hero id, for heroes whose headshot is not stored with the site yet. */
+  portraits?: Record<string, string>;
 };
 
 /**
@@ -28,7 +30,7 @@ type Props = {
  * started hero has reached Lord). It always takes the same height, so nothing below it moves
  * when the answer appears or changes.
  */
-export default function AnswerCard({ rows, linked, kind, anyLevel, fromSample, onEnter, onSignIn, actions }: Props) {
+export default function AnswerCard({ rows, linked, kind, anyLevel, fromSample, onEnter, onSignIn, actions, portraits }: Props) {
   const started = rows.filter((r) => r.effective > 1);
   const toLord = started
     .filter((r) => r.effective < LORD)
@@ -49,12 +51,20 @@ export default function AnswerCard({ rows, linked, kind, anyLevel, fromSample, o
         </p>
         {hero ? (
           <div className="answer-hero">
-            <RankBadge tier={tierOf(hero.effective)} size={44} />
+            <Portrait
+              heroId={hero.id}
+              name={hero.name}
+              role={hero.role}
+              tier={portraitTier(tierOf(hero.effective))}
+              fallbackSrc={portraits?.[hero.id]}
+              variant="thumb"
+            />
             <div className="answer-text">
               <p className="answer-name">
                 {hero.name} <span>Lv {hero.effective}</span>
               </p>
               <p className="answer-sub">
+                <RankBadge tier={tierOf(hero.effective)} size={20} />
                 {linked && hero.hoursToNext != null
                   ? `About ${formatHours(hero.hoursToNext)} to Lord`
                   : `${target - hero.effective} ${target - hero.effective === 1 ? "level" : "levels"} to go${hero.hoursToNext != null ? `, about ${formatHours(hero.hoursToNext)}` : ""}`}

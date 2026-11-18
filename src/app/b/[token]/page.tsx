@@ -72,7 +72,7 @@ export default async function PublicBoardPage({ params }: PageProps<"/b/[token]"
 
       {started.length > 0 ? (
         <>
-          <AnswerCard rows={rows} linked={false} kind="own" anyLevel />
+          <AnswerCard rows={rows} linked={false} kind="own" anyLevel portraits={portraits} />
           <section className="list" aria-label={`${name}'s heroes`} style={{ marginTop: 18 }}>
             {started.map((r) => (
               <HeroLineStatic key={r.id} row={r} portrait={portraits[r.id]} />

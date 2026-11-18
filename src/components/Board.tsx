@@ -640,6 +640,7 @@ export function Board({ mode, initial, signInSlot, portraits, screenshotImport, 
   return (
     <div className={exampleForAll ? "board-zone hold" : "board-zone"}>
       <AnswerCard
+        portraits={portraits}
         rows={rows}
         linked={syncEnabled && !!board?.link}
         kind={example ? "sample" : guestCard ? "start" : "own"}

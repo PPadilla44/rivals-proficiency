@@ -11,11 +11,20 @@ jobs:
     # Fork PRs have no access to the secret and never get a Neon branch.
     if: github.event.pull_request.head.repo.full_name == github.repository
     runs-on: ubuntu-latest
-    # A PR that never produced a preview has no branch to delete; that is fine.
-    continue-on-error: true
+    env:
+      NEON_API_KEY: ${{ secrets.NEON_API_KEY }}
+      NEON_PROJECT_ID: ${{ vars.NEON_PROJECT_ID }}
+      BRANCH: preview/${{ github.event.pull_request.head.ref }}
     steps:
-      - uses: neondatabase/delete-branch-action@v3
-        with:
-          project_id: ${{ vars.NEON_PROJECT_ID }}
-          branch: preview/${{ github.event.pull_request.head.ref }}
-          api_key: ${{ secrets.NEON_API_KEY }}
+      - name: Delete the PR's Neon preview branch, if it has one
+        run: |
+          npm i -g neonctl@v2
+          # Listing first means a bad key or an API outage fails the job,
+          # while a PR that never got a preview branch just finishes quietly.
+          names=$(neonctl branches list --project-id "$NEON_PROJECT_ID" --output json | jq -r '.[].name')
+          if grep -Fxq -- "$BRANCH" <<< "$names"; then
+            neonctl branches delete "$BRANCH" --project-id "$NEON_PROJECT_ID"
+            echo "Deleted $BRANCH"
+          else
+            echo "No Neon branch named $BRANCH, nothing to delete."
+          fi

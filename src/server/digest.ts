@@ -5,6 +5,7 @@ import { getProblems, sendWebhook, type Send } from "./alerts";
 import { countScans, type AnyDb } from "./board";
 import { SERVER_VISITOR, getReferrers, getStats, recordEvent } from "./events";
 import { searchSection } from "./search-console";
+import { boardLinkLine, getBoardLinkStats } from "./board-link-stats";
 import { countFeedback, countFeedbackOpens, type FeedbackCounts } from "./feedback";
 
 const DAY = 86_400_000;
@@ -256,7 +257,7 @@ export async function buildDigest(
 ): Promise<string> {
   const now = opts.now ?? new Date();
   const dayAgo = new Date(now.getTime() - DAY);
-  const [kept, search, today, before, week, refs, eng, fresh, problems, reads, [{ accounts }], notes, notesOpened] = await Promise.all([
+  const [kept, search, today, before, week, refs, eng, fresh, problems, reads, [{ accounts }], notes, notesOpened, link] = await Promise.all([
     getNewVisitorRetention(db, now),
     (opts.search ?? (() => searchSection({ now })))(),
     getStats(db, 1, now),
@@ -270,6 +271,7 @@ export async function buildDigest(
     db.select({ accounts: sql<number>`count(*)::int` }).from(users),
     countFeedback(db, dayAgo, now),
     countFeedbackOpens(db, dayAgo, now),
+    getBoardLinkStats(db, dayAgo, now),
   ]);
 
   const device = (d: string) => today.devices.find((x) => x.device === d)?.visitors ?? 0;
@@ -315,6 +317,9 @@ export async function buildDigest(
     ``,
     `**Share image**`,
     shareLine(eng),
+    ``,
+    `**Board link**`,
+    ...boardLinkLine(link),
     ``,
     `**Keeping new visitors**`,
     retentionLine(kept),

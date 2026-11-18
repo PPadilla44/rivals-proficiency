@@ -6,9 +6,11 @@ import { openFeedback } from "@/lib/feedback-open";
 import { track } from "@/lib/track";
 
 /** Counts one view per page load of a public board. Anonymous, and it never says which board. */
-export function BoardViewEvent() {
+export function BoardViewEvent({ own = false }: { own?: boolean }) {
   useEffect(() => {
-    track("board_view");
+    track("board_view", { own });
+    // Once per page load.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
   return null;
 }

@@ -10,7 +10,8 @@ import { buildRows } from "@/lib/board-model";
 import { DEFAULT_BOARD_NAME } from "@/lib/board-name";
 import { getHeroPortraits } from "@/lib/portraits";
 import { CHAMPION, LORD } from "@/lib/proficiency";
-import { getPublicBoard } from "@/server/public-board";
+import { auth, authConfigured } from "@/auth";
+import { getPublicBoard, isBoardOwner } from "@/server/public-board";
 
 const load = cache(async (token: string) => getPublicBoard(getDb(), token));
 
@@ -39,6 +40,10 @@ export default async function PublicBoardPage({ params }: PageProps<"/b/[token]"
   const board = await load(token);
   if (!board) notFound();
 
+  // Only so the owner's own views are not counted as visits; nothing about the owner is shown or sent.
+  const session = authConfigured ? await auth().catch(() => null) : null;
+  const own = await isBoardOwner(getDb(), token, session?.user?.id).catch(() => false);
+
   const portraits = await getHeroPortraits();
   const rows = buildRows(
     Object.fromEntries(Object.entries(board.levels).map(([id, level]) => [id, { level, baselinePlaytimeSec: null }])),
@@ -53,7 +58,7 @@ export default async function PublicBoardPage({ params }: PageProps<"/b/[token]"
 
   return (
     <div className="wrap">
-      <BoardViewEvent />
+      <BoardViewEvent own={own} />
       <header className="top">
         <div>
           <h1 className="page-title">{board.boardName ? `${board.boardName}'s board` : `${DEFAULT_BOARD_NAME}'s board`}</h1>

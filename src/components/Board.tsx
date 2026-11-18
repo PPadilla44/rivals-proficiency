@@ -774,7 +774,7 @@ export function Board({ mode, initial, signInSlot, portraits, screenshotImport, 
         </div>
       ) : null}
 
-      {mode === "user" && !example && !oneMessage && !exactSkipped ? (
+      {mode === "user" && !example && !showImport && !exactSkipped ? (
         <ExactLevels
           rows={rows}
           portraits={portraits}

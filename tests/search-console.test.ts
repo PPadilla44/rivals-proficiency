@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { createVerify, generateKeyPairSync } from "node:crypto";
-import { getSearchReport, searchLines, searchSection, signJwt } from "@/server/search-console";
+import { getSearchDaily, getSearchReport, searchLines, searchSection, signJwt } from "@/server/search-console";
 
 const { privateKey, publicKey } = generateKeyPairSync("rsa", { modulusLength: 2048 });
 const pem = privateKey.export({ type: "pkcs8", format: "pem" }).toString();
@@ -58,6 +58,30 @@ describe("search console", () => {
       '• "marvel rivals proficiency tracker": 30 clicks of 90, position 4.2',
       "Pages (average position in brackets): / 40 of 250 (6.0), /ranks 2 of 60 (12.0)",
     ]);
+  });
+
+  it("reads clicks per day, oldest first, and asks for the date dimension", async () => {
+    vi.stubEnv("GOOGLE_SERVICE_ACCOUNT_JSON", JSON.stringify(key));
+    const seen: { url: string; body: unknown }[] = [];
+    const base = fakeGoogle(seen);
+    const fetchFn = (async (input: RequestInfo | URL, init?: RequestInit) => {
+      const body = typeof init?.body === "string" ? JSON.parse(init.body) : null;
+      if (body?.dimensions?.[0] === "date") {
+        seen.push({ url: String(input), body });
+        return new Response(
+          JSON.stringify({ rows: [{ keys: ["2026-10-04"], clicks: 5, impressions: 40 }, { keys: ["2026-10-03"], clicks: 3, impressions: 30 }] }),
+          { status: 200 },
+        );
+      }
+      return base(input, init);
+    }) as typeof fetch;
+    const days = await getSearchDaily({ now, fetchFn, days: 7 });
+    expect(days).toEqual([
+      { day: "2026-10-03", clicks: 3, impressions: 30 },
+      { day: "2026-10-04", clicks: 5, impressions: 40 },
+    ]);
+    const q = seen.find((x) => (x.body as { dimensions?: string[] } | null)?.dimensions?.[0] === "date")!.body as { startDate: string; endDate: string };
+    expect([q.startDate, q.endDate]).toEqual(["2026-09-29", "2026-10-05"]);
   });
 
   it("is left out when not set up, and reports a failure in one line", async () => {

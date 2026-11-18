@@ -369,7 +369,7 @@ export function ScreenshotImport({ current, empty, quiet, onSave }: Props) {
             )
           }
         >
-          <p className="muted">Reads ranks, not exact levels: each hero starts at the first level of its rank. You can set exact levels afterwards.</p>
+          <p className="muted">Reads ranks, not exact levels: each hero starts at the first level of its rank. After you save, the board asks for the exact level of the few heroes that matter most.</p>
           {/* Status and errors come first: on a phone the guide below is long enough to push them off screen. */}
           {reading ? (
             <div className="shot-reading" role="status">

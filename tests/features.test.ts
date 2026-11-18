@@ -36,6 +36,10 @@ describe("feature cards", () => {
     await ev("import_read", "imp-aaaa-1", "2026-11-19T20:05:00Z", { screenshots: 3, heroes: 20, failed: 2, single: false });
     await ev("import_save", "imp-aaaa-1", "2026-11-19T20:10:00Z", { heroes: 18 });
     await ev("import_check", "imp-aaaa-1", "2026-11-19T20:11:00Z", { result: "right" });
+    await ev("exact_prompt", "imp-aaaa-1", "2026-11-19T20:12:00Z", { heroes: 3, target: "lord" });
+    await ev("exact_set", "imp-aaaa-1", "2026-11-19T20:13:00Z", { target: "lord", off: 2, confirm: false });
+    await ev("exact_set", "imp-aaaa-1", "2026-11-19T20:14:00Z", { target: "lord", off: 0, confirm: true }); // same person twice
+    await ev("exact_prompt", "imp-bbbb-2", "2026-11-19T20:12:00Z", { heroes: 1, target: "lord" });
     await ev("import_open", "imp-bbbb-2", "2026-11-19T20:00:00Z");
     await ev("import_read", "imp-bbbb-2", "2026-11-19T20:05:00Z", { screenshots: 1, heroes: 0, failed: 0, single: true });
     await ev("import_check", "imp-bbbb-2", "2026-11-19T20:06:00Z", { result: "off" });
@@ -43,7 +47,7 @@ describe("feature cards", () => {
     await ev("identify", "boss-phone-1", "2026-11-19T20:01:00Z", {}, "boss");
     await ev("import_open", SERVER_VISITOR, "2026-11-19T20:00:00Z");
     const f = await getFeatures(db, "7", now);
-    expect(f.import.steps.map((s) => s.n)).toEqual([2, 2, 1, 1]);
+    expect(f.import.steps.map((s) => s.n)).toEqual([2, 2, 1, 1, 2, 1]);
     expect(f.import).toMatchObject({ answeredOff: 1, readsTotal: 2, readsFailed: 1, wrongScreen: 1 });
   });
 

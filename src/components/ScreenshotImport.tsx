@@ -369,7 +369,7 @@ export function ScreenshotImport({ current, empty, quiet, onSave }: Props) {
             )
           }
         >
-          <p className="muted">Reads ranks, not exact levels: each hero starts at the first level of its rank. You can set exact levels afterwards.</p>
+          <p className="muted">Reads ranks, not exact levels: each hero starts at the first level of its rank. After you save, the board asks for the exact level of the few heroes that matter most.</p>
           {/* Status and errors come first: on a phone the guide below is long enough to push them off screen. */}
           {reading ? (
             <div className="shot-reading" role="status">
@@ -501,7 +501,7 @@ export function ScreenshotImport({ current, empty, quiet, onSave }: Props) {
           {proposals.length} {proposals.length === 1 ? "hero" : "heroes"} read, {changes.length} changed.
         </p>
         {wrongScreen ? <WrongScreenHint /> : null}
-        <p className="muted">Each hero is set to the first level of its rank (Lord becomes 20) unless your saved level is already inside it. Tap a level afterwards to set it exactly.</p>
+        <p className="muted">Each hero is set to the first level of its rank (Lord becomes 20) unless your saved level is already inside it. After you save, you can pick exact levels for the heroes closest to Lord.</p>
         {notes.length ? (
           <ul className="muted shot-fails">
             {notes.map((n) => (

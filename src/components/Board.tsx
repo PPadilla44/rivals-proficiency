@@ -14,6 +14,7 @@ import { buildRows, GOALS, SORTS, type Goal, type HeroRow, type Sort } from "@/l
 import { ROLE_SORT, type Role } from "@/lib/heroes";
 import { CHAMPION, LORD, RANKS, clampLevel, tierOf } from "@/lib/proficiency";
 import AnswerCard from "./AnswerCard";
+import ExactLevels from "./ExactLevels";
 import { CameraIcon } from "./bits";
 import { HeroCard, HeroLine } from "./HeroViews";
 import { Account } from "./Account";
@@ -37,6 +38,7 @@ const LS_UI = "proficiency-board-ui";
 const LS_TIP = "pb-tip-type-level";
 const LS_EXAMPLE_DONE = "pb-example-done";
 const LS_AB_SENT = "pb-ab-example";
+const LS_EXACT_SKIP = "pb-exact-skip";
 const TIP_AFTER_STEPS = 3;
 const LS_SHARE_NUDGE = "pb-share-nudged";
 const SHARE_IDLE_MS = 10_000;
@@ -110,6 +112,13 @@ export function Board({ mode, initial, signInSlot, portraits, screenshotImport, 
   const [guestCardHidden, setGuestCardHidden] = useState(false);
   // After an import is saved: ask if it read the heroes right. "right" shows a thank-you with the Ko-fi link.
   const [importCheck, setImportCheck] = useState<null | { count: number; answer: "right" | null }>(null);
+  // The exact-levels panel after an import can be skipped; that is remembered in this browser until the next import.
+  const [exactSkipped, setExactSkipped] = useState(false);
+  useEffect(() => {
+    try {
+      if (localStorage.getItem(LS_EXACT_SKIP)) setExactSkipped(true);
+    } catch {}
+  }, []);
   const [emptyAtLoad, setEmptyAtLoad] = useState(() => Object.keys(initial?.levels ?? {}).length === 0);
 
   // First-time visitors may be shown an example board in place of their empty one. It is display
@@ -195,7 +204,7 @@ export function Board({ mode, initial, signInSlot, portraits, screenshotImport, 
   }, [ready]);
 
   /** Leave the example for the visitor's own empty board. `via` is how they did it. */
-  const startOwnBoard = useCallback((via: "button" | "tap", applied = false) => {
+  const startOwnBoard = useCallback((via: "button" | "tap" | "import", applied = false) => {
     if (!exampleRef.current) return;
     exampleRef.current = false;
     exampleEndedAt.current = Date.now();
@@ -206,7 +215,7 @@ export function Board({ mode, initial, signInSlot, portraits, screenshotImport, 
     } catch {}
     track("example_start", { via });
     if (via === "tap" && !applied) setToast({ text: "This is your board now. Set your first level." });
-    window.scrollTo({ top: 0, behavior: "smooth" });
+    if (via !== "import") window.scrollTo({ top: 0, behavior: "smooth" });
   }, []);
 
   // One "visit" per browser session.
@@ -705,8 +714,14 @@ export function Board({ mode, initial, signInSlot, portraits, screenshotImport, 
             if (ok) {
               userChanged.current = true;
               lastChange.current = null;
+              // An import from the sample board makes the board the player's own.
+              startOwnBoard("import", true);
               setEmptyAtLoad(false);
               setImportCheck({ count: updates.length, answer: null });
+              setExactSkipped(false);
+              try {
+                localStorage.removeItem(LS_EXACT_SKIP);
+              } catch {}
             }
             return ok;
           }}
@@ -757,6 +772,20 @@ export function Board({ mode, initial, signInSlot, portraits, screenshotImport, 
             </button>
           </div>
         </div>
+      ) : null}
+
+      {mode === "user" && !example && !showImport && !exactSkipped ? (
+        <ExactLevels
+          rows={rows}
+          portraits={portraits}
+          onLevel={(heroId, level) => setLevel(heroId, level)}
+          onSkip={() => {
+            setExactSkipped(true);
+            try {
+              localStorage.setItem(LS_EXACT_SKIP, "1");
+            } catch {}
+          }}
+        />
       ) : null}
 
       {showImport && !importCheck ? (

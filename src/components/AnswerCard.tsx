@@ -41,6 +41,10 @@ export default function AnswerCard({ rows, linked, kind, anyLevel, fromSample, o
   const target = toLord.length ? LORD : CHAMPION;
   const hero = toLord[0] ?? toChamp[0] ?? null;
   const lordPlus = rows.filter((r) => r.effective >= LORD).length;
+  const goal = target === LORD ? "Lord" : "Champion";
+  // A screenshot import only knows the rank, so the level shown is the lowest it could be.
+  const rankOnly = !!hero && hero.approx && !hero.estimate;
+  const left = hero ? target - hero.effective : 0;
 
   return (
     <section className={`answer${kind === "start" ? " start" : ""}${kind === "sample" || fromSample ? " sample-height" : ""}`} aria-label="Closest to Lord">
@@ -61,13 +65,15 @@ export default function AnswerCard({ rows, linked, kind, anyLevel, fromSample, o
             />
             <div className="answer-text">
               <p className="answer-name">
-                {hero.name} <span>Lv {hero.effective}</span>
+                {hero.name} <span>Lv {hero.effective}{rankOnly ? "+" : ""}</span>
               </p>
               <p className="answer-sub">
                 <RankBadge tier={tierOf(hero.effective)} size={20} />
                 {linked && hero.hoursToNext != null
-                  ? `About ${formatHours(hero.hoursToNext)} to Lord`
-                  : `${target - hero.effective} ${target - hero.effective === 1 ? "level" : "levels"} to go${hero.hoursToNext != null ? `, about ${formatHours(hero.hoursToNext)}` : ""}`}
+                  ? `${rankOnly ? "Up to about" : "About"} ${formatHours(hero.hoursToNext)} to ${goal}`
+                  : rankOnly
+                    ? `Up to ${left} ${left === 1 ? "level" : "levels"} to go`
+                    : `${left} ${left === 1 ? "level" : "levels"} to go${hero.hoursToNext != null ? `, about ${formatHours(hero.hoursToNext)}` : ""}`}
               </p>
               <div className="answer-bar" aria-hidden="true">
                 <span style={{ width: `${((hero.effective - (target === LORD ? 1 : LORD)) / (target - (target === LORD ? 1 : LORD))) * 100}%`, background: tierColor(tierOf(hero.effective)) }} />

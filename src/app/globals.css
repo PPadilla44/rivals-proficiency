@@ -1010,3 +1010,28 @@ body > footer.foot { margin-top: auto; }
 .dash-weekbar { width: 100%; max-width: 34px; border-radius: 3px 3px 0 0; background: var(--gold-ink); }
 .dash-weekcol.open .dash-weekbar { background: transparent; border: 2px dashed var(--gold-ink); border-bottom: 0; }
 .dash-weekaxis { display: flex; justify-content: space-between; font-size: 11.5px; color: var(--ink-3); font-family: var(--mono); }
+
+/* Exact levels after a screenshot import */
+.exact { gap: 10px; }
+.exact-head { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px 20px; flex-wrap: wrap; }
+.exact-head h2 { display: block; font-size: 16px; }
+.exact-head p { margin: 4px 0 0; font-size: 14px; max-width: 62ch; }
+.exact-head .exact-hint { font-size: 13px; }
+.exact-rows { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; }
+.exact-rows li { display: flex; align-items: center; justify-content: space-between; gap: 10px 16px; flex-wrap: wrap; padding: 10px 0; border-top: 1px solid var(--line); }
+.exact-hero { display: flex; align-items: center; gap: 10px; min-width: 0; }
+.exact-hero .thumb { width: 44px; }
+.exact-name { margin: 0; font-weight: 600; font-size: 15px; }
+.exact-sub { margin: 0; font-size: 13px; color: var(--ink-3); }
+.exact-rows li.done .exact-sub { color: var(--ink); font-weight: 600; }
+.exact-chips { display: flex; gap: 6px; flex-wrap: wrap; }
+.lvl-chip { min-width: 44px; height: 44px; padding: 0 10px; border-radius: 10px; border: 1px solid var(--line-2); background: transparent; color: var(--ink-2); font-size: 15px; font-weight: 600; cursor: pointer; font-variant-numeric: tabular-nums; }
+.lvl-chip:hover { color: var(--ink); border-color: var(--ink-3); }
+.lvl-chip[aria-pressed="true"] { background: var(--ink); color: var(--panel); border-color: var(--ink); }
+.exact-more { margin: 0; font-size: 13px; }
+.exact-live { position: absolute; width: 1px; height: 1px; margin: -1px; padding: 0; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0; }
+@media (max-width: 640px) {
+  .exact-rows li { flex-direction: column; align-items: flex-start; }
+  .exact-chips { width: 100%; }
+  .lvl-chip { flex: 1 1 0; min-width: 0; max-width: 64px; }
+}

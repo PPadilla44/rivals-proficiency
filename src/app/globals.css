@@ -972,3 +972,24 @@ body > footer.foot { margin-top: auto; }
 .dash-fold { display: flex; flex-direction: column; gap: 12px; }
 .dash-fold-body { display: flex; flex-direction: column; gap: 14px; margin-top: 8px; }
 @media (max-width: 640px) { .dash-tiles .dash-tile:last-child:nth-child(odd) { grid-column: 1 / -1; } }
+.dash-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; align-items: start; }
+@media (max-width: 900px) { .dash-grid { grid-template-columns: minmax(0, 1fr); } }
+.dash-card { padding: 14px 16px; border-radius: 12px; background: var(--panel); border: 1px solid var(--line); display: flex; flex-direction: column; gap: 10px; min-width: 0; }
+.dash-card h3 { font-size: 15px; font-weight: 600; margin: 0; }
+.dash-steps, .dash-weeks { list-style: none; margin: 0; padding: 0; display: grid; gap: 10px; }
+.dash-steps li, .dash-weeks li { display: grid; grid-template-columns: minmax(0, 1.3fr) minmax(0, 1fr) 118px; gap: 10px; align-items: center; font-size: 13.5px; }
+.dash-step-name, .dash-week-name { color: var(--ink-2); }
+.dash-steps b, .dash-weeks b { font-family: var(--mono); font-weight: 600; text-align: right; white-space: nowrap; }
+.dash-steps small, .dash-weeks small, .dash-table small { font-family: var(--mono); font-weight: 400; color: var(--ink-3); font-size: 12px; }
+.dash-bar { display: block; height: 10px; border-radius: 5px; background: var(--track); overflow: hidden; min-width: 40px; }
+.dash-bar-fill { display: block; height: 100%; border-radius: 5px; }
+.dash-bar-fill.gold { background: var(--gold-ink); }
+.dash-bar-fill.purple { background: var(--champ-ink); }
+.dash-cell { display: grid; grid-template-columns: minmax(40px, 1fr) auto; gap: 8px; align-items: center; }
+.dash-table tfoot th, .dash-table tfoot td { border-top: 1px solid var(--line-2); font-weight: 600; }
+.dash-gsc-bar { fill: var(--gold-ink); }
+.dash-hatch-line { stroke: var(--line-2); stroke-width: 2; }
+@media (max-width: 640px) { .dash-table .dash-bar { display: none; } .dash-cell { grid-template-columns: auto; } .dash-steps li, .dash-weeks li { grid-template-columns: minmax(0, 1fr) auto; } .dash-steps .dash-bar, .dash-weeks .dash-bar { grid-column: 1 / -1; grid-row: 2; } }
+.dash-table { min-width: 0; }
+.dash-table th:first-child { min-width: 0; }
+@media (max-width: 640px) { .dash-table th, .dash-table td { padding: 8px 6px; } .dash-table { font-size: 14px; } }

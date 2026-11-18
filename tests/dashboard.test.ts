@@ -5,7 +5,7 @@ import { migrate } from "drizzle-orm/pglite/migrator";
 import * as schema from "@/db/schema";
 import type { AnyDb } from "@/server/board";
 import { SERVER_VISITOR, recordEvent } from "@/server/events";
-import { addDays, delta, getDashboard, keptLabel, pacificDay, parseRange } from "@/server/dashboard";
+import { addDays, delta, getCohorts, getDashboard, getSources, keptLabel, pacificDay, parseRange, sourceName, weekStart } from "@/server/dashboard";
 
 let db: AnyDb;
 const oldAdmins = process.env.ADMIN_EMAILS;
@@ -136,5 +136,89 @@ describe("dashboard labels", () => {
     expect(parseRange("all")).toBe("all");
     expect(parseRange("nope")).toBe("7");
     expect(parseRange(undefined)).toBe("7");
+  });
+});
+
+describe("steps", () => {
+  it("counts signed-in and returning visitors inside the period", async () => {
+    await ev("visit", "steps-001", "2026-11-18T20:00:00Z");
+    await ev("visit", "steps-001", "2026-11-19T20:00:00Z");
+    await ev("visit", "steps-002", "2026-11-19T20:00:00Z");
+    await ev("identify", "steps-002", "2026-11-19T20:05:00Z", { userId: "u1" });
+    await ev("visit", "steps-003", "2026-11-19T20:00:00Z");
+    const d = await getDashboard(db, "7", now);
+    expect(d.now).toMatchObject({ visitors: 3, signedIn: 1, returning: 1 });
+  });
+});
+
+describe("sources", () => {
+  it("names the common sites and leaves others as their host", () => {
+    expect(sourceName("google.com")).toBe("Google");
+    expect(sourceName("google.co.uk")).toBe("Google");
+    expect(sourceName("duckduckgo.com")).toBe("Other search");
+    expect(sourceName("discord.com")).toBe("Discord");
+    expect(sourceName("old.reddit.com")).toBe("Reddit");
+    expect(sourceName("t.co")).toBe("X");
+    expect(sourceName("direct")).toBe("Direct");
+    expect(sourceName(null)).toBe("Not recorded");
+    expect(sourceName("example.org")).toBe("example.org");
+    expect(sourceName("notgoogle.com")).toBe("notgoogle.com");
+  });
+
+  it("uses each new visitor's first referrer, counts kept per source, leaves today out", async () => {
+    await ev("visit", "src-goog-1", "2026-11-17T20:00:00Z", { props: { ref: "google.com" } });
+    await ev("visit", "src-goog-1", "2026-11-19T20:00:00Z", { props: { ref: "direct" } }); // later visit does not change the source
+    await ev("visit", "src-goog-2", "2026-11-17T20:00:00Z", { props: { ref: "google.com" } });
+    await ev("visit", "src-disc-1", "2026-11-17T20:00:00Z", { props: { ref: "discord.com" } });
+    await ev("visit", "src-disc-1", "2026-11-18T20:00:00Z", { props: { ref: "direct" } });
+    await ev("level_set", "src-none-1", "2026-11-17T20:00:00Z"); // no referrer recorded
+    await ev("visit", "src-today-1", "2026-11-20T18:00:00Z", { props: { ref: "reddit.com" } });
+    const s = await getSources(db, "7", now);
+    expect(s.to).toBe("2026-11-19");
+    expect(s.total).toBe(4);
+    expect(s.rows.map((r) => [r.source, r.visitors, r.kept])).toEqual([
+      ["Google", 2, 1],
+      ["Discord", 1, 1],
+      ["Not recorded", 1, 0],
+    ]);
+    expect(s.kept).toBe(2);
+  });
+
+  it("skips visitors first seen before the range and the owner", async () => {
+    await ev("visit", "src-old-01", "2026-10-20T20:00:00Z", { props: { ref: "google.com" } });
+    await ev("visit", "src-old-01", "2026-11-18T20:00:00Z", { props: { ref: "google.com" } });
+    await ev("visit", "src-boss-1", "2026-11-18T20:00:00Z", { props: { ref: "google.com" } });
+    await ev("identify", "src-boss-1", "2026-11-18T20:05:00Z", { userId: "boss" });
+    const s = await getSources(db, "7", now);
+    expect(s.total).toBe(0);
+    expect(s.rows).toEqual([]);
+  });
+});
+
+describe("cohorts", () => {
+  it("finds the Monday of a Pacific week", () => {
+    expect(weekStart("2026-11-16")).toBe("2026-11-16");
+    expect(weekStart("2026-11-20")).toBe("2026-11-16");
+    expect(weekStart("2026-11-22")).toBe("2026-11-16");
+    expect(weekStart("2026-11-23")).toBe("2026-11-23");
+  });
+
+  it("groups new visitors by the week they first came and counts who was kept", async () => {
+    await ev("visit", "coh-last-1", "2026-11-10T20:00:00Z"); // week of Nov 9
+    await ev("visit", "coh-last-1", "2026-11-18T20:00:00Z"); // came back
+    await ev("visit", "coh-last-2", "2026-11-11T20:00:00Z");
+    await ev("visit", "coh-this-1", "2026-11-17T20:00:00Z"); // week of Nov 16
+    await ev("visit", "coh-this-2", "2026-11-17T20:00:00Z");
+    await ev("visit", "coh-this-2", "2026-11-19T20:00:00Z");
+    await ev("visit", "coh-today-1", "2026-11-20T18:00:00Z"); // today, left out
+    const weeks = await getCohorts(db, now);
+    expect(weeks).toEqual([
+      { start: "2026-11-09", visitors: 2, kept: 1, open: false },
+      { start: "2026-11-16", visitors: 2, kept: 1, open: true },
+    ]);
+  });
+
+  it("returns nothing when there are no visitors", async () => {
+    expect(await getCohorts(db, now)).toEqual([]);
   });
 });

@@ -59,8 +59,10 @@ const totals = (rows: Row[] | undefined): SearchTotals => {
   return r ? { clicks: r.clicks, impressions: r.impressions, position: r.position } : { clicks: 0, impressions: 0, position: null };
 };
 
-/** The last 7 days of search data ending yesterday, next to the 7 days before. */
-export async function getSearchReport(opts: { now?: Date; fetchFn?: Fetch; retryDelayMs?: number } = {}): Promise<SearchReport> {
+type Opts = { now?: Date; fetchFn?: Fetch; retryDelayMs?: number };
+
+/** Signs in to Google and finds the property; returns a query helper and a "days ago" date helper. */
+async function connect(opts: Opts) {
   const now = opts.now ?? new Date();
   const raw = opts.fetchFn ?? fetch;
   const signal = () => AbortSignal.timeout(8_000);
@@ -114,7 +116,12 @@ export async function getSearchReport(opts: { now?: Date; fetchFn?: Fetch; retry
         "Search Console query",
       )
     ).rows;
+  return { at, query };
+}
 
+/** The last 7 days of search data ending yesterday, next to the 7 days before. */
+export async function getSearchReport(opts: Opts = {}): Promise<SearchReport> {
+  const { at, query } = await connect(opts);
   const [from, to] = [at(7), at(1)];
   const [cur, prev, queries, pages] = await Promise.all([
     query(from, to, [], 1),
@@ -159,4 +166,20 @@ export async function searchSection(opts: { now?: Date; fetchFn?: Fetch; retryDe
     console.error("search console failed", e);
     return [`**Google Search**`, `Could not be read today (${e instanceof Error ? e.message.slice(0, 120) : "unknown error"})`];
   }
+}
+
+export type SearchDay = { day: string; clicks: number; impressions: number };
+
+/**
+ * Clicks and impressions per day for the last `days` days ending yesterday.
+ * Days Google has not reported yet are simply missing from the list.
+ */
+export async function getSearchDaily(opts: Opts & { days?: number } = {}): Promise<SearchDay[]> {
+  const { at, query } = await connect(opts);
+  const days = opts.days ?? 60;
+  const rows = await query(at(days), at(1), ["date"], days + 5);
+  return (rows ?? [])
+    .map((r) => ({ day: r.keys?.[0] ?? "", clicks: r.clicks, impressions: r.impressions }))
+    .filter((d) => d.day)
+    .sort((a, b) => a.day.localeCompare(b.day));
 }

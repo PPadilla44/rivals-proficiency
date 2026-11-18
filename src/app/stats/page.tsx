@@ -4,12 +4,13 @@ import { connection } from "next/server";
 import { auth, authConfigured } from "@/auth";
 import { getDb } from "@/db";
 import { Dashboard } from "./Dashboard";
-import { getDashboard, parseRange } from "@/server/dashboard";
+import { getCachedSearch } from "./search-cache";
+import { getCohorts, getDashboard, getSources, parseRange } from "@/server/dashboard";
 import { getRecentReferrers, getStats, type Stats } from "@/server/events";
 import { sendDailyDigest } from "@/server/digest";
 import { getBoardLinkStats } from "@/server/board-link-stats";
 import { BoardLinkPanel } from "./BoardLinkPanel";
-import { getSearchReport, searchConsoleConfigured, type SearchReport } from "@/server/search-console";
+import { searchConsoleConfigured } from "@/server/search-console";
 import { isAdminEmail as isAdmin, playtimeSyncEnabled } from "@/lib/flags";
 import { playtimeSyncFlag, screenshotDailyCap } from "@/flags";
 import { getProblems, sendTestAlert } from "@/server/alerts";
@@ -96,9 +97,11 @@ export default async function StatsPage({ searchParams }: PageProps<"/stats">) {
   const db = getDb();
   const now = new Date();
   const searchState = searchConsoleConfigured() ? "ok" : "off";
-  const [dash, search, week, month, syncForYou, problems, readsToday, cap, referrers, notes, linkDay, linkWeek, linkMonth] = await Promise.all([
+  const [dash, sources, cohorts, searchData, week, month, syncForYou, problems, readsToday, cap, referrers, notes, linkDay, linkWeek, linkMonth] = await Promise.all([
     getDashboard(db, range, now),
-    searchState === "ok" ? getSearchReport({ now }).catch((e): null => (console.error("dashboard search failed", e), null)) : Promise.resolve<SearchReport | null>(null),
+    getSources(db, range, now),
+    getCohorts(db, now),
+    searchState === "ok" ? getCachedSearch().catch((e): null => (console.error("dashboard search failed", e), null)) : Promise.resolve(null),
     getStats(db, 7),
     getStats(db, 30),
     playtimeSyncEnabled(session?.user, () => playtimeSyncFlag()),
@@ -150,7 +153,15 @@ export default async function StatsPage({ searchParams }: PageProps<"/stats">) {
           ) : null}
         </div>
       </header>
-      <Dashboard data={dash} problems={problems} search={search} searchState={search ? "ok" : searchState === "off" ? "off" : "failed"} />
+      <Dashboard
+        data={dash}
+        problems={problems}
+        search={searchData?.report ?? null}
+        searchDaily={searchData?.daily ?? null}
+        searchState={searchData ? "ok" : searchState === "off" ? "off" : "failed"}
+        sources={sources}
+        cohorts={cohorts}
+      />
       {notes.length ? (
         <p className="muted-note">
           <b>{notes.length}</b> feedback message{notes.length === 1 ? "" : "s"} in the last 30 days, under Details below.

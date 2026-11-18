@@ -1,8 +1,9 @@
 import Link from "next/link";
 import type { ReactNode } from "react";
-import { delta, keptLabel, type DashDay, type DashRange, type Dashboard as Data } from "@/server/dashboard";
+import { delta, keptLabel, type CohortWeek, type DashDay, type DashRange, type Dashboard as Data, type Sources } from "@/server/dashboard";
 import type { ProblemRow } from "@/server/alerts";
-import type { SearchReport } from "@/server/search-console";
+import type { SearchDay, SearchReport } from "@/server/search-console";
+import { CohortsPanel, SearchPanel, SourcesPanel, StepsPanel } from "./DashboardMore";
 
 const RANGES: [DashRange, string][] = [
   ["7", "7 days"],
@@ -122,12 +123,18 @@ export function Dashboard({
   data,
   problems,
   search,
+  searchDaily,
   searchState,
+  sources,
+  cohorts,
 }: {
   data: Data;
   problems: ProblemRow[];
   search: SearchReport | null;
+  searchDaily: SearchDay[] | null;
   searchState: "ok" | "off" | "failed";
+  sources: Sources;
+  cohorts: CohortWeek[];
 }) {
   const { now, before, days } = data;
   const rate = pct(now.interacted, now.visitors);
@@ -234,6 +241,13 @@ export function Dashboard({
             </table>
           </div>
         </details>
+      </div>
+
+      <div className="dash-grid">
+        <StepsPanel p={now} label={label} />
+        <SourcesPanel s={sources} />
+        <CohortsPanel weeks={cohorts} />
+        <SearchPanel days={days} search={searchDaily} state={searchState} />
       </div>
     </section>
   );

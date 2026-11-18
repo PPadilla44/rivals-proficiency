@@ -80,7 +80,7 @@ export function FeatureCards({ f }: { f: Features }) {
       </Card>
 
       <Card id="feat-share" title="Share my board">
-        <Headline done={shr.steps[2].n} of={shr.steps[1].n} text="of people who opened Share shared a picture" />
+        <Headline done={shr.steps[3].n} of={shr.steps[2].n} text="of people who opened Share shared a picture" />
         <Steps steps={shr.steps} />
         <p className="muted-note">
           Pictures by way: share sheet {shr.ways.share}, saved {shr.ways.save}, copied {shr.ways.copy} · with a board link: {shr.withLink}

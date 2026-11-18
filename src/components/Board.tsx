@@ -475,6 +475,7 @@ export function Board({ mode, initial, signInSlot, portraits, screenshotImport, 
         : hero && hero.effective >= LORD && now.lord > prev.lord
           ? `${hero.name} just reached Lord.`
           : `${now.lord} heroes at Lord or higher.`;
+    track("share", { action: "prompt", via: "nudge" });
     setToast({ text: `${lead} Share your board?`, action: { label: "Share", run: () => openShare("nudge") } });
   }, [lordNow, champNow, toast, importCheck, example, rows, openShare]);
 
@@ -491,6 +492,7 @@ export function Board({ mode, initial, signInSlot, portraits, screenshotImport, 
       } catch {
         return;
       }
+      track("share", { action: "prompt", via: "idle" });
       setToast({ text: `${lordNow} heroes at Lord or higher. Share your board?`, action: { label: "Share", run: () => openShare("idle") } });
     };
     // "Quiet" means the player has stopped: any tap, key press or scroll starts the wait over.

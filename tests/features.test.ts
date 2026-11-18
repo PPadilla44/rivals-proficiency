@@ -53,12 +53,13 @@ describe("feature cards", () => {
 
   it("counts share steps by visitor and the ways by picture", async () => {
     await ev("share", "shr-aaaa-1", "2026-11-18T20:00:00Z", { action: "ready", lord: 4 });
+    await ev("share", "shr-aaaa-1", "2026-11-18T20:00:30Z", { action: "prompt", via: "idle" });
     await ev("share", "shr-aaaa-1", "2026-11-18T20:01:00Z", { action: "open", from: "button" });
     await ev("share", "shr-aaaa-1", "2026-11-18T20:02:00Z", { action: "done", how: "save", link: false });
     await ev("share", "shr-aaaa-1", "2026-11-18T20:03:00Z", { action: "done", how: "share", link: true });
     await ev("share", "shr-bbbb-2", "2026-11-18T20:00:00Z", { action: "ready", lord: 3 });
     const f = await getFeatures(db, "7", now);
-    expect(f.share.steps.map((s) => s.n)).toEqual([2, 1, 1]);
+    expect(f.share.steps.map((s) => s.n)).toEqual([2, 1, 1, 1]);
     expect(f.share.ways).toEqual({ share: 1, save: 1, copy: 0 });
     expect(f.share.withLink).toBe(1);
   });

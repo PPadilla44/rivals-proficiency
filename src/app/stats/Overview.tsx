@@ -1,15 +1,9 @@
 import Link from "next/link";
 import type { ReactNode } from "react";
-import { delta, keptLabel, type CohortWeek, type DashDay, type DashRange, type Dashboard as Data, type Sources } from "@/server/dashboard";
+import { delta, keptLabel, type DashDay, type Dashboard as Data } from "@/server/dashboard";
 import type { ProblemRow } from "@/server/alerts";
-import type { SearchDay, SearchReport } from "@/server/search-console";
-import { CohortsPanel, SearchPanel, SourcesPanel, StepsPanel } from "./DashboardMore";
+import type { SearchReport } from "@/server/search-console";
 
-const RANGES: [DashRange, string][] = [
-  ["7", "7 days"],
-  ["30", "30 days"],
-  ["all", "All"],
-];
 const pct = (a: number, b: number) => (b ? Math.round((a / b) * 100) : 0);
 const short = (day: string) =>
   new Date(`${day}T12:00:00Z`).toLocaleDateString("en-US", { timeZone: "UTC", month: "short", day: "numeric" });
@@ -119,22 +113,18 @@ function Chart({ days, v, id }: { days: DashDay[]; v: Variant; id: string }) {
   );
 }
 
-export function Dashboard({
+export function Overview({
   data,
   problems,
   search,
-  searchDaily,
   searchState,
-  sources,
-  cohorts,
+  feedbackCount,
 }: {
   data: Data;
   problems: ProblemRow[];
   search: SearchReport | null;
-  searchDaily: SearchDay[] | null;
   searchState: "ok" | "off" | "failed";
-  sources: Sources;
-  cohorts: CohortWeek[];
+  feedbackCount: number;
 }) {
   const { now, before, days } = data;
   const rate = pct(now.interacted, now.visitors);
@@ -153,13 +143,6 @@ export function Dashboard({
             {short(data.from)} to {short(data.to)}, in Pacific days. Today is still counting. Your own visits are left out.
           </p>
         </div>
-        <nav className="dash-range" aria-label="Time range">
-          {RANGES.map(([r, text]) => (
-            <Link key={r} href={r === "7" ? "/stats" : `/stats?range=${r}`} aria-current={data.range === r ? "page" : undefined} scroll={false}>
-              {text}
-            </Link>
-          ))}
-        </nav>
       </div>
 
       {problems.length ? (
@@ -243,12 +226,12 @@ export function Dashboard({
         </details>
       </div>
 
-      <div className="dash-grid">
-        <StepsPanel p={now} label={label} />
-        <SourcesPanel s={sources} />
-        <CohortsPanel weeks={cohorts} />
-        <SearchPanel days={days} search={searchDaily} state={searchState} />
-      </div>
+      {feedbackCount ? (
+        <p className="muted-note">
+          <b>{feedbackCount}</b> feedback message{feedbackCount === 1 ? "" : "s"} in the last 30 days.{" "}
+          <Link href="/stats/details#feedback">Read {feedbackCount === 1 ? "it" : "them"}</Link>
+        </p>
+      ) : null}
     </section>
   );
 }

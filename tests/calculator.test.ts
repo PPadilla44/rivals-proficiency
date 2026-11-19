@@ -88,9 +88,12 @@ describe("text", () => {
     expect(daysText(500)).toBe("16 months");
     expect(daysText(2100)).toBe("about 5.5 years");
   });
-  it("adds the year only when it changes", () => {
+  it("leaves the year off unless the date is about a year away or more", () => {
     const now = new Date(2026, 9, 9);
     expect(finishDate(24, now)).toBe("Nov 2");
-    expect(finishDate(100, now)).toBe("Jan 17, 2027");
+    expect(finishDate(100, now)).toBe("Jan 17"); // next year, but the coming one is the only reading
+    expect(finishDate(329, now)).toBe("Sep 3");
+    expect(finishDate(330, now)).toBe("Sep 4, 2027");
+    expect(finishDate(800, now)).toBe("Dec 17, 2028");
   });
 });

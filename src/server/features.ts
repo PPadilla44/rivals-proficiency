@@ -16,7 +16,8 @@ export type Features = {
   /** Visitors who reached each step inside the range; owner and server left out. */
   import: { steps: FeatureStep[]; answeredOff: number; readsTotal: number; readsFailed: number; wrongScreen: number };
   share: { steps: FeatureStep[]; ways: { share: number; save: number; copy: number }; withLink: number };
-  calc: { steps: FeatureStep[] };
+  /** heroPicked: visitors who chose a hero in the dropdown (not the one filled in from their board). */
+  calc: { steps: FeatureStep[]; heroPicked: number };
   link: { steps: FeatureStep[]; views: number; linksOn: number; accounts: number };
   /** The last 8 Pacific weeks, oldest first. Each is visitors who reached the last step (link: views by friends). */
   weeks: FeatureWeek[];
@@ -61,6 +62,7 @@ export async function getFeatures(db: AnyDb, range: DashRange, now = new Date(),
         count(*) filter (where name = 'share' and props->>'action' = 'done' and props->>'link' = 'true') as with_link,
         count(distinct visitor_id) filter (where name = 'calc' and props->>'action' = 'view') as calc_view,
         count(distinct visitor_id) filter (where name = 'calc' and props->>'action' = 'use') as calc_use,
+        count(distinct visitor_id) filter (where name = 'calc' and props->>'action' = 'hero') as calc_hero,
         count(distinct visitor_id) filter (where name = 'calc' and props->>'action' = 'box_seen') as calc_box,
         count(distinct visitor_id) filter (where name = 'calc' and props->>'action' = 'cta') as calc_cta,
         count(distinct visitor_id) filter (where name = 'calc' and props->>'action' = 'landed' and props->>'result' = 'added') as calc_landed,
@@ -128,6 +130,7 @@ export async function getFeatures(db: AnyDb, range: DashRange, now = new Date(),
         s("Landed with their hero added", "calc_landed"),
         s("Then set another level or opened Import", "calc_started"),
       ],
+      heroPicked: num(r?.calc_hero),
     },
     link: {
       steps: [s("Friends who opened a board link", "link_viewers"), s("Pressed Track your own board", "link_cta"), s("Then changed a hero or opened Import", "link_started")],

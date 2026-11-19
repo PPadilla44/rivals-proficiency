@@ -4,10 +4,10 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { daysText, defaultGoal, finishDate, goalOptions, hoursText, plan } from "@/lib/calculator";
 import { CALC_NOTICE_KEY, GUEST_LEVELS_KEY, addHeroIfMissing, type CalcNotice } from "@/lib/guest-board";
 import { HEROES } from "@/lib/heroes";
-import { DEFAULT_POINTS_PER_HOUR, MAX_LEVEL, clampLevel, pointsBetween } from "@/lib/proficiency";
+import { DEFAULT_POINTS_PER_HOUR, MAX_LEVEL, clampLevel, pointsBetween, tierOf } from "@/lib/proficiency";
 import { REWARD_KIND_LABEL } from "@/lib/proficiency-rewards";
 import { referrerSite, track } from "@/lib/track";
-import { LevelStepper } from "./bits";
+import { LevelStepper, Portrait, portraitTier } from "./bits";
 
 // Same key the board saves guest levels under.
 const LS_LEVELS = GUEST_LEVELS_KEY;
@@ -129,6 +129,7 @@ export function Calculator({ boardLevels }: Props) {
   const [goal, setGoal] = useState(defaultGoal(1));
   const [perWeek, setPerWeek] = useState("7");
   const used = useRef(false);
+  const picked = useRef(false);
   // Dates depend on the visitor's own clock and time zone, so they only render in the browser.
   const [now, setNow] = useState<Date | null>(null);
 
@@ -162,6 +163,11 @@ export function Calculator({ boardLevels }: Props) {
   };
 
   const changeHero = (id: string) => {
+    // Once per visit, and only for a hero the visitor chose (the one filled in from their board does not count).
+    if (id && !picked.current) {
+      picked.current = true;
+      track("calc", { action: "hero", board: Object.keys(levels).length > 0 });
+    }
     setHeroId(id);
     if (id && levels[id] != null) {
       setLevel(levels[id]);
@@ -188,7 +194,7 @@ export function Calculator({ boardLevels }: Props) {
   return (
     <>
       <section className="panel calc-form" aria-label="Your hero">
-        <div className="calc-field">
+        <div className="calc-field full">
           <label htmlFor="calc-hero">Hero</label>
           <select id="calc-hero" value={heroId} onChange={(e) => changeHero(e.target.value)}>
             <option value="">Any hero</option>
@@ -224,7 +230,7 @@ export function Calculator({ boardLevels }: Props) {
             ))}
           </select>
         </div>
-        <div className="calc-field">
+        <div className="calc-field full">
           <label htmlFor="calc-week">Hours you play a week</label>
           <input
             id="calc-week"
@@ -247,29 +253,35 @@ export function Calculator({ boardLevels }: Props) {
       {maxed ? (
         <>
           <section className="panel calc-answer" aria-live="polite">
-            <p className="calc-headline">
-              {hero ? `${hero.name} is at level ${MAX_LEVEL}, the max.` : `Level ${MAX_LEVEL} is the max.`} Nothing left to earn.
-            </p>
+            <div className="calc-who">
+              {hero ? <Portrait key={hero.id} heroId={hero.id} name={hero.name} role={hero.role} tier={portraitTier(tierOf(level))} variant="thumb" /> : null}
+              <p className="calc-headline">
+                {hero ? `${hero.name} is at level ${MAX_LEVEL}, the max.` : `Level ${MAX_LEVEL} is the max.`} Nothing left to earn.
+              </p>
+            </div>
           </section>
           {box}
         </>
       ) : (
         <>
           <section className="panel calc-answer" aria-live="polite">
-            <p className="calc-headline">
-              {goalName} on {who} takes <b>{hoursText(result.hours)}</b> of play
-              {finish ? (
-                <>
-                  , around <b>{finish}</b> at {weekly} {weekly === 1 ? "hour" : "hours"} a week
-                </>
-              ) : null}
-              .
-            </p>
+            <div className="calc-who">
+              {hero ? <Portrait key={hero.id} heroId={hero.id} name={hero.name} role={hero.role} tier={portraitTier(tierOf(level))} variant="thumb" /> : null}
+              <p className="calc-headline">
+                {goalName} on {who} takes <b>{hoursText(result.hours)}</b> of play
+                {finish ? (
+                  <>
+                    , around <b>{finish}</b> at {weekly} {weekly === 1 ? "hour" : "hours"} a week
+                  </>
+                ) : null}
+                .
+              </p>
+            </div>
             <div className="stat-row">
               <div className="stat">
                 <span>Points needed</span>
                 <b>{fmt(result.points)}</b>
-                <small>
+                <small className="stat-extra">
                   level {result.from} to {result.to}
                 </small>
               </div>
@@ -281,7 +293,7 @@ export function Calculator({ boardLevels }: Props) {
               <div className="stat">
                 <span>Finish</span>
                 <b>{finish ?? "–"}</b>
-                <small>{result.days != null ? `in ${daysText(result.days)}` : "set hours a week"}</small>
+                <small className={result.days != null ? "stat-extra" : undefined}>{result.days != null ? `in ${daysText(result.days)}` : "set hours a week"}</small>
               </div>
             </div>
           </section>

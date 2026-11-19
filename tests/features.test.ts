@@ -67,9 +67,11 @@ describe("feature cards", () => {
   it("counts the calculator", async () => {
     await ev("calc", "calc-aaa-1", "2026-11-18T20:00:00Z", { action: "view" });
     await ev("calc", "calc-aaa-1", "2026-11-18T20:01:00Z", { action: "use" });
+    await ev("calc", "calc-aaa-1", "2026-11-18T20:02:00Z", { action: "hero" });
     await ev("calc", "calc-bbb-2", "2026-11-18T20:00:00Z", { action: "view" });
     const f = await getFeatures(db, "7", now);
     expect(f.calc.steps.map((s) => s.n).slice(0, 2)).toEqual([2, 1]);
+    expect(f.calc.heroPicked).toBe(1);
   });
 
   it("counts the calculator's board box: seen, pressed, landed with the hero added, then did something", async () => {

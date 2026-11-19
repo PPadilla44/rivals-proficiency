@@ -100,13 +100,16 @@ export function hoursText(h: number): string {
   return `about ${n} ${n === 1 ? "hour" : "hours"}`;
 }
 
-/** The finish date for a number of days from `now`, like "Nov 2". Adds the year when it is not this year. */
+/** From this many days out, a date with no year would read as the coming one, so the year is shown. */
+const YEAR_SHOWN_FROM_DAYS = 330;
+
+/** The finish date for a number of days from `now`, like "Nov 2". Adds the year only when it is about a year away or more. */
 export function finishDate(days: number, now: Date = new Date()): string {
   // Calendar days, so a daylight saving change cannot land it on the day before.
   const d = new Date(now);
   d.setDate(d.getDate() + Math.ceil(days));
   const opts: Intl.DateTimeFormatOptions = { month: "short", day: "numeric" };
-  if (d.getFullYear() !== now.getFullYear()) opts.year = "numeric";
+  if (Math.ceil(days) >= YEAR_SHOWN_FROM_DAYS) opts.year = "numeric";
   return d.toLocaleDateString("en-US", opts);
 }
 

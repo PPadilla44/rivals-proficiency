@@ -61,6 +61,15 @@ export async function getFeatures(db: AnyDb, range: DashRange, now = new Date(),
         count(*) filter (where name = 'share' and props->>'action' = 'done' and props->>'link' = 'true') as with_link,
         count(distinct visitor_id) filter (where name = 'calc' and props->>'action' = 'view') as calc_view,
         count(distinct visitor_id) filter (where name = 'calc' and props->>'action' = 'use') as calc_use,
+        count(distinct visitor_id) filter (where name = 'calc' and props->>'action' = 'box_seen') as calc_box,
+        count(distinct visitor_id) filter (where name = 'calc' and props->>'action' = 'cta') as calc_cta,
+        count(distinct visitor_id) filter (where name = 'calc' and props->>'action' = 'landed' and props->>'result' = 'added') as calc_landed,
+        (select count(*) from (
+          select visitor_id, min(created_at) as first_cta from win where name = 'calc' and props->>'action' = 'cta' group by visitor_id
+        ) c where exists (
+          select 1 from win e where e.visitor_id = c.visitor_id and e.created_at > c.first_cta
+            and e.name in ('level_set', 'import_open', 'import_save')
+        )) as calc_started,
         (select count(*) from friend_views) as link_views,
         (select count(*) from viewers) as link_viewers,
         (select count(distinct visitor_id) from win where name = 'board_cta' and visitor_id in (select visitor_id from viewers)) as link_cta,
@@ -110,7 +119,16 @@ export async function getFeatures(db: AnyDb, range: DashRange, now = new Date(),
       ways: { share: num(r?.by_share), save: num(r?.by_save), copy: num(r?.by_copy) },
       withLink: num(r?.with_link),
     },
-    calc: { steps: [s("Opened the calculator", "calc_view"), s("Changed something", "calc_use")] },
+    calc: {
+      steps: [
+        s("Opened the calculator", "calc_view"),
+        s("Changed something", "calc_use"),
+        s("Saw the board box", "calc_box"),
+        s("Pressed a board button", "calc_cta"),
+        s("Landed with their hero added", "calc_landed"),
+        s("Then set another level or opened Import", "calc_started"),
+      ],
+    },
     link: {
       steps: [s("Friends who opened a board link", "link_viewers"), s("Pressed Track your own board", "link_cta"), s("Then changed a hero or opened Import", "link_started")],
       views: num(r?.link_views),

@@ -11,7 +11,8 @@ import {
 } from "@/app/actions";
 import type { BoardData } from "@/server/board";
 import { buildRows, GOALS, SORTS, type Goal, type HeroRow, type Sort } from "@/lib/board-model";
-import { ROLE_SORT, type Role } from "@/lib/heroes";
+import { CALC_NOTICE_KEY, GUEST_LEVELS_KEY, parseCalcNotice } from "@/lib/guest-board";
+import { HEROES, ROLE_SORT, type Role } from "@/lib/heroes";
 import { CHAMPION, LORD, RANKS, clampLevel, tierOf } from "@/lib/proficiency";
 import AnswerCard from "./AnswerCard";
 import ExactLevels from "./ExactLevels";
@@ -33,7 +34,7 @@ import { SHARE_MIN_LORD, lordCount, shareEligible } from "@/lib/share-card";
 // The share sheet and its drawing code load only when someone opens it.
 const ShareSheet = lazy(() => import("./ShareSheet"));
 
-const LS_LEVELS = "proficiency-board-v1";
+const LS_LEVELS = GUEST_LEVELS_KEY;
 const LS_UI = "proficiency-board-ui";
 const LS_TIP = "pb-tip-type-level";
 const LS_EXAMPLE_DONE = "pb-example-done";
@@ -120,6 +121,9 @@ export function Board({ mode, initial, signInSlot, portraits, screenshotImport, 
     } catch {}
   }, []);
   const [emptyAtLoad, setEmptyAtLoad] = useState(() => Object.keys(initial?.levels ?? {}).length === 0);
+  // The big "fill in your whole board" card stays for an account with only a few heroes, decided at load and held for the
+  // visit (so rows do not jump under a tap). One hero carried over from the calculator must not hide it.
+  const [fewAtLoad, setFewAtLoad] = useState(() => Object.keys(initial?.levels ?? {}).length <= 3);
 
   // First-time visitors may be shown an example board in place of their empty one. It is display
   // only: nothing in it is saved, and the first press of Enter my levels (or any level control) swaps
@@ -197,6 +201,32 @@ export function Board({ mode, initial, signInSlot, portraits, screenshotImport, 
       if (ui?.view === "cards" || ui?.view === "list") setView(ui.view);
     } catch {}
   }, [mode, exampleMode, exampleForAll]);
+
+  // The calculator sends visitors here with a note on what it did (it adds the hero to a guest's saved levels itself,
+  // before this page loads). Say so once, and record the tap here because a request sent from the calculator could be
+  // cut off by the page change. A stale or malformed note is ignored.
+  useEffect(() => {
+    let raw: string | null = null;
+    try {
+      raw = sessionStorage.getItem(CALC_NOTICE_KEY);
+      if (raw) sessionStorage.removeItem(CALC_NOTICE_KEY);
+    } catch {}
+    const n = parseCalcNotice(raw, Date.now());
+    if (!n) return;
+    track("calc", { action: "cta", via: n.via, ...(n.hero ? { hero: n.hero } : {}) });
+    if (n.via !== "add" || !n.result) return;
+    track("calc", { action: "landed", result: n.result });
+    const name = HEROES.find((h) => h.id === n.hero)?.name ?? "That hero";
+    const text =
+      n.result === "added"
+        ? `${name} is on your board at Lv ${n.level}. Tap any hero's level to add the rest.`
+        : n.result === "exists"
+          ? `${name} is already on your board at Lv ${n.existing ?? n.level}. Nothing changed.`
+          : n.result === "failed"
+            ? "Couldn't save in this browser."
+            : null;
+    if (text) setToast({ text, long: true, error: n.result === "failed" });
+  }, []);
 
   // Reveal the board once the first render with the visitor's own levels is in the page (see saved-board-flag.ts).
   useEffect(() => {
@@ -375,7 +405,9 @@ export function Board({ mode, initial, signInSlot, portraits, screenshotImport, 
       }));
       if (mode === "guest") {
         setGuestLevels((g) => {
-          const next = { ...g, [heroId]: v };
+          // Heroes added in another tab (or by the calculator) since this page loaded are kept: storage fills in
+          // what this page does not have, and this page's own levels win where both have a hero.
+          const next = { ...readLocal(), ...g, [heroId]: v };
           try {
             localStorage.setItem(LS_LEVELS, JSON.stringify({ levels: next }));
           } catch {}
@@ -709,7 +741,7 @@ export function Board({ mode, initial, signInSlot, portraits, screenshotImport, 
       {mode === "user" && screenshotImport && !oneMessage ? (
         <ScreenshotImport
           current={currentLevels}
-          empty={untouched}
+          empty={fewAtLoad}
           quiet={example}
           onSave={async (updates) => {
             const ok = await withBusy(() => saveLevelsAction(updates));
@@ -719,6 +751,7 @@ export function Board({ mode, initial, signInSlot, portraits, screenshotImport, 
               // An import from the sample board makes the board the player's own.
               startOwnBoard("import", true);
               setEmptyAtLoad(false);
+              setFewAtLoad(false);
               setImportCheck({ count: updates.length, answer: null });
               setExactSkipped(false);
               try {

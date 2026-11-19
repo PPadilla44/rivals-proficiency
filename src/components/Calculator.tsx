@@ -1,8 +1,8 @@
 "use client";
 
-import Link from "next/link";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { daysText, defaultGoal, finishDate, goalOptions, hoursText, plan } from "@/lib/calculator";
+import { CALC_NOTICE_KEY, GUEST_LEVELS_KEY, addHeroIfMissing, type CalcNotice } from "@/lib/guest-board";
 import { HEROES } from "@/lib/heroes";
 import { DEFAULT_POINTS_PER_HOUR, MAX_LEVEL, clampLevel, pointsBetween } from "@/lib/proficiency";
 import { REWARD_KIND_LABEL } from "@/lib/proficiency-rewards";
@@ -10,7 +10,7 @@ import { referrerSite, track } from "@/lib/track";
 import { LevelStepper } from "./bits";
 
 // Same key the board saves guest levels under.
-const LS_LEVELS = "proficiency-board-v1";
+const LS_LEVELS = GUEST_LEVELS_KEY;
 
 const fmt = (n: number) => n.toLocaleString("en-US");
 const byName = [...HEROES].sort((a, b) => a.name.localeCompare(b.name));
@@ -39,6 +39,82 @@ function closestHero(levels: Record<string, number>): string | null {
     if (!best || points < best.points) best = { id, points };
   }
   return best?.id ?? null;
+}
+
+/**
+ * Shown to visitors with no board yet, right under the answer. For a guest with a hero picked above level 1 it can carry
+ * that hero over: the levels are saved to this browser here (adding only, never overwriting) and the board opens with
+ * it already on it. Everyone else gets a plain link to the board.
+ */
+function BoardBox({ guest, heroId, heroName, level }: { guest: boolean; heroId: string; heroName: string | null; level: number }) {
+  const ref = useRef<HTMLElement>(null);
+  useEffect(() => {
+    const el = ref.current;
+    if (!el || typeof IntersectionObserver === "undefined") return;
+    const io = new IntersectionObserver((entries) => {
+      if (entries.some((e) => e.isIntersecting)) {
+        track("calc", { action: "box_seen" });
+        io.disconnect();
+      }
+    });
+    io.observe(el);
+    return () => io.disconnect();
+  }, []);
+
+  const canAdd = guest && !!heroName && level >= 2;
+
+  // The board shows what happened and records the tap (a request sent here could be cut off by the page change).
+  const go = (via: "add" | "open") => {
+    let notice: CalcNotice = { via: "open", at: Date.now() };
+    if (via === "add" && canAdd) {
+      let result: CalcNotice["result"] = "failed";
+      let existing: number | undefined;
+      try {
+        const out = addHeroIfMissing(localStorage.getItem(GUEST_LEVELS_KEY), heroId, level);
+        result = out.result;
+        existing = out.existing;
+        if (out.next) localStorage.setItem(GUEST_LEVELS_KEY, out.next);
+      } catch {
+        result = "failed";
+      }
+      notice = { via: "add", hero: heroId, level, result, existing, at: Date.now() };
+    }
+    try {
+      sessionStorage.setItem(CALC_NOTICE_KEY, JSON.stringify(notice));
+    } catch {}
+    // A full page load on purpose: the board decides what to draw before first paint from what is saved in this browser,
+    // and a client-side navigation would skip that and flash the sample board.
+    // eslint-disable-next-line @next/next/no-location-assign-relative-destination
+    window.location.assign("/");
+  };
+
+  return (
+    <section className="banner accent cta calc-box" ref={ref} aria-label="Track every hero on one board">
+      <p>
+        <strong>{canAdd ? `Track ${heroName} and every other hero on one board` : "See every hero's hours to Lord on one board"}</strong>
+        <br />
+        Free, no sign-up. Your levels stay in this browser.
+      </p>
+      <div className="actions">
+        {canAdd ? (
+          <>
+            <button type="button" className="btn primary" onClick={() => go("add")}>
+              Add {heroName} (Lv {level}) to my board
+            </button>
+            {/* eslint-disable-next-line @next/next/no-html-link-for-pages -- full page load, see go() */}
+            <a className="btn" href="/" onClick={(e) => { e.preventDefault(); go("open"); }}>
+              Open the board
+            </a>
+          </>
+        ) : (
+          // eslint-disable-next-line @next/next/no-html-link-for-pages -- full page load, see go()
+          <a className="btn primary" href="/" onClick={(e) => { e.preventDefault(); go("open"); }}>
+            Open the board
+          </a>
+        )}
+      </div>
+    </section>
+  );
 }
 
 type Props = {
@@ -105,6 +181,9 @@ export function Calculator({ boardLevels }: Props) {
   const finish = date(result.days);
   const maxed = level >= MAX_LEVEL;
   const fromBoard = heroId && levels[heroId] != null && levels[heroId] === level;
+  // Only once the browser has read its own board, so a guest who has one never sees the box flash in.
+  const showBox = now !== null && Object.keys(levels).length === 0;
+  const box = showBox ? <BoardBox guest={boardLevels === null} heroId={heroId} heroName={hero?.name ?? null} level={level} /> : null;
 
   return (
     <>
@@ -166,11 +245,14 @@ export function Calculator({ boardLevels }: Props) {
       </section>
 
       {maxed ? (
-        <section className="panel calc-answer" aria-live="polite">
-          <p className="calc-headline">
-            {hero ? `${hero.name} is at level ${MAX_LEVEL}, the max.` : `Level ${MAX_LEVEL} is the max.`} Nothing left to earn.
-          </p>
-        </section>
+        <>
+          <section className="panel calc-answer" aria-live="polite">
+            <p className="calc-headline">
+              {hero ? `${hero.name} is at level ${MAX_LEVEL}, the max.` : `Level ${MAX_LEVEL} is the max.`} Nothing left to earn.
+            </p>
+          </section>
+          {box}
+        </>
       ) : (
         <>
           <section className="panel calc-answer" aria-live="polite">
@@ -203,6 +285,8 @@ export function Calculator({ boardLevels }: Props) {
               </div>
             </div>
           </section>
+
+          {box}
 
           {result.stops.length > 1 ? (
             <section className="panel rank-table-wrap">
@@ -256,18 +340,6 @@ export function Calculator({ boardLevels }: Props) {
           ) : null}
         </>
       )}
-
-      {Object.keys(levels).length === 0 ? (
-        <section className="banner accent cta">
-          <p>
-            <strong>Want this for every hero?</strong> Proficiency Board keeps all your levels on one screen and shows the
-            hours left to Lord and Champion for each.
-          </p>
-          <Link href="/" className="btn primary">
-            Open the board
-          </Link>
-        </section>
-      ) : null}
     </>
   );
 }

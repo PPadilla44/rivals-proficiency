@@ -69,7 +69,24 @@ describe("feature cards", () => {
     await ev("calc", "calc-aaa-1", "2026-11-18T20:01:00Z", { action: "use" });
     await ev("calc", "calc-bbb-2", "2026-11-18T20:00:00Z", { action: "view" });
     const f = await getFeatures(db, "7", now);
-    expect(f.calc.steps.map((s) => s.n)).toEqual([2, 1]);
+    expect(f.calc.steps.map((s) => s.n).slice(0, 2)).toEqual([2, 1]);
+  });
+
+  it("counts the calculator's board box: seen, pressed, landed with the hero added, then did something", async () => {
+    // aaa saw the box, pressed Add, landed with the hero added, then set another level.
+    await ev("calc", "box-aaaa-1", "2026-11-18T20:00:00Z", { action: "box_seen" });
+    await ev("calc", "box-aaaa-1", "2026-11-18T20:01:00Z", { action: "cta", via: "add", hero: "hulk" });
+    await ev("calc", "box-aaaa-1", "2026-11-18T20:01:01Z", { action: "landed", result: "added" });
+    await ev("level_set", "box-aaaa-1", "2026-11-18T20:03:00Z", { hero: "thor", level: 5 });
+    // bbb saw it and pressed Open; the hero already existed; they did something before pressing, which does not count.
+    await ev("level_set", "box-bbbb-2", "2026-11-18T19:00:00Z", { hero: "thor", level: 5 });
+    await ev("calc", "box-bbbb-2", "2026-11-18T20:00:00Z", { action: "box_seen" });
+    await ev("calc", "box-bbbb-2", "2026-11-18T20:01:00Z", { action: "cta", via: "open" });
+    await ev("calc", "box-bbbb-2", "2026-11-18T20:01:01Z", { action: "landed", result: "exists" });
+    // ccc only saw it.
+    await ev("calc", "box-cccc-3", "2026-11-18T20:00:00Z", { action: "box_seen" });
+    const f = await getFeatures(db, "7", now);
+    expect(f.calc.steps.map((s) => s.n).slice(2)).toEqual([3, 2, 1, 1]);
   });
 
   it("counts board link viewers who are not the owner, and who started a board afterwards", async () => {

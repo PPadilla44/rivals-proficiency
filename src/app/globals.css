@@ -577,6 +577,24 @@ footer.foot .foot-kofi:hover { color: var(--ink); text-decoration: none; }
   .calc-rewards li { grid-template-columns: 52px 1fr; }
   .calc-rewards small { display: none; }
 }
+@media (max-width: 440px) {
+  /* The On the way table fits the screen instead of scrolling sideways with nothing to say it does. */
+  .calc-table { min-width: 0; font-size: 13px; }
+  .calc-table th, .calc-table td { padding: 8px 4px; }
+  .calc-table th:first-child { min-width: 0; }
+  .calc-table .rk { gap: 6px; }
+  .calc-table tbody th img { width: 26px; }
+  .calc-table td { font-size: 12.5px; }
+  .calc-table thead th { font-size: 10.5px; letter-spacing: 0.03em; }
+  .calc-table td:last-child { white-space: normal; } /* a date with a year wraps instead of widening the table */
+}
+@media (max-width: 380px) {
+  .calc-table tbody th img { display: none; } /* the rank name is enough when the room is this tight */
+}
+@media (max-width: 340px) {
+  .calc-table th, .calc-table td { padding: 8px 3px; }
+  .calc-table, .calc-table td { font-size: 12px; }
+}
 @media (max-width: 359px) {
   /* The level stepper and goal select do not both fit a half row this narrow. */
   .calc-form > .calc-field { grid-column: 1 / -1; }

@@ -304,7 +304,7 @@ export function Calculator({ boardLevels }: Props) {
             <section className="panel rank-table-wrap">
               <h2>On the way</h2>
               <div className="table-scroll">
-                <table className="rank-table">
+                <table className="rank-table calc-table">
                   <thead>
                     <tr>
                       <th scope="col">Rank</th>
@@ -321,7 +321,10 @@ export function Calculator({ boardLevels }: Props) {
                           <span className="rk">
                             {/* eslint-disable-next-line @next/next/no-img-element */}
                             <img src={`/ranks/${s.rank.toLowerCase()}.webp`} alt="" width={52} height={47} />
-                            {s.label}
+                            <span className="rk-text">
+                              {s.label}
+                              {s.label !== `Level ${s.level}` ? <span className="rk-level">Level {s.level}</span> : null}
+                            </span>
                           </span>
                         </th>
                         <td>{s.level}</td>

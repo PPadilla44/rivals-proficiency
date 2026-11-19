@@ -16,7 +16,8 @@ export type Features = {
   /** Visitors who reached each step inside the range; owner and server left out. */
   import: { steps: FeatureStep[]; answeredOff: number; readsTotal: number; readsFailed: number; wrongScreen: number };
   share: { steps: FeatureStep[]; ways: { share: number; save: number; copy: number }; withLink: number };
-  calc: { steps: FeatureStep[] };
+  /** heroPicked: visitors who chose a hero in the dropdown (not the one filled in from their board). */
+  calc: { steps: FeatureStep[]; heroPicked: number };
   link: { steps: FeatureStep[]; views: number; linksOn: number; accounts: number };
   /** The last 8 Pacific weeks, oldest first. Each is visitors who reached the last step (link: views by friends). */
   weeks: FeatureWeek[];
@@ -124,12 +125,12 @@ export async function getFeatures(db: AnyDb, range: DashRange, now = new Date(),
       steps: [
         s("Opened the calculator", "calc_view"),
         s("Changed something", "calc_use"),
-        s("Picked a hero", "calc_hero"),
         s("Saw the board box", "calc_box"),
         s("Pressed a board button", "calc_cta"),
         s("Landed with their hero added", "calc_landed"),
         s("Then set another level or opened Import", "calc_started"),
       ],
+      heroPicked: num(r?.calc_hero),
     },
     link: {
       steps: [s("Friends who opened a board link", "link_viewers"), s("Pressed Track your own board", "link_cta"), s("Then changed a hero or opened Import", "link_started")],

@@ -166,7 +166,7 @@ export function Calculator({ boardLevels }: Props) {
     // Once per visit, and only for a hero the visitor chose (the one filled in from their board does not count).
     if (id && !picked.current) {
       picked.current = true;
-      track("calc", { action: "hero" });
+      track("calc", { action: "hero", board: Object.keys(levels).length > 0 });
     }
     setHeroId(id);
     if (id && levels[id] != null) {
@@ -194,7 +194,7 @@ export function Calculator({ boardLevels }: Props) {
   return (
     <>
       <section className="panel calc-form" aria-label="Your hero">
-        <div className="calc-field">
+        <div className="calc-field full">
           <label htmlFor="calc-hero">Hero</label>
           <select id="calc-hero" value={heroId} onChange={(e) => changeHero(e.target.value)}>
             <option value="">Any hero</option>
@@ -230,7 +230,7 @@ export function Calculator({ boardLevels }: Props) {
             ))}
           </select>
         </div>
-        <div className="calc-field">
+        <div className="calc-field full">
           <label htmlFor="calc-week">Hours you play a week</label>
           <input
             id="calc-week"
@@ -254,7 +254,7 @@ export function Calculator({ boardLevels }: Props) {
         <>
           <section className="panel calc-answer" aria-live="polite">
             <div className="calc-who">
-              {hero ? <Portrait heroId={hero.id} name={hero.name} role={hero.role} tier={portraitTier(tierOf(level))} variant="thumb" /> : null}
+              {hero ? <Portrait key={hero.id} heroId={hero.id} name={hero.name} role={hero.role} tier={portraitTier(tierOf(level))} variant="thumb" /> : null}
               <p className="calc-headline">
                 {hero ? `${hero.name} is at level ${MAX_LEVEL}, the max.` : `Level ${MAX_LEVEL} is the max.`} Nothing left to earn.
               </p>
@@ -266,7 +266,7 @@ export function Calculator({ boardLevels }: Props) {
         <>
           <section className="panel calc-answer" aria-live="polite">
             <div className="calc-who">
-              {hero ? <Portrait heroId={hero.id} name={hero.name} role={hero.role} tier={portraitTier(tierOf(level))} variant="thumb" /> : null}
+              {hero ? <Portrait key={hero.id} heroId={hero.id} name={hero.name} role={hero.role} tier={portraitTier(tierOf(level))} variant="thumb" /> : null}
               <p className="calc-headline">
                 {goalName} on {who} takes <b>{hoursText(result.hours)}</b> of play
                 {finish ? (
@@ -281,7 +281,7 @@ export function Calculator({ boardLevels }: Props) {
               <div className="stat">
                 <span>Points needed</span>
                 <b>{fmt(result.points)}</b>
-                <small>
+                <small className="stat-extra">
                   level {result.from} to {result.to}
                 </small>
               </div>
@@ -293,7 +293,7 @@ export function Calculator({ boardLevels }: Props) {
               <div className="stat">
                 <span>Finish</span>
                 <b>{finish ?? "–"}</b>
-                <small>{result.days != null ? `in ${daysText(result.days)}` : "set hours a week"}</small>
+                <small className={result.days != null ? "stat-extra" : undefined}>{result.days != null ? `in ${daysText(result.days)}` : "set hours a week"}</small>
               </div>
             </div>
           </section>

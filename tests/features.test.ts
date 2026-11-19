@@ -70,7 +70,8 @@ describe("feature cards", () => {
     await ev("calc", "calc-aaa-1", "2026-11-18T20:02:00Z", { action: "hero" });
     await ev("calc", "calc-bbb-2", "2026-11-18T20:00:00Z", { action: "view" });
     const f = await getFeatures(db, "7", now);
-    expect(f.calc.steps.map((s) => s.n).slice(0, 3)).toEqual([2, 1, 1]);
+    expect(f.calc.steps.map((s) => s.n).slice(0, 2)).toEqual([2, 1]);
+    expect(f.calc.heroPicked).toBe(1);
   });
 
   it("counts the calculator's board box: seen, pressed, landed with the hero added, then did something", async () => {
@@ -87,7 +88,7 @@ describe("feature cards", () => {
     // ccc only saw it.
     await ev("calc", "box-cccc-3", "2026-11-18T20:00:00Z", { action: "box_seen" });
     const f = await getFeatures(db, "7", now);
-    expect(f.calc.steps.map((s) => s.n).slice(3)).toEqual([3, 2, 1, 1]);
+    expect(f.calc.steps.map((s) => s.n).slice(2)).toEqual([3, 2, 1, 1]);
   });
 
   it("counts board link viewers who are not the owner, and who started a board afterwards", async () => {

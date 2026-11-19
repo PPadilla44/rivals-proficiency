@@ -89,8 +89,11 @@ export function FeatureCards({ f }: { f: Features }) {
       </Card>
 
       <Card id="feat-calc" title="Calculator">
-        <Headline done={calc.steps[4].n} of={calc.steps[3].n} text="of people who saw the board box pressed a button" />
+        <Headline done={calc.steps[3].n} of={calc.steps[2].n} text="of people who saw the board box pressed a button" />
         <Steps steps={calc.steps} />
+        <p className="muted-note">
+          Picked a hero in the dropdown: {calc.heroPicked} of {calc.steps[0].n} who opened it
+        </p>
         <WeekStrip weeks={f.weeks} pick={(w) => w.calc} label="People who opened it" />
       </Card>
 

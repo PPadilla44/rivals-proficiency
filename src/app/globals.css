@@ -548,7 +548,7 @@ footer.foot .foot-kofi:hover { color: var(--ink); text-decoration: none; }
 .calc-num { font-family: var(--mono); font-weight: 600; max-width: 110px; }
 .calc-field select:focus-visible, .calc-num:focus-visible { outline: 2px solid var(--focus); outline-offset: 1px; }
 .calc-answer { display: flex; flex-direction: column; gap: 16px; padding: 18px 20px 20px; }
-.calc-who { display: flex; align-items: center; gap: 12px; }
+.calc-who { display: flex; align-items: center; gap: 12px; min-height: 39px; } /* the portrait is 39px tall: no jump when it appears */
 .calc-headline { margin: 0; font-size: 19px; line-height: 1.4; color: var(--ink-2); }
 .calc-headline b { color: var(--ink); }
 .calc-answer .stat-row { max-width: none; }
@@ -562,20 +562,24 @@ footer.foot .foot-kofi:hover { color: var(--ink); text-decoration: none; }
   .calc-form { grid-template-columns: 1fr 1fr; }
   .calc-headline { font-size: 17px; }
 }
-@media (max-width: 420px) {
+@media (max-width: 440px) {
   /* Hero and hours get a full row; level and goal share one. Keeps the answer and the board box near the top. */
   .calc-form { grid-template-columns: 1fr 1fr; gap: 14px; padding: 16px; }
-  .calc-form > .calc-field:first-child, .calc-form > .calc-field:last-child { grid-column: 1 / -1; }
+  .calc-field.full { grid-column: 1 / -1; }
   .calc-answer { padding: 16px; gap: 14px; }
   .calc-answer .stat-row { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
   .calc-answer .stat { padding: 10px; }
   .calc-answer .stat span { font-size: 10.5px; letter-spacing: 0.04em; }
-  .calc-answer .stat b { font-size: 22px; }
+  .calc-answer .stat b { font-size: clamp(14px, 4.4vw, 22px); overflow-wrap: anywhere; } /* "116,100" must fit a third of the row */
   .calc-answer .stat small { font-size: 11px; line-height: 1.3; }
-  /* The first and last captions repeat the form and the headline; the middle one says what the estimate assumes. */
-  .calc-answer .stat:first-child small, .calc-answer .stat:last-child small { display: none; }
+  /* Captions that repeat the form or the headline go; the middle one says what the estimate assumes. */
+  .calc-answer .stat small.stat-extra { display: none; }
   .calc-rewards li { grid-template-columns: 52px 1fr; }
   .calc-rewards small { display: none; }
+}
+@media (max-width: 359px) {
+  /* The level stepper and goal select do not both fit a half row this narrow. */
+  .calc-form > .calc-field { grid-column: 1 / -1; }
 }
 
 /* Home page explainer under the board */

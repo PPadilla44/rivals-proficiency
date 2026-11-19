@@ -548,6 +548,7 @@ footer.foot .foot-kofi:hover { color: var(--ink); text-decoration: none; }
 .calc-num { font-family: var(--mono); font-weight: 600; max-width: 110px; }
 .calc-field select:focus-visible, .calc-num:focus-visible { outline: 2px solid var(--focus); outline-offset: 1px; }
 .calc-answer { display: flex; flex-direction: column; gap: 16px; padding: 18px 20px 20px; }
+.calc-who { display: flex; align-items: center; gap: 12px; }
 .calc-headline { margin: 0; font-size: 19px; line-height: 1.4; color: var(--ink-2); }
 .calc-headline b { color: var(--ink); }
 .calc-answer .stat-row { max-width: none; }
